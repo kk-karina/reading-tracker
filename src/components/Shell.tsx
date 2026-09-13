@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'motion/react'
+import { motion } from 'motion/react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { CursorDot } from './fun'
 import { useAuth } from '../state/AuthContext'
@@ -49,24 +49,21 @@ export function Shell() {
         </div>
       </header>
 
-      <AnimatePresence mode="wait" initial={false}>
-        <motion.main
-          key={location.pathname}
-          className="page"
-          initial={{ opacity: 0, filter: 'blur(6px)' }}
-          // `filter` on an ancestor turns position:fixed into position:absolute, so clear it once done.
-          animate={{ opacity: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }}
-          exit={{ opacity: 0, filter: 'blur(4px)', transition: { duration: 0.12 } }}
-          transition={{ duration: 0.28, ease: [0.22, 1, 0.36, 1] }}
-        >
-          {error && (
-            <div className="error" style={{ marginBottom: 24 }}>
-              {error}
-            </div>
-          )}
-          <Outlet />
-        </motion.main>
-      </AnimatePresence>
+      {/* Keyed by route: a plain fade-in on mount, no exit animation to wait for. */}
+      <motion.main
+        key={location.pathname}
+        className="page"
+        initial={{ opacity: 0, y: 6 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+      >
+        {error && (
+          <div className="error" style={{ marginBottom: 24 }}>
+            {error}
+          </div>
+        )}
+        <Outlet />
+      </motion.main>
     </div>
   )
 }
