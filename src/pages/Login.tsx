@@ -6,6 +6,7 @@ import { useAuth } from '../state/AuthContext'
 
 // One of these greets you at the door. Rotates on every load.
 const GREETINGS = [
+  'Somebody has to play the low notes.',
   'Password first. Bass second.',
   'Roots, fifths, password.',
   'The bass has been waiting.',
