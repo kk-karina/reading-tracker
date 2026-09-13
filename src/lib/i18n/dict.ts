@@ -203,6 +203,87 @@ export const DICT = {
     ru: { one: 'день', few: 'дня', many: 'дней' },
     en: { one: 'day', other: 'days' },
   },
+  'book.back': { ru: 'Полка', en: 'Shelf' },
+  'book.progress': { ru: 'Прогресс', en: 'Progress' },
+  'book.time': { ru: 'Время', en: 'Time' },
+  'book.pace': { ru: 'Темп', en: 'Pace' },
+  'book.left': { ru: 'Осталось', en: 'Left' },
+  'book.pages': { ru: 'Страницы', en: 'Pages' },
+  'book.unknown': { ru: '—', en: '—' },
+  'book.noTime': { ru: 'не записано', en: 'not recorded' },
+  'book.noTimeHint': {
+    ru: 'Поставь минуты хотя бы в одной сессии — дальше время и остаток посчитаются сами.',
+    en: 'Put minutes on one session and the time and the estimate work themselves out.',
+  },
+  'book.approx': { ru: 'часть времени оценена по твоему темпу', en: 'part of this is estimated from your pace' },
+  'book.perPage': { ru: '{n} мин/стр', en: '{n} min/page' },
+  'book.statusLabel': { ru: 'Статус', en: 'Status' },
+  'book.actions': { ru: 'Действия', en: 'Actions' },
+  'book.sessions': { ru: 'Сессии', en: 'Sessions' },
+  'book.sessionsEmpty': { ru: 'Пока ни одной сессии.', en: 'No sessions yet.' },
+  'book.notes': { ru: 'Мысли', en: 'Thoughts' },
+  'book.notesEmpty': {
+    ru: 'Здесь будет всё, что ты вынесла из этой книги.',
+    en: 'Everything you took from this book will be here.',
+  },
+  'book.allTags': { ru: 'Все', en: 'All' },
+
+  'session.log': { ru: 'Записать сессию', en: 'Log a session' },
+  'session.title': { ru: 'Сессия чтения', en: 'Reading session' },
+  'session.date': { ru: 'Дата', en: 'Date' },
+  'session.from': { ru: 'От страницы', en: 'From page' },
+  'session.to': { ru: 'До страницы', en: 'To page' },
+  'session.minutes': { ru: 'Минуты', en: 'Minutes' },
+  'session.minutesHint': {
+    ru: 'Необязательно, но с ними появятся темп и прогноз.',
+    en: 'Optional, but they unlock the pace and the estimate.',
+  },
+  'session.how': { ru: 'Как пошло', en: 'How it went' },
+  'session.pagesRead': { ru: 'Прочитано за сессию: {n}', en: 'Read this session: {n}' },
+  'session.toMustGrow': {
+    ru: 'Страница «до» не может быть меньше страницы «от».',
+    en: 'The page you stopped at cannot be before the page you started from.',
+  },
+  'session.finishedAsk': {
+    ru: 'Похоже, книга дочитана. Отметить как прочитанную?',
+    en: 'Looks like the book is finished. Mark it as read?',
+  },
+  'session.addNote': { ru: '+ мысль', en: '+ a thought' },
+  'session.removeNote': { ru: 'Убрать', en: 'Remove' },
+  'session.noteOnPage': { ru: 'стр. {n}', en: 'p. {n}' },
+
+  'tag.quote': { ru: 'Цитата', en: 'Quote' },
+  'tag.idea': { ru: 'Идея', en: 'Idea' },
+  'tag.question': { ru: 'Вопрос', en: 'Question' },
+  'tag.disagree': { ru: 'Несогласие', en: 'Disagreement' },
+  'tag.feeling': { ru: 'Чувство', en: 'Feeling' },
+
+  'tagHint.quote': {
+    ru: 'Выпиши строчку — и почему она зацепила.',
+    en: 'Write the line down — and why it caught you.',
+  },
+  'tagHint.idea': {
+    ru: 'Своими словами: о чём она и с чем у тебя связана.',
+    en: 'In your own words: what it is, and what it connects to.',
+  },
+  'tagHint.question': {
+    ru: 'Что осталось непонятным или что хочется проверить.',
+    en: 'What stayed unclear, or what you want to check.',
+  },
+  'tagHint.disagree': {
+    ru: 'С чем ты не согласна и на чём основано твоё возражение.',
+    en: 'What you disagree with, and what your objection rests on.',
+  },
+  'tagHint.feeling': {
+    ru: 'Что ты почувствовала в этом месте.',
+    en: 'What you felt at this point.',
+  },
+
+  'face.1': { ru: 'тяжело', en: 'rough' },
+  'face.2': { ru: 'так себе', en: 'meh' },
+  'face.3': { ru: 'нормально', en: 'okay' },
+  'face.4': { ru: 'хорошо', en: 'good' },
+  'face.5': { ru: 'отлично', en: 'great' },
 } satisfies Dict
 
 export type DictKey = keyof typeof DICT

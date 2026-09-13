@@ -1866,3 +1866,136 @@ button {
   gap: 7px;
   font-size: 13px;
 }
+
+/* ---------- book page: breadcrumb, facts, control rows ---------- */
+
+.crumbs {
+  margin-bottom: 22px;
+}
+
+.crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px 6px 10px;
+  border: 1px solid var(--ink);
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  text-decoration: none;
+  transition: background 0.2s, transform 0.2s var(--ease-out);
+}
+
+.crumb:hover {
+  background: var(--brand-soft);
+  transform: translateX(-2px);
+}
+
+/* Four cells, always present. A dash is a fact; a missing row is not. */
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 18px 24px;
+  margin: 22px 0 0;
+  padding: 18px 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.facts div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.facts dt {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.facts dd {
+  margin: 0;
+  font-size: 16px;
+}
+
+.hint-line {
+  margin: 12px 0 0;
+  max-width: 46ch;
+}
+
+/* What the book is, and what you can do to it, are different questions. */
+.control-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin: 34px 0 30px;
+  padding: 22px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.control-row {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.control-row > .label {
+  min-width: 90px;
+}
+
+/* ---------- session sheet ---------- */
+
+.faces {
+  display: flex;
+  gap: 8px;
+}
+
+.face-btn {
+  width: 42px;
+  height: 38px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--paper);
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, transform 0.15s var(--ease-out);
+}
+
+.face-btn:hover {
+  border-color: var(--ink);
+  transform: translateY(-2px);
+}
+
+.face-btn.on {
+  background: var(--brand);
+  border-color: var(--ink);
+}
+
+.face-sm {
+  margin-right: 6px;
+}
+
+.note-draft {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  margin-bottom: 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg);
+}
+
+.note-draft textarea {
+  width: 100%;
+  resize: vertical;
+  font-family: inherit;
+}

@@ -172,3 +172,73 @@ describe('sharesBy', () => {
     expect(shares[5]).toEqual({ key: null, count: 3 })
   })
 })
+
+import { paceMinutesPerPage, remainingMinutes, spentOn } from './reading'
+
+describe('paceMinutesPerPage', () => {
+  test('is unknown until at least one session carries minutes', () => {
+    expect(paceMinutesPerPage([s({ minutes: null })])).toBeNull()
+    expect(paceMinutesPerPage([])).toBeNull()
+  })
+
+  test('divides minutes by pages across the timed sessions', () => {
+    const sessions = [s({ page_from: 0, page_to: 50, minutes: 100 })]
+    expect(paceMinutesPerPage(sessions)).toBe(2)
+  })
+
+  test('ignores sessions with no minutes rather than counting them as free', () => {
+    const sessions = [
+      s({ page_from: 0, page_to: 50, minutes: 100 }),
+      s({ page_from: 50, page_to: 150, minutes: null }),
+    ]
+    expect(paceMinutesPerPage(sessions)).toBe(2)
+  })
+
+  test('ignores a timed session that turned no pages', () => {
+    const sessions = [
+      s({ page_from: 0, page_to: 50, minutes: 100 }),
+      s({ page_from: 50, page_to: 50, minutes: 30 }),
+    ]
+    expect(paceMinutesPerPage(sessions)).toBe(2)
+  })
+})
+
+describe('spentOn', () => {
+  test('adds up the minutes actually recorded', () => {
+    const sessions = [s({ minutes: 30 }), s({ minutes: 45 })]
+    expect(spentOn('b1', sessions, 2)).toEqual({ minutes: 75, approx: false })
+  })
+
+  test('fills the gaps from the pace and says the number is approximate', () => {
+    const sessions = [
+      s({ page_from: 0, page_to: 20, minutes: 40 }),
+      s({ page_from: 20, page_to: 30, minutes: null }),
+    ]
+    expect(spentOn('b1', sessions, 2)).toEqual({ minutes: 60, approx: true })
+  })
+
+  test('without a pace it reports only what is known, still flagged approximate', () => {
+    const sessions = [s({ page_from: 0, page_to: 20, minutes: null })]
+    expect(spentOn('b1', sessions, null)).toEqual({ minutes: 0, approx: true })
+  })
+
+  test('is zero and exact for a book never opened', () => {
+    expect(spentOn('b1', [], 2)).toEqual({ minutes: 0, approx: false })
+  })
+})
+
+describe('remainingMinutes', () => {
+  test('is unknown without a pace or without a page count', () => {
+    expect(remainingMinutes(136, 320, null)).toBeNull()
+    expect(remainingMinutes(136, null, 2)).toBeNull()
+  })
+
+  test('estimates the pages left at the current pace', () => {
+    expect(remainingMinutes(136, 320, 2)).toBe(368)
+  })
+
+  test('is zero once the last page is reached or passed', () => {
+    expect(remainingMinutes(320, 320, 2)).toBe(0)
+    expect(remainingMinutes(340, 320, 2)).toBe(0)
+  })
+})

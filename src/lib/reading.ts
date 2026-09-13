@@ -117,3 +117,57 @@ export function sharesBy(books: Book[], field: 'genre' | 'language'): Share[] {
   const rest = sorted.slice(MAX_SHARES - 1).reduce((sum, s) => sum + s.count, 0)
   return [...kept, { key: null, count: rest }]
 }
+
+/* ---------- time ---------- */
+
+/**
+ * Minutes per page, learned from the sessions where minutes were filled in.
+ * Null until there is at least one, which is why every number derived from it
+ * is allowed to be unknown rather than guessed.
+ */
+export function paceMinutesPerPage(sessions: Session[]): number | null {
+  let minutes = 0
+  let pages = 0
+  for (const s of sessions) {
+    const read = s.page_to - s.page_from
+    // A timed session that turned no pages says nothing about pace.
+    if (s.minutes === null || read <= 0) continue
+    minutes += s.minutes
+    pages += read
+  }
+  return pages > 0 ? minutes / pages : null
+}
+
+export interface TimeSpent {
+  minutes: number
+  /** True when some of this was estimated rather than measured. */
+  approx: boolean
+}
+
+/**
+ * Time on a book: measured where minutes were entered, estimated from the pace
+ * where they were not. Minutes are optional by design, so the total would be
+ * silently wrong if the untimed sessions simply counted as zero.
+ */
+export function spentOn(bookId: string, sessions: Session[], pace: number | null): TimeSpent {
+  let minutes = 0
+  let approx = false
+  for (const s of forBook(bookId, sessions)) {
+    if (s.minutes !== null) {
+      minutes += s.minutes
+      continue
+    }
+    approx = true
+    if (pace !== null) minutes += (s.page_to - s.page_from) * pace
+  }
+  return { minutes: Math.round(minutes), approx }
+}
+
+export function remainingMinutes(
+  page: number,
+  pages: number | null,
+  pace: number | null,
+): number | null {
+  if (pages === null || pace === null) return null
+  return Math.round(Math.max(0, pages - page) * pace)
+}
