@@ -1429,3 +1429,15 @@ button {
     animation-duration: 0.01ms !important;
   }
 }
+
+/* language toggle sits next to the account in the bar */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.seg.sm button {
+  padding: 4px 10px;
+  font-size: 12px;
+}

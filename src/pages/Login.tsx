@@ -3,11 +3,11 @@ import { useState, type FormEvent } from 'react'
 import { Wave } from '../components/fun'
 import { Jelly } from '../components/ui'
 import { useAuth } from '../state/AuthContext'
-
-const GREETING = 'Tune up. Log in.'
+import { useT } from '../state/LocaleContext'
 
 export function Login() {
   const { signIn } = useAuth()
+  const t = useT()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
@@ -29,14 +29,14 @@ export function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
-        <span className="label">slap that bass</span>
+        <span className="label">{t('app.name')}</span>
         <h1 className="display" style={{ marginTop: 28, fontSize: 40 }}>
-          <Wave>{GREETING}</Wave>
+          <Wave>{t('login.greeting')}</Wave>
         </h1>
 
         <form onSubmit={submit}>
           <label className="field">
-            <span className="label">Email</span>
+            <span className="label">{t('login.email')}</span>
             <input
               className="input"
               type="email"
@@ -47,7 +47,7 @@ export function Login() {
             />
           </label>
           <label className="field">
-            <span className="label">Password</span>
+            <span className="label">{t('login.password')}</span>
             <input
               className="input"
               type="password"
@@ -58,8 +58,13 @@ export function Login() {
             />
           </label>
           {msg && <div className="error">{msg}</div>}
-          <Jelly className="btn" type="submit" disabled={busy} style={{ marginTop: 8, alignSelf: 'flex-start' }}>
-            Sign in
+          <Jelly
+            className="btn"
+            type="submit"
+            disabled={busy}
+            style={{ marginTop: 8, alignSelf: 'flex-start' }}
+          >
+            {t('login.submit')}
           </Jelly>
         </form>
       </motion.div>

@@ -1,20 +1,29 @@
 import { motion } from 'motion/react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { CursorDot } from './fun'
+import type { DictKey } from '../lib/i18n/dict'
+import type { Locale } from '../lib/i18n/translate'
 import { useAuth } from '../state/AuthContext'
 import { useData } from '../state/DataContext'
+import { useLocale } from '../state/LocaleContext'
+import { CursorDot } from './fun'
+import { Segmented } from './ui'
 
-const LINKS = [
-  { to: '/', label: 'Progress' },
-  { to: '/topics', label: 'Topics' },
-  { to: '/songs', label: 'Songs' },
-  { to: '/log', label: 'Log' },
-  { to: '/settings', label: 'Settings' },
+const LINKS: { to: string; key: DictKey }[] = [
+  { to: '/', key: 'nav.progress' },
+  { to: '/shelf', key: 'nav.shelf' },
+  { to: '/journal', key: 'nav.journal' },
+  { to: '/settings', key: 'nav.settings' },
+]
+
+const LOCALES: { value: Locale; label: string }[] = [
+  { value: 'ru', label: 'РУ' },
+  { value: 'en', label: 'EN' },
 ]
 
 export function Shell() {
   const { user } = useAuth()
   const { error } = useData()
+  const { locale, setLocale, t } = useLocale()
   const location = useLocation()
 
   return (
@@ -39,13 +48,23 @@ export function Shell() {
                         transition={{ type: 'spring', stiffness: 380, damping: 24 }}
                       />
                     )}
-                    <span className="nav-label">{l.label}</span>
+                    <span className="nav-label">{t(l.key)}</span>
                   </motion.span>
                 )}
               </NavLink>
             ))}
           </nav>
-          <span className="who">{user?.email}</span>
+          {/* In the bar rather than tucked away in settings: the language follows the book. */}
+          <div className="topbar-right">
+            <Segmented
+              name={t('locale.label')}
+              value={locale}
+              options={LOCALES}
+              onChange={setLocale}
+              className="sm"
+            />
+            <span className="who">{user?.email}</span>
+          </div>
         </div>
       </header>
 

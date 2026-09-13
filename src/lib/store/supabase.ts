@@ -1,8 +1,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { LogEntry, Song, Topic } from '../types'
-import type { DataStore, NewLog, NewSong, NewTopic } from './types'
+import type { Book, Note, Session } from '../types'
+import type { DataStore, NewBook, NewNote, NewSession } from './types'
 
-// Tables: topics, songs, log_entries. See supabase/schema.sql.
+// Tables: books, sessions, notes. See supabase/schema.sql.
 // user_id is filled by a column default (auth.uid()) and scoped by RLS.
 export function createSupabaseStore(sb: SupabaseClient): DataStore {
   const fail = (e: { message: string } | null) => {
@@ -11,63 +11,69 @@ export function createSupabaseStore(sb: SupabaseClient): DataStore {
 
   return {
     async load() {
-      const [t, s, l] = await Promise.all([
-        sb.from('topics').select('*').order('sort').order('created_at'),
-        sb.from('songs').select('*').order('sort').order('created_at'),
+      const [b, s, n] = await Promise.all([
+        sb.from('books').select('*').order('sort').order('created_at'),
         sb
-          .from('log_entries')
+          .from('sessions')
           .select('*')
           .order('date', { ascending: false })
           .order('created_at', { ascending: false }),
+        sb.from('notes').select('*').order('created_at', { ascending: false }),
       ])
-      fail(t.error)
+      fail(b.error)
       fail(s.error)
-      fail(l.error)
+      fail(n.error)
       return {
-        topics: (t.data ?? []) as Topic[],
-        songs: (s.data ?? []) as Song[],
-        log: (l.data ?? []) as LogEntry[],
+        books: (b.data ?? []) as Book[],
+        sessions: (s.data ?? []) as Session[],
+        notes: (n.data ?? []) as Note[],
       }
     },
 
-    async addTopics(items: NewTopic[]) {
-      const { data, error } = await sb.from('topics').insert(items).select('*')
+    async addBook(item: NewBook) {
+      const { data, error } = await sb.from('books').insert(item).select('*').single()
       fail(error)
-      return (data ?? []) as Topic[]
+      return data as Book
     },
-    async updateTopic(id, patch) {
-      fail((await sb.from('topics').update(patch).eq('id', id)).error)
-    },
-    async deleteTopic(id) {
-      fail((await sb.from('topics').delete().eq('id', id)).error)
-    },
-
-    async addSong(item: NewSong) {
-      const { data, error } = await sb.from('songs').insert(item).select('*').single()
-      fail(error)
-      return data as Song
-    },
-    async updateSong(id, patch) {
+    async updateBook(id, patch) {
       const res = await sb
-        .from('songs')
+        .from('books')
         .update({ ...patch, updated_at: new Date().toISOString() })
         .eq('id', id)
       fail(res.error)
     },
-    async deleteSong(id) {
-      fail((await sb.from('songs').delete().eq('id', id)).error)
+    async deleteBook(id) {
+      // sessions and notes carry "on delete cascade", so the rows go with the book.
+      fail((await sb.from('books').delete().eq('id', id)).error)
+    },
+    async setFocus(id) {
+      // The partial unique index allows one focused book per user, so clear before setting.
+      fail((await sb.from('books').update({ is_focus: false }).eq('is_focus', true)).error)
+      if (id) fail((await sb.from('books').update({ is_focus: true }).eq('id', id)).error)
     },
 
-    async addLog(item: NewLog) {
-      const { data, error } = await sb.from('log_entries').insert(item).select('*').single()
+    async addSession(item: NewSession) {
+      const { data, error } = await sb.from('sessions').insert(item).select('*').single()
       fail(error)
-      return data as LogEntry
+      return data as Session
     },
-    async updateLog(id, patch) {
-      fail((await sb.from('log_entries').update(patch).eq('id', id)).error)
+    async updateSession(id, patch) {
+      fail((await sb.from('sessions').update(patch).eq('id', id)).error)
     },
-    async deleteLog(id) {
-      fail((await sb.from('log_entries').delete().eq('id', id)).error)
+    async deleteSession(id) {
+      fail((await sb.from('sessions').delete().eq('id', id)).error)
+    },
+
+    async addNote(item: NewNote) {
+      const { data, error } = await sb.from('notes').insert(item).select('*').single()
+      fail(error)
+      return data as Note
+    },
+    async updateNote(id, patch) {
+      fail((await sb.from('notes').update(patch).eq('id', id)).error)
+    },
+    async deleteNote(id) {
+      fail((await sb.from('notes').delete().eq('id', id)).error)
     },
   }
 }

@@ -1,17 +1,16 @@
-import type { LogEntry, Snapshot, Song, Topic } from '../types'
-import type { DataStore, NewLog, NewSong, NewTopic } from './types'
+import { emptySnapshot, type Book, type Note, type Session, type Snapshot } from '../types'
+import type { DataStore, NewBook, NewNote, NewSession } from './types'
 
-const KEY = 'slapthatbass.v1'
-const OLD_KEY = 'lowend.v1'
+const KEY = 'readingtracker.v1'
 
 function read(): Snapshot {
   try {
-    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY)
-    if (raw) return JSON.parse(raw) as Snapshot
+    const raw = localStorage.getItem(KEY)
+    if (raw) return { ...emptySnapshot(), ...(JSON.parse(raw) as Partial<Snapshot>) }
   } catch {
     /* corrupted or blocked storage: start empty */
   }
-  return { topics: [], songs: [], log: [] }
+  return emptySnapshot()
 }
 
 function write(snap: Snapshot) {
@@ -26,64 +25,78 @@ export const localStore: DataStore = {
     return read()
   },
 
-  async addTopics(items: NewTopic[]) {
+  async addBook(item: NewBook) {
     const snap = read()
-    const created: Topic[] = items.map((t) => ({ ...t, id: uid(), created_at: now() }))
-    snap.topics.push(...created)
+    const book: Book = {
+      ...item,
+      id: uid(),
+      is_focus: false,
+      rating: null,
+      started_at: null,
+      finished_at: null,
+      created_at: now(),
+      updated_at: now(),
+    }
+    snap.books.push(book)
     write(snap)
-    return created
+    return book
   },
-  async updateTopic(id, patch) {
+  async updateBook(id, patch) {
     const snap = read()
-    snap.topics = snap.topics.map((t) => (t.id === id ? { ...t, ...patch } : t))
-    write(snap)
-  },
-  async deleteTopic(id) {
-    const snap = read()
-    snap.topics = snap.topics.filter((t) => t.id !== id)
-    snap.log = snap.log.map((l) => (l.topic_id === id ? { ...l, topic_id: null } : l))
-    write(snap)
-  },
-
-  async addSong(item: NewSong) {
-    const snap = read()
-    const s: Song = { ...item, id: uid(), created_at: now(), updated_at: now() }
-    snap.songs.push(s)
-    write(snap)
-    return s
-  },
-  async updateSong(id, patch) {
-    const snap = read()
-    snap.songs = snap.songs.map((s) =>
-      s.id === id ? { ...s, ...patch, updated_at: now() } : s,
-    )
+    snap.books = snap.books.map((b) => (b.id === id ? { ...b, ...patch, updated_at: now() } : b))
     write(snap)
   },
-  async deleteSong(id) {
+  async deleteBook(id) {
     const snap = read()
-    snap.songs = snap.songs.filter((s) => s.id !== id)
+    snap.books = snap.books.filter((b) => b.id !== id)
+    snap.sessions = snap.sessions.filter((s) => s.book_id !== id)
+    snap.notes = snap.notes.filter((n) => n.book_id !== id)
+    write(snap)
+  },
+  async setFocus(id) {
+    const snap = read()
+    snap.books = snap.books.map((b) => ({ ...b, is_focus: b.id === id }))
     write(snap)
   },
 
-  async addLog(item: NewLog) {
+  async addSession(item: NewSession) {
     const snap = read()
-    const l: LogEntry = { ...item, id: uid(), created_at: now() }
-    snap.log.push(l)
+    const session: Session = { ...item, id: uid(), created_at: now() }
+    snap.sessions.push(session)
     write(snap)
-    return l
+    return session
   },
-  async updateLog(id, patch) {
+  async updateSession(id, patch) {
     const snap = read()
-    snap.log = snap.log.map((l) => (l.id === id ? { ...l, ...patch } : l))
+    snap.sessions = snap.sessions.map((s) => (s.id === id ? { ...s, ...patch } : s))
     write(snap)
   },
-  async deleteLog(id) {
+  async deleteSession(id) {
     const snap = read()
-    snap.log = snap.log.filter((l) => l.id !== id)
+    snap.sessions = snap.sessions.filter((s) => s.id !== id)
+    snap.notes = snap.notes.map((n) => (n.session_id === id ? { ...n, session_id: null } : n))
+    write(snap)
+  },
+
+  async addNote(item: NewNote) {
+    const snap = read()
+    const note: Note = { ...item, id: uid(), created_at: now() }
+    snap.notes.push(note)
+    write(snap)
+    return note
+  },
+  async updateNote(id, patch) {
+    const snap = read()
+    snap.notes = snap.notes.map((n) => (n.id === id ? { ...n, ...patch } : n))
+    write(snap)
+  },
+  async deleteNote(id) {
+    const snap = read()
+    snap.notes = snap.notes.filter((n) => n.id !== id)
     write(snap)
   },
 
   async replaceAll(snap) {
-    write(snap)
+    write({ ...emptySnapshot(), ...snap })
   },
 }
