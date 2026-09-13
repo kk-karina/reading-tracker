@@ -9,14 +9,14 @@ export interface Tone {
 }
 
 const TONES: Tone[] = [
-  { bg: '#2f5d78', ink: '#eaf2f7' }, // sea blue
-  { bg: '#6b4f6b', ink: '#f5ecf3' }, // dusty plum
-  { bg: '#2f5f6b', ink: '#e8f2f3' }, // deep teal
-  { bg: '#7b5a70', ink: '#f8eef3' }, // mauve
-  { bg: '#4a5580', ink: '#ecEEF8' }, // periwinkle
-  { bg: '#8a6478', ink: '#faeff3' }, // dusty rose
-  { bg: '#3b6b73', ink: '#e9f3f4' }, // sea green
-  { bg: '#574f72', ink: '#efedf6' }, // muted violet
+  { bg: '#2b3a44', ink: '#eceff1' }, // slate
+  { bg: '#3a4f5c', ink: '#eaeef1' }, // steel
+  { bg: '#4a4f58', ink: '#edeef0' }, // graphite
+  { bg: '#54453f', ink: '#f1ecea' }, // espresso
+  { bg: '#3f4a5e', ink: '#ebedf2' }, // indigo slate
+  { bg: '#5a4a52', ink: '#f1ecee' }, // burgundy grey
+  { bg: '#3d534f', ink: '#eaefed' }, // deep sage
+  { bg: '#4a4258', ink: '#eeecf2' }, // muted aubergine
 ]
 
 /** Same title, same colour, every time and on every device. */

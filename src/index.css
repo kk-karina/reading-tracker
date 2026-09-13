@@ -1,38 +1,39 @@
 :root {
-  /* Satin, not poster paint: a sky-and-sea ground, colours held back, and panels
-     you can see the sheen through. */
-  --bg: #eaf1f7;
-  --paper: #f9fcfe;
-  /* The satin itself: panels let the wash behind them show. */
-  --glass: rgba(255, 255, 255, 0.52);
-  --glass-line: rgba(255, 255, 255, 0.72);
-  --ink: #1b2833;
-  --ink-2: #55636f;
-  --ink-3: #6f7d88;
-  --line: #dde8f0;
-  --line-2: #c6d6e2;
-  --brand: #1a6883;
-  --brand-2: #2b85a5;
-  --brand-mute: #a9cbdb;
-  --brand-soft: #ddedf5;
-  --accent: var(--brand);
+  /* Neutral ground, one colour: a light satin blue. Nothing else is tinted. */
+  --bg: #f3f4f5;
+  --paper: #ffffff;
+  --ink: #16191c;
+  --ink-2: #5a6066;
+  --ink-3: #848a90;
+  --line: #e5e7e9;
+  --line-2: #d1d5d8;
+
+  /* The satin blue. Light enough that fills carry dark text, with a deeper
+     step for anything that has to read as text or as a small mark. */
+  --brand: #a5d3e8;
+  --brand-2: #bbe0f0;
+  --brand-strong: #6bb4d6;
+  --brand-ink: #0f627f;
+  --brand-mute: #d6e9f2;
+  --brand-soft: #eef6fa;
+  --accent: var(--brand-strong);
   --accent-soft: var(--brand-soft);
   --danger: #a8455f;
 
-  /* The shelf split is ordered by size, so it rides one hue from deep to pale.
-     Six muted hues cannot be told apart by anyone; six steps of lightness can. */
-  --ramp-1: #17566f;
-  --ramp-2: #2a7595;
-  --ramp-3: #4494b3;
-  --ramp-4: #77b6cd;
-  --ramp-5: #a6d0de;
-  --ramp-6: #cfe6ee;
+  /* The shelf split rides the same blue from present to pale. Ordered by size,
+     so lightness carries the order; the swatches get a hairline so the palest
+     steps are still visible on white. */
+  --ramp-1: #3f92b5;
+  --ramp-2: #5aa5c4;
+  --ramp-3: #78b9d3;
+  --ramp-4: #97cbe0;
+  --ramp-5: #b3dae9;
+  --ramp-6: #cde7f1;
 
-  /* Accents off the sleeve, dialled down to satin. */
-  --hot: #e893c4;
-  --hot-2: #d87bb2;
-  --hot-cyan: #9ad3e8;
-  --hot-blue: #b3c8e8;
+  --hot: #8fc9e3;
+  --hot-2: #74b9d8;
+  --hot-cyan: #a9dced;
+  --hot-blue: #c2dced;
 
   --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -57,12 +58,7 @@
 html,
 body {
   margin: 0;
-  background:
-    radial-gradient(1180px 700px at 8% -14%, #f2e4ee 0%, rgba(242, 228, 238, 0) 66%),
-    radial-gradient(1020px 600px at 98% -8%, #d7e9f6 0%, rgba(215, 233, 246, 0) 64%),
-    radial-gradient(820px 560px at 52% 110%, #e4e8f5 0%, rgba(228, 232, 245, 0) 70%),
-    var(--bg);
-  background-attachment: fixed;
+  background: var(--bg);
   color: var(--ink);
   font-family: var(--font);
   font-size: 15px;
@@ -171,6 +167,7 @@ button {
   border-radius: 50%;
   margin-right: 8px;
   vertical-align: 1px;
+  box-shadow: inset 0 0 0 1px rgba(22, 25, 28, 0.16);
 }
 .small {
   font-size: 13px;
@@ -274,7 +271,7 @@ button {
   border-radius: 6px;
   border: 1px solid var(--brand);
   background: var(--brand);
-  color: #fff;
+  color: var(--ink);
   font-weight: 500;
   white-space: nowrap;
   transition:
@@ -641,9 +638,8 @@ button {
 /* ---------- surfaces ---------- */
 
 .panel {
-  background: var(--glass);
-  backdrop-filter: blur(14px) saturate(1.06);
-  border: 1px solid var(--glass-line);
+  background: var(--paper);
+  border: 1px solid var(--line);
   border-radius: var(--r-lg);
   padding: 28px;
 }
@@ -1611,7 +1607,7 @@ button {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--accent);
+  background: var(--brand-strong);
   transition: width 0.5s var(--ease-out);
 }
 
@@ -1671,9 +1667,8 @@ button {
   width: min(620px, 100%);
   padding: 26px 28px 30px;
   border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  backdrop-filter: blur(18px) saturate(1.06);
-  box-shadow: 0 24px 60px -20px rgba(27, 40, 51, 0.28);
+  background: var(--paper);
+  box-shadow: 0 24px 60px -20px rgba(22, 25, 28, 0.26);
 }
 
 .sheet-head {
