@@ -140,14 +140,17 @@ describe('stuckBooks', () => {
 })
 
 describe('finishedInYear', () => {
-  test('counts books finished inside the given year', () => {
+  test('counts a book finished inside the year and not one finished outside it', () => {
     const books = [
       b({ status: 'finished', finished_at: '2026-02-03' }),
       b({ status: 'finished', finished_at: '2025-12-30' }),
-      b({ status: 'finished', finished_at: null }),
-      b({ status: 'reading', finished_at: '2026-05-05' }),
     ]
     expect(finishedInYear(books, 2026)).toHaveLength(1)
+  })
+
+  test('ignores a book that is not finished, whatever date it carries', () => {
+    const books = [b({ status: 'reading', finished_at: '2026-05-05' })]
+    expect(finishedInYear(books, 2026)).toEqual([])
   })
 })
 
@@ -240,5 +243,51 @@ describe('remainingMinutes', () => {
   test('is zero once the last page is reached or passed', () => {
     expect(remainingMinutes(320, 320, 2)).toBe(0)
     expect(remainingMinutes(340, 320, 2)).toBe(0)
+  })
+})
+
+import { statusPatch } from './reading'
+
+describe('statusPatch', () => {
+  const today = '2026-09-13'
+
+  test('stamps the finish date when a book becomes finished', () => {
+    const patch = statusPatch(b({ status: 'reading' }), 'finished', today)
+    expect(patch).toMatchObject({ status: 'finished', finished_at: today })
+  })
+
+  test('keeps a finish date that is already there', () => {
+    const patch = statusPatch(b({ status: 'finished', finished_at: '2026-03-01' }), 'finished', today)
+    expect(patch.finished_at).toBe('2026-03-01')
+  })
+
+  test('clears the finish date when the book leaves the finished shelf', () => {
+    const patch = statusPatch(b({ status: 'finished', finished_at: '2026-03-01' }), 'want', today)
+    expect(patch.finished_at).toBeNull()
+  })
+
+  test('stamps the start date when a book starts being read', () => {
+    expect(statusPatch(b({ status: 'want' }), 'reading', today).started_at).toBe(today)
+  })
+
+  test('does not move a start date that is already set', () => {
+    const patch = statusPatch(b({ status: 'want', started_at: '2026-01-05' }), 'reading', today)
+    expect(patch.started_at).toBe('2026-01-05')
+  })
+
+  test('leaves the start date alone when marking a book finished', () => {
+    expect(statusPatch(b({ status: 'want' }), 'finished', today).started_at).toBeNull()
+  })
+})
+
+describe('finishedInYear with an undated book', () => {
+  test('falls back to when the book was last touched, so nothing is silently lost', () => {
+    const undated = b({ status: 'finished', finished_at: null, updated_at: '2026-04-02T09:00:00Z' })
+    expect(finishedInYear([undated], 2026)).toHaveLength(1)
+  })
+
+  test('does not drag an undated book into a year it has nothing to do with', () => {
+    const undated = b({ status: 'finished', finished_at: null, updated_at: '2024-04-02T09:00:00Z' })
+    expect(finishedInYear([undated], 2026)).toHaveLength(0)
   })
 })

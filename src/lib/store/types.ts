@@ -2,7 +2,17 @@ import type { Book, Note, Session, Snapshot } from '../types'
 
 export type NewBook = Pick<
   Book,
-  'title' | 'author' | 'pages' | 'cover_url' | 'external_id' | 'genre' | 'language' | 'status' | 'sort'
+  | 'title'
+  | 'author'
+  | 'pages'
+  | 'cover_url'
+  | 'external_id'
+  | 'genre'
+  | 'language'
+  | 'status'
+  | 'started_at'
+  | 'finished_at'
+  | 'sort'
 >
 export type NewSession = Pick<
   Session,

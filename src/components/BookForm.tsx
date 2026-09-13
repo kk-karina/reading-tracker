@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react'
 import { searchBooks, type BookCandidate } from '../lib/books'
+import { todayISO } from '../lib/format'
+import { statusPatch } from '../lib/reading'
 import type { Book, BookStatus } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
@@ -70,7 +72,12 @@ export function BookForm({ book, onClose }: { book?: Book; onClose: () => void }
       external_id: externalId.current,
       genre: genre.trim() || null,
       language: language.trim() || null,
-      status,
+      // A book added straight onto the finished shelf still needs its date.
+      ...statusPatch(
+        { started_at: book?.started_at ?? null, finished_at: book?.finished_at ?? null },
+        status,
+        todayISO(),
+      ),
     }
     if (book) await updateBook(book.id, fields)
     else await addBook({ ...fields, sort: 0 })

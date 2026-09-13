@@ -67,7 +67,7 @@ export function streakDays(sessions: Session[], today: string): number {
 
 /* ---------- books ---------- */
 
-import type { Book } from './types'
+import type { Book, BookStatus } from './types'
 
 /** Books being read that have gone quiet: the honest, actionable panel. */
 export function stuckBooks(
@@ -84,9 +84,37 @@ export function stuckBooks(
   })
 }
 
+/**
+ * Books finished inside a year.
+ *
+ * A finished book with no date falls back to when it was last written. Marking a
+ * book finished used to leave the date empty, and those books would otherwise
+ * vanish from the year wall with no way to tell why. New writes always stamp the
+ * date, so the fallback only ever covers the gap.
+ */
 export function finishedInYear(books: Book[], year: number): Book[] {
   const prefix = String(year)
-  return books.filter((b) => b.status === 'finished' && b.finished_at?.startsWith(prefix))
+  return books.filter((b) => {
+    if (b.status !== 'finished') return false
+    return (b.finished_at ?? b.updated_at).startsWith(prefix)
+  })
+}
+
+/**
+ * Status never travels alone: finishing a book dates it, starting one dates it,
+ * and moving a book off the finished shelf takes its finish date with it.
+ */
+export function statusPatch(
+  dates: Pick<Book, 'started_at' | 'finished_at'>,
+  status: BookStatus,
+  today: string,
+): Pick<Book, 'status' | 'started_at' | 'finished_at'> {
+  return {
+    status,
+    // Marking something finished says nothing about when it was begun.
+    started_at: status === 'reading' ? (dates.started_at ?? today) : dates.started_at,
+    finished_at: status === 'finished' ? (dates.finished_at ?? today) : null,
+  }
 }
 
 export interface Share {

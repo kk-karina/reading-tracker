@@ -32,8 +32,6 @@ export const localStore: DataStore = {
       id: uid(),
       is_focus: false,
       rating: null,
-      started_at: null,
-      finished_at: null,
       created_at: now(),
       updated_at: now(),
     }

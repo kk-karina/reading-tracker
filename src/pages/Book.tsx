@@ -4,7 +4,7 @@ import { BookCover } from '../components/BookCover'
 import { BookForm } from '../components/BookForm'
 import { SessionSheet } from '../components/SessionSheet'
 import { Jelly, Segmented } from '../components/ui'
-import { fmtDate, fmtMinutes } from '../lib/format'
+import { fmtDate, fmtMinutes, todayISO } from '../lib/format'
 import { face } from '../lib/rating'
 import {
   lastSessionDate,
@@ -13,6 +13,7 @@ import {
   progressOf,
   remainingMinutes,
   spentOn,
+  statusPatch,
 } from '../lib/reading'
 import type { BookStatus, NoteTag } from '../lib/types'
 import { useData } from '../state/DataContext'
@@ -140,7 +141,7 @@ export function Book() {
             name={t('book.statusLabel')}
             value={book.status}
             options={STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))}
-            onChange={(status) => updateBook(book.id, { status })}
+            onChange={(status) => updateBook(book.id, statusPatch(book, status, todayISO()))}
           />
         </div>
         <div className="control-row">

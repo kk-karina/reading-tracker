@@ -20,6 +20,8 @@ export const SEED_BOOKS: SeedBook[] = [
     genre: 'Бизнес',
     language: 'ru',
     status: 'want',
+    started_at: null,
+    finished_at: null,
     sort: 0,
   },
   {
@@ -31,6 +33,8 @@ export const SEED_BOOKS: SeedBook[] = [
     genre: 'Психология',
     language: 'ru',
     status: 'reading',
+    started_at: null,
+    finished_at: null,
     sort: 1,
     page_to: 136,
   },
@@ -43,6 +47,8 @@ export const SEED_BOOKS: SeedBook[] = [
     genre: 'Бизнес',
     language: 'en',
     status: 'want',
+    started_at: null,
+    finished_at: null,
     sort: 2,
   },
   {
@@ -54,6 +60,8 @@ export const SEED_BOOKS: SeedBook[] = [
     genre: 'Документальное',
     language: 'ru',
     status: 'want',
+    started_at: null,
+    finished_at: null,
     sort: 3,
   },
   {
@@ -65,6 +73,8 @@ export const SEED_BOOKS: SeedBook[] = [
     genre: 'Психология',
     language: 'en',
     status: 'want',
+    started_at: null,
+    finished_at: null,
     sort: 4,
   },
 ]
