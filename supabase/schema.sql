@@ -15,6 +15,9 @@ create table if not exists public.books (
     check (status in ('want','reading','finished','abandoned')),
   is_focus boolean not null default false,
   rating smallint check (rating between 1 and 5),
+  -- The review is one per book and written once, so it lives on the book
+  -- rather than in a table of its own.
+  review text,
   started_at date,
   finished_at date,
   sort integer not null default 0,

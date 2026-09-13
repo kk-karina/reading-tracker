@@ -468,8 +468,8 @@ button {
 }
 .chip.on {
   background: var(--brand);
-  border-color: var(--brand);
-  color: #fff;
+  border-color: var(--brand-2);
+  color: var(--ink);
 }
 
 /* ---------- pill + sticker ---------- */
@@ -866,6 +866,10 @@ button {
 
 .chart {
   position: relative;
+  width: 100%;
+}
+/* Measured, not scaled: the SVG fills the box at one unit per pixel. */
+.chart-fill {
   width: 100%;
 }
 .chart-svg {
@@ -1309,7 +1313,7 @@ button {
 }
 .entry {
   display: grid;
-  grid-template-columns: 56px 1fr auto;
+  grid-template-columns: 72px 1fr auto;
   gap: 16px;
   padding: 12px 0;
   border-bottom: 1px solid var(--line);
@@ -1342,6 +1346,129 @@ button {
 .entry:hover .acts,
 .entry:focus-within .acts {
   opacity: 1;
+}
+
+.entry a.cat:hover {
+  text-decoration: underline;
+}
+.day:last-of-type .entry:last-of-type {
+  border-bottom: 0;
+}
+
+/* Status on the left, the book on the right, and no captions: a segmented
+   control and a select say what they are without being introduced. */
+.journal-filters {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 30px;
+}
+.entry-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+}
+.entry-main .cover {
+  margin-top: 1px;
+}
+.entry-text {
+  min-width: 0;
+}
+.select.sm {
+  width: auto;
+  max-width: 280px;
+  height: 34px;
+  font-size: 14px;
+  padding: 0 30px 0 10px;
+  background-position: right 10px center;
+}
+
+/* Editing an entry is a second thought: the handles wait until you go near it. */
+.recent-row.with-acts {
+  grid-template-columns: 84px 1fr auto auto;
+}
+.recent-row .acts {
+  display: flex;
+  gap: 10px;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.recent-row:hover .acts,
+.recent-row:focus-within .acts {
+  opacity: 1;
+}
+/* Nothing hovers on a touch screen, so there they stay out in the open. */
+@media (hover: none) {
+  .entry .acts,
+  .recent-row .acts {
+    opacity: 1;
+  }
+}
+
+/* ---------- book tabs ---------- */
+
+.tabs {
+  display: flex;
+  gap: 2px;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--line-2);
+  margin: 0 0 24px;
+}
+.tab {
+  position: relative;
+  padding: 11px 16px;
+  color: var(--ink-3);
+  transition: color 0.2s;
+}
+.tab:hover:not(:disabled) {
+  color: var(--ink);
+}
+.tab.on {
+  color: var(--ink);
+  font-weight: 500;
+}
+.tab:disabled {
+  color: var(--line-2);
+  cursor: not-allowed;
+}
+.tab-n {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-3);
+  margin-left: 7px;
+}
+.tab-line {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: -1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+.tab-body {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  min-height: 180px;
+}
+
+.review {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-width: 620px;
+}
+.review-lead {
+  margin: 0;
+  max-width: 52ch;
+}
+.review-text {
+  min-height: 200px;
+  line-height: 1.55;
 }
 
 /* ---------- settings ---------- */
@@ -1460,6 +1587,14 @@ button {
   transition: box-shadow 0.25s var(--ease-out), transform 0.25s var(--ease-out);
 }
 
+.cover-xs { width: 26px; border-radius: 1px 3px 3px 1px; }
+/* A 26px book would be all shadow otherwise. */
+.cover-xs {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.16),
+    0 2px 5px -2px rgba(0, 0, 0, 0.34);
+}
+.cover-xs .cover-art { display: none; }
 .cover-sm { width: 96px; }
 .cover-md { width: 150px; }
 .cover-lg { width: 260px; }
@@ -1797,6 +1932,136 @@ button {
 }
 
 .spine:hover { transform: translateY(-6px) rotate(-2deg); }
+
+/* One column, top to bottom: nothing sits beside anything, so nothing has to
+   agree about its height. */
+.dash-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  margin-top: 24px;
+}
+
+/* A thought is a card, not a row in a box: cards in a grid row settle to one
+   height by themselves, which is the whole reason they are cards.
+
+   Each one is a memo pad — soft paper with an aura printed into it, the tag in
+   a stamped box in the corner. The aura is keyed to the tag, so a shelf of
+   thoughts sorts itself by colour before a word of it is read. */
+.thought-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  gap: 20px;
+}
+.thought-card {
+  --paper-1: #f4f5f7;
+  --core: #fbfbfc;
+  --ring: #dfe3ea;
+
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 18px 20px 16px;
+  border-radius: 18px;
+  overflow: hidden;
+  color: var(--ink);
+  /* One ellipse, three stops: a lit centre, the colour at mid-radius, and the
+     paper again before the edge — the ring is what makes it an aura and not a
+     wash. The last stop is the paper colour itself, so nothing greys out on
+     the way to transparent. */
+  background: radial-gradient(
+    74% 60% at 50% 52%,
+    var(--core) 0%,
+    var(--ring) 46%,
+    var(--paper-1) 84%
+  );
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 16, 18, 0.05),
+    0 1px 1px rgba(14, 16, 18, 0.04),
+    0 20px 30px -24px rgba(14, 16, 18, 0.55);
+  transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
+}
+.thought-cards > .thought-card:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 16, 18, 0.05),
+    0 1px 1px rgba(14, 16, 18, 0.04),
+    0 26px 36px -24px rgba(14, 16, 18, 0.6);
+}
+
+/* Cream and apricot, cool blue, periwinkle, rose, mint: pale enough that ink
+   stays the loudest thing on the card. */
+.thought-card[data-tag='quote'] {
+  --paper-1: #fdfaee;
+  --ring: #dfe7c2;
+  --core: #f1cfac;
+}
+.thought-card[data-tag='idea'] {
+  --paper-1: #eef6fd;
+  --ring: #a7cdea;
+  --core: #d8ecfa;
+}
+.thought-card[data-tag='question'] {
+  --paper-1: #f2f3fb;
+  --ring: #d3dcf2;
+  --core: #fbfbff;
+}
+.thought-card[data-tag='disagree'] {
+  --paper-1: #fdf3f4;
+  --ring: #f0ccd2;
+  --core: #fdeaec;
+}
+.thought-card[data-tag='feeling'] {
+  --paper-1: #eefaf5;
+  --ring: #c3e6d8;
+  --core: #f0fbf6;
+}
+
+/* The stamped box in the corner, like the date field on a memo pad. */
+.thought-tag {
+  align-self: flex-start;
+  padding: 4px 9px 3px;
+  border: 1px solid rgba(14, 16, 18, 0.22);
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink-2);
+}
+.thought-body {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 7;
+}
+.thought-foot,
+.thought-book {
+  margin-top: auto;
+}
+.thought-book {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(14, 16, 18, 0.09);
+}
+/* The title is a caption under a thought, not a heading: small, tight, and cut
+   at two lines. The full one is in the tooltip. */
+.thought-book span {
+  font-size: 11.5px;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+.thought-book:hover span {
+  text-decoration: underline;
+}
 
 .year-grid {
   display: flex;

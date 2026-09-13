@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { todayISO } from '../lib/format'
 import { FACES } from '../lib/rating'
 import { progressOf } from '../lib/reading'
-import type { Book, NoteTag, Session } from '../lib/types'
+import type { Book, Note, NoteTag, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
 import { Sheet } from './Sheet'
@@ -12,9 +12,14 @@ const TAGS: NoteTag[] = ['quote', 'idea', 'question', 'disagree', 'feeling']
 
 interface Draft {
   key: number
+  /** Set on a thought that is already saved; absent on one being typed now. */
+  id?: string
   tag: NoteTag
   body: string
 }
+
+const draftsFrom = (notes: Note[]): Draft[] =>
+  notes.map((n, i) => ({ key: i, id: n.id, tag: n.tag, body: n.body }))
 
 /**
  * One session, and the thoughts that came with it.
@@ -23,26 +28,36 @@ interface Draft {
  * only number normally typed is the one you read up to. Minutes stay optional —
  * asking for them every time is what makes people stop keeping a log — but the
  * form says what they buy, since nothing else can produce a pace.
+ *
+ * With `session` given the same sheet edits that entry instead: nothing about a
+ * log is worth keeping if a mistyped page has to stand forever.
  */
 export function SessionSheet({
   book,
   sessions,
+  session,
   onClose,
 }: {
   book: Book
   sessions: Session[]
+  session?: Session
   onClose: () => void
 }) {
   const t = useT()
-  const { addSession, addNote, updateBook } = useData()
+  const { notes, addSession, updateSession, deleteSession, addNote, updateNote, deleteNote, updateBook } =
+    useData()
   const { page } = progressOf(book.id, sessions, book.pages)
+  const mine = session ? notes.filter((n) => n.session_id === session.id) : []
 
-  const [date, setDate] = useState(todayISO())
-  const [from, setFrom] = useState(String(page))
-  const [to, setTo] = useState('')
-  const [minutes, setMinutes] = useState('')
-  const [rating, setRating] = useState<number | null>(null)
-  const [drafts, setDrafts] = useState<Draft[]>([])
+  const [date, setDate] = useState(session?.date ?? todayISO())
+  const [from, setFrom] = useState(String(session?.page_from ?? page))
+  const [to, setTo] = useState(session ? String(session.page_to) : '')
+  const [minutes, setMinutes] = useState(session?.minutes ? String(session.minutes) : '')
+  const [rating, setRating] = useState<number | null>(session?.rating ?? null)
+  const [drafts, setDrafts] = useState<Draft[]>(() => draftsFrom(mine))
+  // Thoughts dropped from the list are deleted on save, not on the click, so
+  // closing the sheet without saving leaves the entry exactly as it was.
+  const [dropped, setDropped] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -56,31 +71,41 @@ export function SessionSheet({
       return
     }
     setBusy(true)
-    const session = await addSession({
+    const fields = {
       book_id: book.id,
       date,
       page_from: fromNum,
       page_to: toNum,
-      minutes: minutes.trim() ? Number(minutes) : null,
+      // Zero and below are "not recorded", not a reading time the database would take.
+      minutes: Number(minutes) > 0 ? Number(minutes) : null,
       rating,
-    })
+    }
+    let sessionId = session?.id
+    if (session) await updateSession(session.id, fields)
+    else sessionId = (await addSession(fields))?.id
 
+    for (const id of dropped) await deleteNote(id)
     for (const d of drafts) {
-      if (!d.body.trim()) continue
-      await addNote({
-        book_id: book.id,
-        session_id: session?.id ?? null,
-        page: toNum,
-        tag: d.tag,
-        body: d.body.trim(),
-      })
+      const body = d.body.trim()
+      if (d.id) {
+        if (body) await updateNote(d.id, { tag: d.tag, body })
+        else await deleteNote(d.id)
+      } else if (body) {
+        await addNote({
+          book_id: book.id,
+          session_id: sessionId ?? null,
+          page: toNum,
+          tag: d.tag,
+          body,
+        })
+      }
     }
 
     // Logging against a book you meant to read means you have started it.
     if (book.status === 'want') {
       await updateBook(book.id, { status: 'reading', started_at: book.started_at ?? date })
     }
-    if (book.pages && toNum >= book.pages && confirm(t('session.finishedAsk'))) {
+    if (book.pages && toNum >= book.pages && book.status !== 'finished' && confirm(t('session.finishedAsk'))) {
       await updateBook(book.id, { status: 'finished', finished_at: date })
     }
 
@@ -88,8 +113,15 @@ export function SessionSheet({
     onClose()
   }
 
+  async function remove() {
+    if (!session || !confirm(t('session.confirmDelete'))) return
+    setBusy(true)
+    await deleteSession(session.id)
+    onClose()
+  }
+
   return (
-    <Sheet title={t('session.title')} onClose={onClose}>
+    <Sheet title={t(session ? 'session.editTitle' : 'session.title')} onClose={onClose}>
       <div className="book-form">
         <div className="field-row">
           <label className="field">
@@ -170,7 +202,7 @@ export function SessionSheet({
                 className="sm"
               />
               <textarea
-                className="input"
+                className="textarea"
                 rows={3}
                 placeholder={t(`tagHint.${d.tag}`)}
                 value={d.body}
@@ -183,7 +215,10 @@ export function SessionSheet({
               <button
                 type="button"
                 className="link-btn"
-                onClick={() => setDrafts((list) => list.filter((x) => x.key !== d.key))}
+                onClick={() => {
+                  if (d.id) setDropped((list) => [...list, d.id as string])
+                  setDrafts((list) => list.filter((x) => x.key !== d.key))
+                }}
               >
                 {t('session.removeNote')}
               </button>
@@ -200,9 +235,16 @@ export function SessionSheet({
         </div>
 
         {error && <div className="error">{error}</div>}
-        <Jelly className="btn" onClick={save} disabled={busy} style={{ alignSelf: 'flex-start' }}>
-          {t('form.save')}
-        </Jelly>
+        <div className="row-tight" style={{ alignSelf: 'flex-start' }}>
+          <Jelly className="btn" onClick={save} disabled={busy}>
+            {t('form.save')}
+          </Jelly>
+          {session && (
+            <button type="button" className="btn ghost" onClick={remove} disabled={busy}>
+              {t('session.delete')}
+            </button>
+          )}
+        </div>
       </div>
     </Sheet>
   )

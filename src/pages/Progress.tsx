@@ -2,7 +2,6 @@ import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
 import { Rhythm, WeeklyBars } from '../components/Charts'
-import { Shares } from '../components/Shares'
 import { Counter, Jelly } from '../components/ui'
 import { daysAgoISO, fmtDate, todayISO } from '../lib/format'
 import { finishedInYear, lastSessionDate, progressOf, streakDays, stuckBooks } from '../lib/reading'
@@ -30,7 +29,8 @@ export function Progress() {
   const streak = streakDays(sessions, today)
   const finished = finishedInYear(books, Number(today.slice(0, 4)))
   const stuck = stuckBooks(books, sessions, today, STUCK_AFTER_DAYS)
-  const recentNotes = notes.slice(0, 5)
+  // Three fills one row of cards on a wide screen; the rest lives in the journal.
+  const recentNotes = notes.slice(0, 3)
 
   return (
     <>
@@ -76,10 +76,85 @@ export function Progress() {
         </div>
       </div>
 
-      <div className="dash-grid">
+      <div className="dash-stack">
+        {/* The log first: what you did, then how it adds up, then what it left you. */}
+        <section className="panel">
+          <div className="panel-head">
+            <div className="label">{t('chart.rhythm')}</div>
+            <span className="small faint">{t('progress.rhythmHint')}</span>
+          </div>
+          <Rhythm sessions={sessions} />
+        </section>
+
+        <section className="panel">
+          <div className="panel-head">
+            <div className="label">{t('chart.weeks')}</div>
+            <span className="small faint">{t('progress.weeksHint')}</span>
+          </div>
+          <WeeklyBars sessions={sessions} />
+        </section>
+
+        {/* Thoughts are not a chart and not a list in a box: each one is a card,
+            and a row of cards settles to one height on its own. */}
+        <section>
+          <div className="panel-head">
+            <div className="label">{t('progress.recentNotes')}</div>
+            <Link to="/journal" className="link-btn">
+              {t('progress.toJournal')}
+            </Link>
+          </div>
+          {recentNotes.length === 0 ? (
+            <div className="empty small">{t('progress.notesEmpty')}</div>
+          ) : (
+            <div className="thought-cards">
+              {recentNotes.map((n) => {
+                const b = books.find((x) => x.id === n.book_id)
+                return (
+                  <article key={n.id} className="thought-card" data-tag={n.tag}>
+                    <span className="label thought-tag">{t(`tag.${n.tag}`)}</span>
+                    <p className="thought-body">{n.body}</p>
+                    {b && (
+                      <Link to={`/book/${b.id}`} className="thought-book" title={b.title}>
+                        <BookCover book={b} size="xs" />
+                        <span className="muted">{b.title}</span>
+                      </Link>
+                    )}
+                  </article>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="panel">
+          <div className="panel-head">
+            <div className="label">{t('progress.stuck')}</div>
+            <span className="small faint">{t('progress.stuckHint')}</span>
+          </div>
+          {stuck.length === 0 ? (
+            <div className="empty small">{t('progress.stuckEmpty')}</div>
+          ) : (
+            <div className="stuck-row">
+              {stuck.map((b) => {
+                const last = lastSessionDate(b.id, sessions)
+                return (
+                  <Link key={b.id} to={`/book/${b.id}`} className="stuck-book">
+                    <BookCover book={b} size="sm" />
+                    <span className="small muted">
+                      {last ? t('book.lastRead', { date: fmtDate(last, locale) }) : t('book.notOpened')}
+                    </span>
+                  </Link>
+                )
+              })}
+            </div>
+          )}
+        </section>
+
+        {/* Last, and across the full width: the shelf of what is already done. */}
         <section className="panel">
           <div className="panel-head">
             <div className="label">{t('progress.yearInBooks')}</div>
+            <span className="small faint mono">{today.slice(0, 4)}</span>
           </div>
           {finished.length === 0 ? (
             <div className="empty small">{t('progress.yearEmpty')}</div>
@@ -93,71 +168,8 @@ export function Progress() {
             </div>
           )}
         </section>
-
-        <section className="panel">
-          <Shares books={books} />
-        </section>
       </div>
 
-      <section className="panel" style={{ marginTop: 24 }}>
-        <div className="panel-head">
-          <div className="label">{t('chart.rhythm')}</div>
-          <span className="small faint">{t('progress.rhythmHint')}</span>
-        </div>
-        <Rhythm sessions={sessions} />
-      </section>
-
-      <div className="dash-row">
-        <section className="panel">
-          <div className="panel-head">
-            <div className="label">{t('chart.weeks')}</div>
-            <span className="small faint">{t('progress.weeksHint')}</span>
-          </div>
-          <WeeklyBars sessions={sessions} />
-        </section>
-
-        <section className="panel">
-          <div className="panel-head">
-            <div className="label">{t('progress.recentNotes')}</div>
-          </div>
-          {recentNotes.length === 0 ? (
-            <div className="empty small">{t('progress.notesEmpty')}</div>
-          ) : (
-            <ul className="note-list">
-              {recentNotes.map((n) => (
-                <li key={n.id}>
-                  <span className="small muted">{books.find((b) => b.id === n.book_id)?.title}</span>
-                  <span>{n.body}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </div>
-
-      <section className="panel" style={{ marginTop: 24 }}>
-        <div className="panel-head">
-          <div className="label">{t('progress.stuck')}</div>
-          <span className="small faint">{t('progress.stuckHint')}</span>
-        </div>
-        {stuck.length === 0 ? (
-          <div className="empty small">{t('progress.stuckEmpty')}</div>
-        ) : (
-          <div className="stuck-row">
-            {stuck.map((b) => {
-              const last = lastSessionDate(b.id, sessions)
-              return (
-                <Link key={b.id} to={`/book/${b.id}`} className="stuck-book">
-                  <BookCover book={b} size="sm" />
-                  <span className="small muted">
-                    {last ? t('book.lastRead', { date: fmtDate(last, locale) }) : t('book.notOpened')}
-                  </span>
-                </Link>
-              )
-            })}
-          </div>
-        )}
-      </section>
     </>
   )
 }

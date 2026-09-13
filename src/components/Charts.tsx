@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { fromISO, localeTag, toISO, todayISO } from '../lib/format'
 import type { Session } from '../lib/types'
 import { useLocale } from '../state/LocaleContext'
@@ -11,6 +11,29 @@ import { useLocale } from '../state/LocaleContext'
  * an empty grid still has to say "nothing here yet", and a mark that starts at
  * scale zero says nothing at all until an animation happens to run.
  */
+
+/**
+ * The width the chart actually got, in CSS pixels.
+ *
+ * A bar chart that spans a whole dashboard cannot keep a fixed aspect ratio —
+ * it would be half a screen tall — and it cannot scale a small viewBox up
+ * either, because that blows the axis type up with it. So it measures its box
+ * and draws one SVG unit per pixel.
+ */
+function useWidth<T extends HTMLElement>() {
+  const ref = useRef<T>(null)
+  const [width, setWidth] = useState(0)
+
+  useEffect(() => {
+    const el = ref.current
+    if (!el) return
+    const ro = new ResizeObserver(([entry]) => setWidth(entry.contentRect.width))
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
+  return [ref, width] as const
+}
 
 interface Tip {
   x: number // 0..100, % of the chart box
@@ -158,6 +181,7 @@ const NWEEKS = 12
 export function WeeklyBars({ sessions }: { sessions: Session[] }) {
   const { t, locale } = useLocale()
   const [tip, setTip] = useState<Tip | null>(null)
+  const [ref, box] = useWidth<HTMLDivElement>()
   const thisMonday = mondayOf(fromISO(todayISO()))
   const tag = localeTag(locale)
 
@@ -180,70 +204,74 @@ export function WeeklyBars({ sessions }: { sessions: Session[] }) {
   const active = weeks.filter((w) => w.pages > 0)
   const avg = active.length ? Math.round(active.reduce((a, w) => a + w.pages, 0) / active.length) : 0
 
-  const W = 480
-  const H = 200
-  const PAD_B = 22
-  const PAD_TOP = 14
+  const H = 220
+  const W = Math.max(300, Math.round(box))
+  const PAD_B = 24
+  const PAD_TOP = 16
   const plotH = H - PAD_B - PAD_TOP
   const slot = W / NWEEKS
-  const barW = Math.min(28, slot * 0.55)
+  const barW = Math.min(46, slot * 0.55)
+  // Twelve dates need room; on a phone every second one is enough.
+  const sparseLabels = slot < 62
   const y = (pages: number) => PAD_TOP + plotH - (pages / max) * plotH
 
   return (
-    <div className="chart" style={{ aspectRatio: `${W} / ${H}` }}>
-      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" role="img" aria-label={t('chart.weeks')}>
-        <line x1={0} x2={W} y1={y(0)} y2={y(0)} stroke="var(--line-2)" />
-        {avg > 0 && (
-          <g>
-            <line x1={0} x2={W} y1={y(avg)} y2={y(avg)} stroke="var(--ink-3)" />
-            <text x={0} y={y(avg) - 5} className="chart-axis">
-              {t('chart.avg', { n: avg })}
-            </text>
-          </g>
-        )}
-        {weeks.map((w, i) => {
-          const cx = slot * i + slot / 2
-          const h = Math.max(0, y(0) - y(w.pages))
-          const current = i === NWEEKS - 1
-          return (
-            <g key={w.iso}>
-              {w.pages > 0 ? (
-                <rect
-                  x={cx - barW / 2}
-                  width={barW}
-                  y={y(0) - h}
-                  height={h}
-                  rx={4}
-                  fill={current ? 'var(--brand-strong)' : 'var(--brand-mute)'}
-                />
-              ) : (
-                <circle cx={cx} cy={y(0)} r={2} fill="var(--line-2)" />
-              )}
-              {(i % 2 === NWEEKS % 2 || current) && (
-                <text x={cx} y={H - 6} textAnchor="middle" className="chart-axis">
-                  {current ? t('chart.now') : w.start.toLocaleDateString(tag, { day: 'numeric', month: 'short' })}
-                </text>
-              )}
-              <rect
-                x={slot * i}
-                y={0}
-                width={slot}
-                height={H - PAD_B}
-                fill="transparent"
-                onMouseEnter={() =>
-                  setTip({
-                    x: (cx / W) * 100,
-                    y: ((y(w.pages) - 6) / H) * 100,
-                    text: w.pages ? t('count.pages', { n: w.pages }) : t('chart.nothing'),
-                    sub: w.start.toLocaleDateString(tag, { day: 'numeric', month: 'short' }),
-                  })
-                }
-                onMouseLeave={() => setTip(null)}
-              />
+    <div className="chart chart-fill" ref={ref} style={{ height: H }}>
+      {box > 0 && (
+        <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" role="img" aria-label={t('chart.weeks')}>
+          <line x1={0} x2={W} y1={y(0)} y2={y(0)} stroke="var(--line-2)" />
+          {avg > 0 && (
+            <g>
+              <line x1={0} x2={W} y1={y(avg)} y2={y(avg)} stroke="var(--ink-3)" />
+              <text x={0} y={y(avg) - 5} className="chart-axis">
+                {t('chart.avg', { n: avg })}
+              </text>
             </g>
-          )
-        })}
-      </svg>
+          )}
+          {weeks.map((w, i) => {
+            const cx = slot * i + slot / 2
+            const h = Math.max(0, y(0) - y(w.pages))
+            const current = i === NWEEKS - 1
+            return (
+              <g key={w.iso}>
+                {w.pages > 0 ? (
+                  <rect
+                    x={cx - barW / 2}
+                    width={barW}
+                    y={y(0) - h}
+                    height={h}
+                    rx={4}
+                    fill={current ? 'var(--brand-strong)' : 'var(--brand-mute)'}
+                  />
+                ) : (
+                  <circle cx={cx} cy={y(0)} r={2} fill="var(--line-2)" />
+                )}
+                {(!sparseLabels || i % 2 === (NWEEKS - 1) % 2) && (
+                  <text x={cx} y={H - 6} textAnchor="middle" className="chart-axis">
+                    {current ? t('chart.now') : w.start.toLocaleDateString(tag, { day: 'numeric', month: 'short' })}
+                  </text>
+                )}
+                <rect
+                  x={slot * i}
+                  y={0}
+                  width={slot}
+                  height={H - PAD_B}
+                  fill="transparent"
+                  onMouseEnter={() =>
+                    setTip({
+                      x: (cx / W) * 100,
+                      y: ((y(w.pages) - 6) / H) * 100,
+                      text: w.pages ? t('count.pages', { n: w.pages }) : t('chart.nothing'),
+                      sub: w.start.toLocaleDateString(tag, { day: 'numeric', month: 'short' }),
+                    })
+                  }
+                  onMouseLeave={() => setTip(null)}
+                />
+              </g>
+            )
+          })}
+        </svg>
+      )}
       <Tooltip tip={tip} />
     </div>
   )

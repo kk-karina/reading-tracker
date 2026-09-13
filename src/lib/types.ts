@@ -15,6 +15,7 @@ export interface Book {
   status: BookStatus
   is_focus: boolean
   rating: number | null // 1–5, set when the book is finished
+  review: string | null // written after the last page, not during
   started_at: string | null // YYYY-MM-DD
   finished_at: string | null
   sort: number

@@ -82,6 +82,7 @@ const b = (over: Partial<Book>): Book => ({
   status: 'reading',
   is_focus: false,
   rating: null,
+  review: null,
   started_at: null,
   finished_at: null,
   sort: 0,

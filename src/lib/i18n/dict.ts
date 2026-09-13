@@ -86,10 +86,6 @@ export const DICT = {
     ru: 'Здесь будет фокусная книга, ритм чтения и последние мысли.',
     en: 'The focused book, your reading rhythm and the latest thoughts will live here.',
   },
-  'soon.journal': {
-    ru: 'Здесь будет хронология сессий и всё, что ты вынесла из книг.',
-    en: 'The timeline of sessions and everything you took from your books.',
-  },
   'soon.book': {
     ru: 'Страница книги появится на второй фазе.',
     en: 'The book page arrives in phase two.',
@@ -192,6 +188,7 @@ export const DICT = {
     ru: 'Мысли из сессий будут появляться здесь — чтобы не забывались.',
     en: 'Thoughts from your sessions will surface here, so they are not lost.',
   },
+  'progress.toJournal': { ru: 'Весь дневник', en: 'The whole journal' },
   'progress.stuck': { ru: 'Застряли', en: 'Gone quiet' },
   'progress.stuckHint': { ru: 'Читаю, но больше двух недель без сессий', en: 'Being read, but untouched for over two weeks' },
   'progress.stuckEmpty': { ru: 'Ничего не простаивает.', en: 'Nothing is stalling.' },
@@ -203,6 +200,22 @@ export const DICT = {
     ru: { one: 'день', few: 'дня', many: 'дней' },
     en: { one: 'day', other: 'days' },
   },
+  'journal.lead': {
+    ru: 'Каждая сессия и каждая мысль — по дням, сверху свежее.',
+    en: 'Every session and every thought, by day, the newest on top.',
+  },
+  'journal.show': { ru: 'Показывать', en: 'Show' },
+  'journal.all': { ru: 'Всё', en: 'Everything' },
+  'journal.sessions': { ru: 'Сессии', en: 'Sessions' },
+  'journal.notes': { ru: 'Мысли', en: 'Thoughts' },
+  'journal.book': { ru: 'Книга', en: 'Book' },
+  'journal.allBooks': { ru: 'Все книги', en: 'All books' },
+  'journal.empty': {
+    ru: 'Пока пусто. Запиши сессию на странице книги — она появится здесь.',
+    en: 'Empty so far. Log a session on a book page and it shows up here.',
+  },
+  'journal.emptyHere': { ru: 'Под этот фильтр ничего не попало.', en: 'Nothing matches this filter.' },
+
   'book.back': { ru: 'Полка', en: 'Shelf' },
   'book.progress': { ru: 'Прогресс', en: 'Progress' },
   'book.time': { ru: 'Время', en: 'Time' },
@@ -228,6 +241,31 @@ export const DICT = {
   },
   'book.allTags': { ru: 'Все', en: 'All' },
 
+  'book.tabReflection': { ru: 'Рефлексия', en: 'Reflection' },
+  'book.tabSessions': { ru: 'Лог сессий', en: 'Session log' },
+  'book.tabReview': { ru: 'Рецензия', en: 'Review' },
+  'book.reviewLocked': {
+    ru: 'Откроется, когда книга будет дочитана',
+    en: 'Opens once the book is finished',
+  },
+  'book.reflectionEmpty': {
+    ru: 'Пока ни одной мысли. Они пишутся вместе с сессией — и остаются здесь.',
+    en: 'No thoughts yet. They are written with a session, and they stay here.',
+  },
+
+  'review.lead': {
+    ru: 'Пишется один раз, после последней страницы: это то, что ты вспомнишь о книге через год.',
+    en: 'Written once, after the last page: it is what you will remember of the book a year from now.',
+  },
+  'review.how': { ru: 'Книга целиком', en: 'The book as a whole' },
+  'review.text': { ru: 'Что это было', en: 'What it was' },
+  'review.placeholder': {
+    ru: 'О чём книга, что из неё осталось с тобой и кому её стоит дать.',
+    en: 'What the book was about, what stayed with you, and who you would hand it to.',
+  },
+  'review.saved': { ru: 'Сохранено', en: 'Saved' },
+  'review.finishedOn': { ru: 'Дочитано {date}', en: 'Finished {date}' },
+
   'session.log': { ru: 'Записать сессию', en: 'Log a session' },
   'session.title': { ru: 'Сессия чтения', en: 'Reading session' },
   'session.date': { ru: 'Дата', en: 'Date' },
@@ -247,6 +285,12 @@ export const DICT = {
   'session.finishedAsk': {
     ru: 'Похоже, книга дочитана. Отметить как прочитанную?',
     en: 'Looks like the book is finished. Mark it as read?',
+  },
+  'session.editTitle': { ru: 'Правка сессии', en: 'Edit the session' },
+  'session.delete': { ru: 'Удалить сессию', en: 'Delete session' },
+  'session.confirmDelete': {
+    ru: 'Удалить эту сессию? Мысли из неё останутся.',
+    en: 'Delete this session? The thoughts from it stay.',
   },
   'session.addNote': { ru: '+ мысль', en: '+ a thought' },
   'session.removeNote': { ru: 'Убрать', en: 'Remove' },

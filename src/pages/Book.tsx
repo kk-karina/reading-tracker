@@ -1,7 +1,9 @@
+import { motion } from 'motion/react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
 import { BookForm } from '../components/BookForm'
+import { Review } from '../components/Review'
 import { SessionSheet } from '../components/SessionSheet'
 import { Jelly, Segmented } from '../components/ui'
 import { fmtDate, fmtMinutes, todayISO } from '../lib/format'
@@ -15,12 +17,23 @@ import {
   spentOn,
   statusPatch,
 } from '../lib/reading'
-import type { BookStatus, NoteTag } from '../lib/types'
+import type { BookStatus, NoteTag, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
 
 const STATUSES: BookStatus[] = ['want', 'reading', 'finished', 'abandoned']
 const TAGS: NoteTag[] = ['quote', 'idea', 'question', 'disagree', 'feeling']
+
+/* Sessions and thoughts are one record kept from two sides, so they are two
+   views of the same thing rather than two boxes side by side. Reflection leads:
+   the pages are the means, what they left behind is the point. */
+const TABS = ['reflection', 'sessions', 'review'] as const
+type Tab = (typeof TABS)[number]
+const TAB_KEY = {
+  reflection: 'book.tabReflection',
+  sessions: 'book.tabSessions',
+  review: 'book.tabReview',
+} as const
 
 export function Book() {
   const { id } = useParams()
@@ -29,7 +42,9 @@ export function Book() {
   const { books, sessions, notes, loading, updateBook, deleteBook, setFocus } = useData()
   const [editing, setEditing] = useState(false)
   const [logging, setLogging] = useState(false)
+  const [editingSession, setEditingSession] = useState<Session | null>(null)
   const [tagFilter, setTagFilter] = useState<NoteTag | 'all'>('all')
+  const [tab, setTab] = useState<Tab>('reflection')
 
   if (loading) return null
   const book = books.find((b) => b.id === id)
@@ -46,8 +61,17 @@ export function Book() {
   const mySessions = sessions
     .filter((s) => s.book_id === book.id)
     .sort((a, b) => (a.date < b.date ? 1 : a.date > b.date ? -1 : 0))
-  const myNotes = notes
-    .filter((n) => n.book_id === book.id && (tagFilter === 'all' || n.tag === tagFilter))
+  const bookNotes = notes.filter((n) => n.book_id === book.id)
+  const myNotes = bookNotes.filter((n) => tagFilter === 'all' || n.tag === tagFilter)
+
+  const finished = book.status === 'finished'
+  // Taking a book off the finished shelf takes its review tab with it.
+  const current: Tab = tab === 'review' && !finished ? 'reflection' : tab
+  const counts: Record<Tab, number | null> = {
+    reflection: bookNotes.length,
+    sessions: mySessions.length,
+    review: null,
+  }
 
   async function remove() {
     if (!book) return
@@ -163,66 +187,129 @@ export function Book() {
         </div>
       </div>
 
-      <div className="dash-row">
-        <section className="panel">
-          <div className="panel-head">
-            <div className="label">{t('book.sessions')}</div>
-            {read > 0 && <span className="small faint">{t('count.pages', { n: read })}</span>}
+      <div className="tabs" role="tablist" aria-label={book.title}>
+        {TABS.map((id) => {
+          const locked = id === 'review' && !finished
+          const on = current === id
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={on}
+              disabled={locked}
+              title={locked ? t('book.reviewLocked') : undefined}
+              className={`tab${on ? ' on' : ''}`}
+              onClick={() => setTab(id)}
+            >
+              {t(TAB_KEY[id])}
+              {counts[id] !== null && counts[id] > 0 && (
+                <span className="tab-n">{counts[id]}</span>
+              )}
+              {on && (
+                <motion.span
+                  layoutId="book-tab"
+                  className="tab-line"
+                  transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                />
+              )}
+            </button>
+          )
+        })}
+      </div>
+
+      {current === 'reflection' && (
+        <div className="tab-body">
+          <div className="chips">
+            {(['all', ...TAGS] as const).map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                className={`chip${tagFilter === tag ? ' on' : ''}`}
+                aria-pressed={tagFilter === tag}
+                onClick={() => setTagFilter(tag)}
+              >
+                {tag === 'all' ? t('book.allTags') : t(`tag.${tag}`)}
+              </button>
+            ))}
           </div>
-          {mySessions.length === 0 ? (
-            <div className="empty small">{t('book.sessionsEmpty')}</div>
+          {myNotes.length === 0 ? (
+            <div className="empty small">
+              {bookNotes.length === 0 ? t('book.reflectionEmpty') : t('journal.emptyHere')}
+            </div>
           ) : (
-            <div className="recent">
-              {mySessions.map((s) => (
-                <div key={s.id} className="recent-row">
-                  <span className="t">{fmtDate(s.date, locale)}</span>
-                  <span className="mono small">
-                    {s.page_from}–{s.page_to}
-                  </span>
-                  <span className="mono small muted">
-                    {face(s.rating) && <span className="face-sm">{face(s.rating)}</span>}
-                    {s.minutes ? fmtMinutes(s.minutes, locale) : '·'}
-                  </span>
-                </div>
+            <div className="thought-cards">
+              {myNotes.map((n) => (
+                <article key={n.id} className="thought-card" data-tag={n.tag}>
+                  <span className="label thought-tag">{t(`tag.${n.tag}`)}</span>
+                  <p className="thought-body">{n.body}</p>
+                  {n.page !== null && (
+                    <span className="small faint mono thought-foot">
+                      {t('session.noteOnPage', { n: n.page })}
+                    </span>
+                  )}
+                </article>
               ))}
             </div>
           )}
-        </section>
+        </div>
+      )}
 
-        <section className="panel">
-          <div className="panel-head">
-            <div className="label">{t('book.notes')}</div>
-            <Segmented
-              name={t('book.notes')}
-              value={tagFilter}
-              options={[
-                { value: 'all' as const, label: t('book.allTags') },
-                ...TAGS.map((tag) => ({ value: tag, label: t(`tag.${tag}`) })),
-              ]}
-              onChange={setTagFilter}
-              className="sm"
-            />
-          </div>
-          {myNotes.length === 0 ? (
-            <div className="empty small">{t('book.notesEmpty')}</div>
+      {current === 'sessions' && (
+        <div className="tab-body">
+          {mySessions.length === 0 ? (
+            <div className="empty small">{t('book.sessionsEmpty')}</div>
           ) : (
-            <ul className="note-list">
-              {myNotes.map((n) => (
-                <li key={n.id}>
-                  <span className="small muted">
-                    {t(`tag.${n.tag}`)}
-                    {n.page !== null && ` · ${t('session.noteOnPage', { n: n.page })}`}
-                  </span>
-                  <span>{n.body}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              <div className="recent">
+                {mySessions.map((s) => (
+                  <div key={s.id} className="recent-row with-acts">
+                    <span className="t">{fmtDate(s.date, locale)}</span>
+                    <span className="mono small">
+                      {s.page_from}–{s.page_to}
+                    </span>
+                    <span className="mono small muted">
+                      {face(s.rating) && <span className="face-sm">{face(s.rating)}</span>}
+                      {s.minutes ? fmtMinutes(s.minutes, locale) : '·'}
+                    </span>
+                    <div className="acts">
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={() => setEditingSession(s)}
+                      >
+                        {t('book.edit')}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {read > 0 && (
+                <p className="small faint" style={{ margin: '14px 0 0' }}>
+                  {t('count.pages', { n: read })}
+                </p>
+              )}
+            </>
           )}
-        </section>
-      </div>
+        </div>
+      )}
+
+      {current === 'review' && (
+        <div className="tab-body">
+          <Review key={book.id} book={book} />
+        </div>
+      )}
 
       {editing && <BookForm book={book} onClose={() => setEditing(false)} />}
       {logging && <SessionSheet book={book} sessions={sessions} onClose={() => setLogging(false)} />}
+      {editingSession && (
+        <SessionSheet
+          book={book}
+          sessions={sessions}
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
+        />
+      )}
     </>
   )
 }

@@ -2,13 +2,16 @@ import { useState, type CSSProperties } from 'react'
 import { toneOf } from '../lib/covers'
 import type { Book } from '../lib/types'
 
-type Size = 'sm' | 'md' | 'lg'
+type Size = 'xs' | 'sm' | 'md' | 'lg'
 
 /**
  * A book standing up: cloth colour, a spine down the left edge, light from the
  * top-left, and a shadow that lifts it off the shelf. A fetched image sits on
  * top; when there is none — or the link has rotted — the drawn cover shows
  * through, which is the normal case for Russian editions.
+ *
+ * At `xs` the drawn title is dropped and only the cloth and the spine remain:
+ * a thumbnail beside a line of text is there to be recognised, not read.
  */
 export function BookCover({ book, size = 'md' }: { book: Book; size?: Size }) {
   const [broken, setBroken] = useState(false)
