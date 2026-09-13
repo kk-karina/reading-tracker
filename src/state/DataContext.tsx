@@ -94,11 +94,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     return p
   }, [])
 
+  const userId = user?.id
   useEffect(() => {
-    if (!user) return
-    setLoading(true)
-    refresh()
-  }, [user, refresh])
+    if (!userId) return
+    // Run outside the auth callback's tick: Supabase holds a lock while it fires, and a query
+    // started inside it can wait on itself.
+    const t = setTimeout(() => refresh(), 0)
+    return () => clearTimeout(t)
+  }, [userId, refresh])
 
   const run = useCallback(
     async (fn: () => Promise<unknown>) => {

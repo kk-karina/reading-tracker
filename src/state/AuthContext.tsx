@@ -24,15 +24,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (!supabase) return
-    const sb = supabase
-    sb.auth.getSession().then(({ data }) => {
-      const u = data.session?.user
-      setUser(u ? { id: u.id, email: u.email ?? '' } : null)
-      setReady(true)
-    })
-    const { data: sub } = sb.auth.onAuthStateChange((_e, session) => {
+    // INITIAL_SESSION arrives right after subscribing, so one listener covers start-up too.
+    // Only swap the user object when the id actually changes; token refreshes must not
+    // look like a new sign-in to the data layer.
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const u = session?.user
-      setUser(u ? { id: u.id, email: u.email ?? '' } : null)
+      setUser((prev) => {
+        if (!u) return null
+        if (prev && prev.id === u.id) return prev
+        return { id: u.id, email: u.email ?? '' }
+      })
+      setReady(true)
     })
     return () => sub.subscription.unsubscribe()
   }, [])
