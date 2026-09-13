@@ -16,7 +16,7 @@ export function Settings() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `lowend-${new Date().toISOString().slice(0, 10)}.json`
+    a.download = `slap-that-bass-${new Date().toISOString().slice(0, 10)}.json`
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -25,7 +25,7 @@ export function Settings() {
     try {
       const snap = JSON.parse(await file.text()) as Snapshot
       if (!Array.isArray(snap.topics) || !Array.isArray(snap.songs) || !Array.isArray(snap.log))
-        throw new Error('Not a lowend export.')
+        throw new Error('Not a slap that bass export.')
       if (!confirm('Replace everything on this device with the file contents?')) return
       await importSnapshot(snap)
       setMsg('Imported.')

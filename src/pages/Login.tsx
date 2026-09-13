@@ -1,10 +1,26 @@
 import { motion } from 'motion/react'
 import { useState, type FormEvent } from 'react'
+import { Wave } from '../components/fun'
+import { Jelly } from '../components/ui'
 import { useAuth } from '../state/AuthContext'
 
+// One of these greets you at the door. Rotates on every load.
+const GREETINGS = [
+  'Password first. Bass second.',
+  'Roots, fifths, password.',
+  'The bass has been waiting.',
+  'Still four strings. Still you.',
+  'No drummer required.',
+  'Members only. Member: one.',
+  'Tune up. Log in.',
+  'Nobody else has the password. Suspicious.',
+  'Low end, high standards.',
+  'Enter, then play something slowly.',
+]
+
 export function Login() {
-  const { signIn, signUp } = useAuth()
-  const [mode, setMode] = useState<'in' | 'up'>('in')
+  const { signIn } = useAuth()
+  const [greeting] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
@@ -14,8 +30,7 @@ export function Login() {
     e.preventDefault()
     setBusy(true)
     setMsg(null)
-    const err = mode === 'in' ? await signIn(email, password) : await signUp(email, password)
-    setMsg(err)
+    setMsg(await signIn(email, password))
     setBusy(false)
   }
 
@@ -27,12 +42,9 @@ export function Login() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
       >
-        <span className="wordmark" style={{ fontSize: 22 }}>
-          <span className="dot" />
-          lowend
-        </span>
-        <h1 className="display" style={{ marginTop: 40, fontSize: 44 }}>
-          {mode === 'in' ? 'Welcome back.' : 'Start a log.'}
+        <span className="label">slap that bass</span>
+        <h1 className="display" style={{ marginTop: 28, fontSize: 40 }}>
+          <Wave>{greeting}</Wave>
         </h1>
 
         <form onSubmit={submit}>
@@ -52,28 +64,16 @@ export function Login() {
             <input
               className="input"
               type="password"
-              autoComplete={mode === 'in' ? 'current-password' : 'new-password'}
+              autoComplete="current-password"
               required
-              minLength={6}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
           </label>
           {msg && <div className="error">{msg}</div>}
-          <button className="btn" type="submit" disabled={busy} style={{ marginTop: 8 }}>
-            {mode === 'in' ? 'Sign in' : 'Create account'}
-          </button>
-          <button
-            type="button"
-            className="link-btn"
-            style={{ alignSelf: 'flex-start', marginTop: 8 }}
-            onClick={() => {
-              setMode(mode === 'in' ? 'up' : 'in')
-              setMsg(null)
-            }}
-          >
-            {mode === 'in' ? 'No account yet? Create one' : 'Have an account? Sign in'}
-          </button>
+          <Jelly className="btn" type="submit" disabled={busy} style={{ marginTop: 8, alignSelf: 'flex-start' }}>
+            Sign in
+          </Jelly>
         </form>
       </motion.div>
     </div>

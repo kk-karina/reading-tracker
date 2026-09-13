@@ -11,7 +11,6 @@ interface AuthValue {
   ready: boolean
   user: AuthUser | null
   signIn(email: string, password: string): Promise<string | null>
-  signUp(email: string, password: string): Promise<string | null>
   signOut(): Promise<void>
 }
 
@@ -46,14 +45,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (!supabase) return null
       const { error } = await supabase.auth.signInWithPassword({ email, password })
       return error ? error.message : null
-    },
-    async signUp(email, password) {
-      if (!supabase) return null
-      const { data, error } = await supabase.auth.signUp({ email, password })
-      if (error) return error.message
-      // With email confirmation on, there is no session yet.
-      if (!data.session) return 'Check your inbox to confirm the address, then sign in.'
-      return null
     },
     async signOut() {
       if (supabase) await supabase.auth.signOut()

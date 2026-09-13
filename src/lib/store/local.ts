@@ -1,11 +1,12 @@
 import type { LogEntry, Snapshot, Song, Topic } from '../types'
 import type { DataStore, NewLog, NewSong, NewTopic } from './types'
 
-const KEY = 'lowend.v1'
+const KEY = 'slapthatbass.v1'
+const OLD_KEY = 'lowend.v1'
 
 function read(): Snapshot {
   try {
-    const raw = localStorage.getItem(KEY)
+    const raw = localStorage.getItem(KEY) ?? localStorage.getItem(OLD_KEY)
     if (raw) return JSON.parse(raw) as Snapshot
   } catch {
     /* corrupted or blocked storage: start empty */
