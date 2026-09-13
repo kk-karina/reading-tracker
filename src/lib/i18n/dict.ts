@@ -155,6 +155,54 @@ export const DICT = {
     ru: 'Open Library хорошо знает англоязычные издания и почти не знает русские.',
     en: 'Open Library knows English editions well and Russian ones barely at all.',
   },
+  'chart.rhythm': { ru: 'Страниц в день за полгода', en: 'Pages per day, last 26 weeks' },
+  'chart.weeks': { ru: 'Страниц по неделям', en: 'Pages per week' },
+  'chart.weekdays': { ru: 'Пн Ср Пт', en: 'M W F' },
+  'chart.rest': { ru: 'Отдых', en: 'Rest' },
+  'chart.nothing': { ru: 'Ничего', en: 'Nothing' },
+  'chart.now': { ru: 'сейчас', en: 'now' },
+  'chart.avg': { ru: 'в среднем {n}', en: 'avg {n}' },
+
+  'shares.title': { ru: 'Из чего состоит полка', en: 'What the shelf is made of' },
+  'shares.other': { ru: 'Прочее', en: 'Other' },
+  'shares.empty': {
+    ru: 'Проставь жанр или язык у книг, и разбивка появится.',
+    en: 'Set a genre or a language on your books and the split appears.',
+  },
+  'lang.ru': { ru: 'Русский', en: 'Russian' },
+  'lang.en': { ru: 'Английский', en: 'English' },
+
+  'progress.noBooks': { ru: 'Пока ни одной книги.', en: 'No books yet.' },
+  'progress.toShelf': { ru: 'На полку', en: 'To the shelf' },
+  'progress.pickFocus': {
+    ru: 'Выбери главную книгу — она будет стоять здесь.',
+    en: 'Pick a focus book and it will stand here.',
+  },
+  'progress.alsoReading': { ru: 'Ещё читаю', en: 'Also reading' },
+  'progress.week': { ru: 'За 7 дней', en: 'Last 7 days' },
+  'progress.streak': { ru: 'Подряд', en: 'Streak' },
+  'progress.finishedYear': { ru: 'Прочитано за год', en: 'Finished this year' },
+  'progress.yearInBooks': { ru: 'Год в книгах', en: 'The year in books' },
+  'progress.yearEmpty': {
+    ru: 'Дочитанные книги встанут сюда обложками.',
+    en: 'Finished books will stand here, covers out.',
+  },
+  'progress.recentNotes': { ru: 'Последние мысли', en: 'Latest thoughts' },
+  'progress.notesEmpty': {
+    ru: 'Мысли из сессий будут появляться здесь — чтобы не забывались.',
+    en: 'Thoughts from your sessions will surface here, so they are not lost.',
+  },
+  'progress.stuck': { ru: 'Застряли', en: 'Gone quiet' },
+  'progress.stuckHint': { ru: 'Читаю, но больше двух недель без сессий', en: 'Being read, but untouched for over two weeks' },
+  'progress.stuckEmpty': { ru: 'Ничего не простаивает.', en: 'Nothing is stalling.' },
+  'progress.rhythmHint': { ru: 'Точка на день. Крупнее — больше страниц.', en: 'One dot per day. Bigger is more pages.' },
+  'progress.weeksHint': { ru: 'Последние 12 недель', en: 'Last 12 weeks' },
+  'progress.noSessions': { ru: 'Сессий пока нет', en: 'No sessions yet' },  'progress.ofTotal': { ru: 'из {n}', en: 'of {n}' },
+  // The unit on its own: the tile already shows the number in large type.
+  'progress.dayUnit': {
+    ru: { one: 'день', few: 'дня', many: 'дней' },
+    en: { one: 'day', other: 'days' },
+  },
 } satisfies Dict
 
 export type DictKey = keyof typeof DICT

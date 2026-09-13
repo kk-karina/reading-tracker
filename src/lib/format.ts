@@ -8,6 +8,9 @@ const UNITS: Record<Locale, { h: string; m: string; gap: string; today: string; 
 
 const TAGS: Record<Locale, string> = { en: 'en-GB', ru: 'ru-RU' }
 
+/** The BCP 47 tag behind a locale, for Intl formatting inside charts. */
+export const localeTag = (locale: Locale): string => TAGS[locale]
+
 export function fmtMinutes(min: number, locale: Locale): string {
   const u = UNITS[locale]
   if (min <= 0) return `0${u.gap}${u.m}`

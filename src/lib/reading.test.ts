@@ -66,3 +66,109 @@ describe('lastSessionDate', () => {
     expect(lastSessionDate('b1', [])).toBeNull()
   })
 })
+
+import { finishedInYear, sharesBy, streakDays, stuckBooks } from './reading'
+import type { Book } from './types'
+
+const b = (over: Partial<Book>): Book => ({
+  id: crypto.randomUUID(),
+  title: 'A book',
+  author: null,
+  pages: 300,
+  cover_url: null,
+  external_id: null,
+  genre: null,
+  language: null,
+  status: 'reading',
+  is_focus: false,
+  rating: null,
+  started_at: null,
+  finished_at: null,
+  sort: 0,
+  created_at: '2026-01-01T00:00:00Z',
+  updated_at: '2026-01-01T00:00:00Z',
+  ...over,
+})
+
+describe('streakDays', () => {
+  test('counts consecutive days ending today', () => {
+    const sessions = [s({ date: '2026-09-13' }), s({ date: '2026-09-12' }), s({ date: '2026-09-11' })]
+    expect(streakDays(sessions, '2026-09-13')).toBe(3)
+  })
+
+  test('still counts when today has not been read yet but yesterday was', () => {
+    const sessions = [s({ date: '2026-09-12' }), s({ date: '2026-09-11' })]
+    expect(streakDays(sessions, '2026-09-13')).toBe(2)
+  })
+
+  test('is broken by a gap of two days', () => {
+    const sessions = [s({ date: '2026-09-10' }), s({ date: '2026-09-09' })]
+    expect(streakDays(sessions, '2026-09-13')).toBe(0)
+  })
+
+  test('counts a day once however many sessions it holds', () => {
+    const sessions = [s({ date: '2026-09-13' }), s({ date: '2026-09-13' }), s({ date: '2026-09-12' })]
+    expect(streakDays(sessions, '2026-09-13')).toBe(2)
+  })
+
+  test('is zero with no sessions at all', () => {
+    expect(streakDays([], '2026-09-13')).toBe(0)
+  })
+})
+
+describe('stuckBooks', () => {
+  test('picks books being read whose last session is older than the cutoff', () => {
+    const slow = b({ id: 'slow' })
+    const fresh = b({ id: 'fresh' })
+    const sessions = [
+      s({ book_id: 'slow', date: '2026-08-01' }),
+      s({ book_id: 'fresh', date: '2026-09-12' }),
+    ]
+    expect(stuckBooks([slow, fresh], sessions, '2026-09-13', 14).map((x) => x.id)).toEqual(['slow'])
+  })
+
+  test('counts a book marked as being read but never opened', () => {
+    const never = b({ id: 'never' })
+    expect(stuckBooks([never], [], '2026-09-13', 14).map((x) => x.id)).toEqual(['never'])
+  })
+
+  test('ignores books that are not being read', () => {
+    const done = b({ id: 'done', status: 'finished' })
+    const wanted = b({ id: 'wanted', status: 'want' })
+    expect(stuckBooks([done, wanted], [], '2026-09-13', 14)).toEqual([])
+  })
+})
+
+describe('finishedInYear', () => {
+  test('counts books finished inside the given year', () => {
+    const books = [
+      b({ status: 'finished', finished_at: '2026-02-03' }),
+      b({ status: 'finished', finished_at: '2025-12-30' }),
+      b({ status: 'finished', finished_at: null }),
+      b({ status: 'reading', finished_at: '2026-05-05' }),
+    ]
+    expect(finishedInYear(books, 2026)).toHaveLength(1)
+  })
+})
+
+describe('sharesBy', () => {
+  test('groups books and orders the biggest group first', () => {
+    const books = [b({ genre: 'Бизнес' }), b({ genre: 'Психология' }), b({ genre: 'Бизнес' })]
+    expect(sharesBy(books, 'genre')).toEqual([
+      { key: 'Бизнес', count: 2 },
+      { key: 'Психология', count: 1 },
+    ])
+  })
+
+  test('leaves out books with the field empty rather than inventing a group', () => {
+    const books = [b({ genre: 'Бизнес' }), b({ genre: null })]
+    expect(sharesBy(books, 'genre')).toEqual([{ key: 'Бизнес', count: 1 }])
+  })
+
+  test('folds everything past the sixth group into one', () => {
+    const books = 'abcdefgh'.split('').map((g) => b({ genre: g }))
+    const shares = sharesBy(books, 'genre')
+    expect(shares).toHaveLength(6)
+    expect(shares[5]).toEqual({ key: null, count: 3 })
+  })
+})
