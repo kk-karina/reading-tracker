@@ -223,7 +223,7 @@ button {
   position: absolute;
   inset: 0;
   border-radius: 6px;
-  background: var(--hot);
+  background: color-mix(in srgb, var(--hot) 18%, var(--paper));
 }
 .nav a:first-child .nav-label {
   font-weight: 600;
