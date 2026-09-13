@@ -2,6 +2,7 @@ import { motion } from 'motion/react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import type { DictKey } from '../lib/i18n/dict'
 import type { Locale } from '../lib/i18n/translate'
+import { configError } from '../lib/supabase'
 import { useAuth } from '../state/AuthContext'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
@@ -76,6 +77,13 @@ export function Shell() {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
       >
+        {/* A broken backend configuration is not a passing error: it stays on
+            screen until it is fixed, because the app silently ran local instead. */}
+        {configError && (
+          <div className="error" style={{ marginBottom: 24 }}>
+            {configError}
+          </div>
+        )}
         {error && (
           <div className="error" style={{ marginBottom: 24 }}>
             {error}
