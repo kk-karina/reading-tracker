@@ -46,25 +46,36 @@ export function CursorDot() {
   )
 }
 
-/** Text whose letters do a little wave when hovered. */
+/** Text whose letters do a little wave when hovered. Wraps by word, not by letter. */
 export function Wave({ children, className }: { children: string; className?: string }) {
+  let n = 0
   return (
-    <motion.span className={className} whileHover="wave" style={{ display: 'inline-block' }}>
-      {children.split('').map((ch, i) => (
-        <motion.span
-          key={i}
-          custom={i}
-          variants={{
-            wave: (n: number) => ({
-              y: [0, -10, 0],
-              rotate: [0, n % 2 ? 6 : -6, 0],
-              transition: { delay: n * 0.03, duration: 0.45, ease: 'easeOut' },
-            }),
-          }}
-          style={{ display: 'inline-block', whiteSpace: 'pre' }}
-        >
-          {ch}
-        </motion.span>
+    <motion.span className={className} whileHover="wave">
+      {children.split(' ').map((word, w) => (
+        <span key={w}>
+          <span style={{ display: 'inline-block', whiteSpace: 'nowrap' }}>
+            {word.split('').map((ch) => {
+              const i = n++
+              return (
+                <motion.span
+                  key={i}
+                  custom={i}
+                  variants={{
+                    wave: (k: number) => ({
+                      y: [0, -10, 0],
+                      rotate: [0, k % 2 ? 6 : -6, 0],
+                      transition: { delay: k * 0.03, duration: 0.45, ease: 'easeOut' },
+                    }),
+                  }}
+                  style={{ display: 'inline-block' }}
+                >
+                  {ch}
+                </motion.span>
+              )
+            })}
+          </span>
+          {w < children.split(' ').length - 1 ? ' ' : ''}
+        </span>
       ))}
     </motion.span>
   )

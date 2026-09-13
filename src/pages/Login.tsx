@@ -4,24 +4,10 @@ import { Wave } from '../components/fun'
 import { Jelly } from '../components/ui'
 import { useAuth } from '../state/AuthContext'
 
-// One of these greets you at the door. Rotates on every load.
-const GREETINGS = [
-  'Somebody has to play the low notes.',
-  'Password first. Bass second.',
-  'Roots, fifths, password.',
-  'The bass has been waiting.',
-  'Still four strings. Still you.',
-  'No drummer required.',
-  'Members only. Member: one.',
-  'Tune up. Log in.',
-  'Nobody else has the password. Suspicious.',
-  'Low end, high standards.',
-  'Enter, then play something slowly.',
-]
+const GREETING = 'Somebody has to play the low notes.'
 
 export function Login() {
   const { signIn } = useAuth()
-  const [greeting] = useState(() => GREETINGS[Math.floor(Math.random() * GREETINGS.length)])
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
@@ -45,7 +31,7 @@ export function Login() {
       >
         <span className="label">slap that bass</span>
         <h1 className="display" style={{ marginTop: 28, fontSize: 40 }}>
-          <Wave>{greeting}</Wave>
+          <Wave>{GREETING}</Wave>
         </h1>
 
         <form onSubmit={submit}>
