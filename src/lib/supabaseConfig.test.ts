@@ -39,4 +39,18 @@ describe('resolveConfig', () => {
   test('names what it expected, so the message is actionable', () => {
     expect(() => resolveConfig('abcdefgh', KEY)).toThrow(/https:\/\//)
   })
+
+  test('shows only the start of the bad value, never the whole secret', () => {
+    // This message is rendered on a page that may be public. A secret key pasted
+    // into the wrong box must not be published along with the complaint.
+    const secret = 'sb_secret_pleaseDoNotPublishThisAnywhereEver'
+    let message = ''
+    try {
+      resolveConfig(secret, KEY)
+    } catch (e) {
+      message = (e as Error).message
+    }
+    expect(message).not.toContain('pleaseDoNotPublishThisAnywhereEver')
+    expect(message).toContain('sb_secret_pl…')
+  })
 })

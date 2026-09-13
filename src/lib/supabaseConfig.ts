@@ -20,17 +20,21 @@ export function resolveConfig(
   const key = rawKey?.trim() ?? ''
   if (!url || !key) return null
 
+  // This message can end up on a public page. Show just enough of the value to
+  // recognise the mistake — never enough to hand over a key pasted by accident.
+  const hint = url.length > 12 ? `${url.slice(0, 12)}…` : url
+
   let parsed: URL
   try {
     parsed = new URL(url)
   } catch {
     throw new Error(
-      `VITE_SUPABASE_URL is not a URL: "${url}". It should look like https://yourproject.supabase.co — copy Project URL from Supabase → Project Settings → API.`,
+      `VITE_SUPABASE_URL is not a URL: "${hint}". It should look like https://yourproject.supabase.co — copy Project URL from Supabase → Project Settings → API.`,
     )
   }
   if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') {
     throw new Error(
-      `VITE_SUPABASE_URL must start with https:// — got "${url}". Copy Project URL from Supabase → Project Settings → API.`,
+      `VITE_SUPABASE_URL must start with https:// — got "${hint}". Copy Project URL from Supabase → Project Settings → API.`,
     )
   }
   return { url, key }
