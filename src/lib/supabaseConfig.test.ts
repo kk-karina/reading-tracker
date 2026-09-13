@@ -17,6 +17,27 @@ describe('resolveConfig', () => {
     expect(resolveConfig('', '')).toBeNull()
   })
 
+  test('keeps only the origin, because Supabase URLs never carry a path', () => {
+    // The dashboard offers a "Data API URL" ending in /rest/v1/, which is the
+    // easiest thing to copy and the wrong thing to paste: the client appends its
+    // own paths to it and every request lands on /rest/v1/auth/v1/...
+    expect(resolveConfig('https://abcdefgh.supabase.co/rest/v1/', KEY)?.url).toBe(
+      'https://abcdefgh.supabase.co',
+    )
+    expect(resolveConfig('https://abcdefgh.supabase.co/', KEY)?.url).toBe(
+      'https://abcdefgh.supabase.co',
+    )
+    expect(resolveConfig('https://abcdefgh.supabase.co/auth/v1?x=1#y', KEY)?.url).toBe(
+      'https://abcdefgh.supabase.co',
+    )
+  })
+
+  test('leaves a bare origin alone', () => {
+    expect(resolveConfig('https://abcdefgh.supabase.co', KEY)?.url).toBe(
+      'https://abcdefgh.supabase.co',
+    )
+  })
+
   test('trims whitespace a copy-paste leaves behind', () => {
     expect(resolveConfig('  https://abcdefgh.supabase.co \n', ` ${KEY} `)).toEqual({
       url: 'https://abcdefgh.supabase.co',

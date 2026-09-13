@@ -37,5 +37,14 @@ export function resolveConfig(
       `VITE_SUPABASE_URL must start with https:// — got "${hint}". Copy Project URL from Supabase → Project Settings → API.`,
     )
   }
-  return { url, key }
+  // Only the origin. The dashboard shows a "Data API URL" ending in /rest/v1/,
+  // which is the easiest value to copy and the wrong one to paste: the client
+  // appends its own paths, so every call would land on /rest/v1/auth/v1/... and
+  // come back as "Invalid path specified in request URL".
+  if (parsed.origin !== url) {
+    console.warn(
+      `VITE_SUPABASE_URL had a path on it; using ${parsed.origin}. The project URL has no path.`,
+    )
+  }
+  return { url: parsed.origin, key }
 }
