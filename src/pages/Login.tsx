@@ -4,7 +4,7 @@ import { Wave } from '../components/fun'
 import { Jelly } from '../components/ui'
 import { useAuth } from '../state/AuthContext'
 
-const GREETING = 'Somebody has to play the low notes.'
+const GREETING = 'Tune up. Log in.'
 
 export function Login() {
   const { signIn } = useAuth()
