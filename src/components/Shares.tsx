@@ -8,20 +8,25 @@ import { Segmented } from './ui'
  * One horizontal part-to-whole bar. Not a pie and not a rose: with two or three
  * languages a circle is a stat tile drawn round, and petals bury close values.
  *
- * The palette is the validated categorical set, tuned into the album's range.
- * It clears every check including colour-blind separation; the one remaining
- * warning is contrast against the surface, relieved by naming each segment in
- * the legend beside its colour and by the 2px gaps between fills.
+ * Every segment is still named in the legend beside its swatch, with a 2px gap
+ * between fills, so the palest steps never have to carry meaning on their own.
  */
-// This exact order is what the validator passed; reordering changes which pairs
-// sit next to each other and so changes the result.
-const HUES = [
-  'var(--magenta)',
-  'var(--violet)',
-  'var(--sky)',
-  'var(--rose)',
-  'var(--indigo)',
-  'var(--cyan)',
+/**
+ * One hue from deep to pale rather than six different ones.
+ *
+ * The groups are already ordered by size, so lightness carries that order
+ * honestly — and it is the only encoding that survives being this muted. Six
+ * held-back hues fail the plain normal-vision separation check: they are hard
+ * to tell apart for anyone, colour blindness aside. Six steps of lightness are
+ * not.
+ */
+const RAMP = [
+  'var(--ramp-1)',
+  'var(--ramp-2)',
+  'var(--ramp-3)',
+  'var(--ramp-4)',
+  'var(--ramp-5)',
+  'var(--ramp-6)',
 ]
 
 type Field = 'genre' | 'language'
@@ -64,14 +69,14 @@ export function Shares({ books }: { books: Book[] }) {
             {shares.map((s, i) => (
               <span
                 key={s.key ?? '_rest'}
-                style={{ width: `${(s.count / total) * 100}%`, background: HUES[i % HUES.length] }}
+                style={{ width: `${(s.count / total) * 100}%`, background: RAMP[i % RAMP.length] }}
               />
             ))}
           </div>
           <ul className="shares-legend">
             {shares.map((s, i) => (
               <li key={s.key ?? '_rest'}>
-                <span className="cat-dot" style={{ background: HUES[i % HUES.length] }} />
+                <span className="cat-dot" style={{ background: RAMP[i % RAMP.length] }} />
                 <span>{name(s.key)}</span>
                 <span className="mono small muted">{s.count}</span>
               </li>
