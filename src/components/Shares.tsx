@@ -8,20 +8,20 @@ import { Segmented } from './ui'
  * One horizontal part-to-whole bar. Not a pie and not a rose: with two or three
  * languages a circle is a stat tile drawn round, and petals bury close values.
  *
- * The palette is the validated categorical set. Its contrast check warns on the
- * two lightest hues, and its worst pair sits in the CVD floor band — both are
- * relieved the same way, by naming every segment in the legend beside its colour
- * and by the 2px gaps between fills, so identity is never carried by colour alone.
+ * The palette is the validated categorical set, tuned into the album's range.
+ * It clears every check including colour-blind separation; the one remaining
+ * warning is contrast against the surface, relieved by naming each segment in
+ * the legend beside its colour and by the 2px gaps between fills.
  */
 // This exact order is what the validator passed; reordering changes which pairs
 // sit next to each other and so changes the result.
 const HUES = [
   'var(--magenta)',
-  'var(--teal)',
   'var(--violet)',
-  'var(--orange)',
+  'var(--sky)',
+  'var(--rose)',
+  'var(--indigo)',
   'var(--cyan)',
-  'var(--blue)',
 ]
 
 type Field = 'genre' | 'language'

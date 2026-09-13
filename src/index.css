@@ -15,20 +15,23 @@
   --accent-soft: var(--brand-soft);
   --danger: #b3243f;
 
-  /* Data hues stay a validated categorical set: lilac, pink and blue alone are
-     too close in hue to tell apart, especially under colour-blindness. */
-  --teal: #00a884;
-  --teal-d: #007a5e;
-  --violet: #6c4cff;
-  --violet-d: #4f35d6;
-  --cyan: #0aa6d6;
-  --cyan-d: #0076a3;
-  --blue: #2f6bff;
-  --blue-d: #1f4fd6;
-  --orange: #f4552b;
-  --orange-d: #c93a12;
-  --magenta: #c0219f;
-  --magenta-d: #99167d;
+  /* Data hues, in the order the validator passed — reordering changes which
+     pairs sit side by side and so changes the result. All six live in the
+     album's range and still clear every check, colour-blindness included. */
+  --magenta: #c026a8;
+  --violet: #8b5cf6;
+  --sky: #3fa9f5;
+  --rose: #e0499b;
+  --indigo: #6c4cff;
+  --cyan: #22b4d8;
+
+  /* Deep variants, for fills carrying white text and for focus rings. */
+  --magenta-d: #96197f;
+  --violet-d: #6533d6;
+  --sky-d: #1f6fb8;
+  --rose-d: #b32d72;
+  --indigo-d: #4f35d6;
+  --cyan-d: #147e9c;
 
   /* Chrome accents: the fuchsia and the satin blue off the sleeve. */
   --hot: #ff2fb4;
@@ -105,7 +108,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--teal-d);
+  outline: 2px solid var(--brand-2);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -318,8 +321,8 @@ button {
   border-color: var(--hot-2);
 }
 .btn.accent {
-  background: var(--teal-d);
-  border-color: var(--teal-d);
+  background: var(--brand);
+  border-color: var(--brand);
 }
 .btn.accent:hover {
   background: var(--brand-2);
@@ -347,8 +350,8 @@ button {
   border-color: var(--ink);
 }
 .link-btn.danger:hover {
-  color: var(--orange-d);
-  border-color: var(--orange-d);
+  color: var(--danger);
+  border-color: var(--danger);
 }
 
 .input,
@@ -658,7 +661,7 @@ button {
 }
 
 .error {
-  background: color-mix(in srgb, var(--orange) 14%, var(--paper));
+  background: color-mix(in srgb, var(--danger) 12%, var(--paper));
   color: var(--danger);
   border-radius: var(--r-sm);
   padding: 10px 14px;
@@ -1187,7 +1190,7 @@ button {
   gap: 8px;
 }
 .song .slot {
-  --s: var(--teal-d);
+  --s: var(--brand);
   font-family: var(--mono);
   font-size: 10px;
   letter-spacing: 0.06em;
@@ -1200,7 +1203,7 @@ button {
   white-space: nowrap;
 }
 .song .slot.growth {
-  --s: var(--blue-d);
+  --s: var(--indigo-d);
 }
 .song .slot.dream {
   --s: var(--magenta-d);
