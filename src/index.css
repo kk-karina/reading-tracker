@@ -1,39 +1,38 @@
 :root {
-  /* Neutral ground, one colour: a light satin blue. Nothing else is tinted. */
-  --bg: #f3f4f5;
+  /* Neutral ground, black ink, one active colour. Black carries data and the
+     secondary controls; lemon means "active, press here". */
+  --bg: #f2f3f4;
   --paper: #ffffff;
-  --ink: #16191c;
-  --ink-2: #5a6066;
-  --ink-3: #848a90;
-  --line: #e5e7e9;
-  --line-2: #d1d5d8;
+  --ink: #0e1012;
+  --ink-2: #4a4f54;
+  --ink-3: #757b80;
+  --line: #e2e4e6;
+  --line-2: #c9ccd0;
 
-  /* The satin blue. Light enough that fills carry dark text, with a deeper
-     step for anything that has to read as text or as a small mark. */
-  --brand: #a5d3e8;
-  --brand-2: #bbe0f0;
-  --brand-strong: #6bb4d6;
-  --brand-ink: #0f627f;
-  --brand-mute: #d6e9f2;
-  --brand-soft: #eef6fa;
-  --accent: var(--brand-strong);
+  --brand: #e9f86b;
+  --brand-2: #dcf03f;
+  --brand-soft: #f6fbd2;
+  /* Marks: a 3px bar or a chart dot in lemon would be invisible on a light
+     page, so anything thin is drawn in ink. */
+  --brand-strong: #0e1012;
+  --brand-mute: #c9ccd0;
+  --accent: var(--brand);
   --accent-soft: var(--brand-soft);
   --danger: #a8455f;
 
-  /* The shelf split rides the same blue from present to pale. Ordered by size,
-     so lightness carries the order; the swatches get a hairline so the palest
-     steps are still visible on white. */
-  --ramp-1: #3f92b5;
-  --ramp-2: #5aa5c4;
-  --ramp-3: #78b9d3;
-  --ramp-4: #97cbe0;
-  --ramp-5: #b3dae9;
-  --ramp-6: #cde7f1;
+  /* The shelf split is ordered by size and rides ink from full to pale: with
+     black as the data colour, lightness is what tells the segments apart. */
+  --ramp-1: #16181a;
+  --ramp-2: #3c4146;
+  --ramp-3: #656a70;
+  --ramp-4: #8e9399;
+  --ramp-5: #b5b9bd;
+  --ramp-6: #d9dcde;
 
-  --hot: #8fc9e3;
-  --hot-2: #74b9d8;
-  --hot-cyan: #a9dced;
-  --hot-blue: #c2dced;
+  --hot: #e9f86b;
+  --hot-2: #dcf03f;
+  --hot-cyan: #cfe9f5;
+  --hot-blue: #d8dde2;
 
   --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -99,7 +98,7 @@ button {
 }
 
 :focus-visible {
-  outline: 2px solid var(--brand-2);
+  outline: 2px solid var(--ink);
   outline-offset: 2px;
   border-radius: 4px;
 }
@@ -230,7 +229,7 @@ button {
   position: absolute;
   inset: 0;
   border-radius: 6px;
-  background: color-mix(in srgb, var(--hot) 50%, var(--paper));
+  background: var(--brand);
 }
 .nav a:first-child .nav-label {
   font-weight: 600;
@@ -269,7 +268,7 @@ button {
   height: 42px;
   padding: 0 20px;
   border-radius: 6px;
-  border: 1px solid var(--brand);
+  border: 1px solid var(--ink);
   background: var(--brand);
   color: var(--ink);
   font-weight: 500;
@@ -284,7 +283,7 @@ button {
 .btn:hover {
   transform: translateY(-2px) rotate(-1.5deg);
   background: var(--brand-2);
-  border-color: var(--brand-2);
+  border-color: var(--ink);
 }
 .btn:active {
   transform: translateY(0) scale(0.94) rotate(1deg);
@@ -294,18 +293,18 @@ button {
   pointer-events: none;
 }
 .btn.ghost {
-  background: var(--paper);
+  background: transparent;
   color: var(--ink);
-  border-color: var(--line-2);
+  border-color: var(--ink);
 }
 .btn.ghost:hover {
-  background: var(--paper);
+  background: var(--brand-soft);
   border-color: var(--ink);
   color: var(--ink);
 }
 .btn.hot {
   background: var(--hot);
-  border-color: var(--hot);
+  border-color: var(--ink);
   color: var(--ink);
 }
 .btn.hot:hover {
@@ -314,11 +313,11 @@ button {
 }
 .btn.accent {
   background: var(--brand);
-  border-color: var(--brand);
+  border-color: var(--ink);
 }
 .btn.accent:hover {
   background: var(--brand-2);
-  border-color: var(--brand-2);
+  border-color: var(--ink);
 }
 
 .btn.sm {
@@ -429,7 +428,7 @@ button {
   color: var(--ink);
 }
 .seg button.on {
-  color: #fff;
+  color: var(--ink);
 }
 .seg .seg-ink {
   position: absolute;
@@ -1607,7 +1606,7 @@ button {
   display: block;
   height: 100%;
   border-radius: 999px;
-  background: var(--brand-strong);
+  background: var(--ink);
   transition: width 0.5s var(--ease-out);
 }
 
@@ -1644,8 +1643,9 @@ button {
 }
 
 .btn.ghost.on {
-  border-color: var(--accent);
-  color: var(--accent);
+  background: var(--brand);
+  border-color: var(--ink);
+  color: var(--ink);
 }
 
 /* ---------- sheet ---------- */

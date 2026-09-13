@@ -214,7 +214,7 @@ export function WeeklyBars({ sessions }: { sessions: Session[] }) {
                   y={y(0) - h}
                   height={h}
                   rx={4}
-                  fill={current ? 'var(--brand-strong)' : 'var(--brand)'}
+                  fill={current ? 'var(--brand-strong)' : 'var(--brand-mute)'}
                 />
               ) : (
                 <circle cx={cx} cy={y(0)} r={2} fill="var(--line-2)" />
