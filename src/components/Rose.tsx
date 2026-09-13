@@ -83,7 +83,7 @@ export function Rose({ minutes, onPick }: Props) {
               strokeLinejoin="round"
             />
           )}
-          {shape.map(([x, y], i) => {
+          {total > 0 && shape.map(([x, y], i) => {
             const id = CATEGORIES[i].id
             const isLow = i === lowest
             const on = hover === id
