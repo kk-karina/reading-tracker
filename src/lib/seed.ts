@@ -1,50 +1,52 @@
 import type { NewBook, NewSession } from './store'
 
 /**
- * The five books Karina named, as a one-click start. Page counts are filled in
- * only where a catalogue actually gave one — guessing them would put invented
- * numbers into real progress bars.
+ * A sample shelf, so an empty install has something to look at. Four real books
+ * with real covers and real page counts from Open Library — invented numbers
+ * would end up in progress bars that mean nothing.
  */
 interface SeedBook extends NewBook {
-  /** Where she already is, for a book that is underway. */
+  /** Where this one is already up to, so a progress bar has something to show. */
   page_to?: number
 }
 
+const cover = (id: number) => `https://covers.openlibrary.org/b/id/${id}-L.jpg`
+
 export const SEED_BOOKS: SeedBook[] = [
   {
-    title: 'Эстетический интеллект. Как его развивать и использовать в бизнесе и жизни',
-    author: 'Полин Браун',
-    pages: null,
-    cover_url: null,
-    external_id: null,
-    genre: 'Бизнес',
-    language: 'ru',
-    status: 'want',
-    started_at: null,
-    finished_at: null,
-    sort: 0,
-  },
-  {
-    title: 'Всегда желанные. Как сохранить страсть в длительных отношениях',
-    author: 'Эстер Перель',
-    pages: null,
-    cover_url: null,
-    external_id: null,
-    genre: 'Психология',
-    language: 'ru',
+    title: 'The Left Hand of Darkness',
+    author: 'Ursula K. Le Guin',
+    pages: 304,
+    cover_url: cover(10618463),
+    external_id: '/works/OL59800W',
+    genre: 'Fiction',
+    language: 'en',
     status: 'reading',
     started_at: null,
     finished_at: null,
-    sort: 1,
-    page_to: 136,
+    sort: 0,
+    page_to: 96,
   },
   {
-    title: 'Pitch Anything',
-    author: 'Oren Klaff',
-    pages: 225,
-    cover_url: 'https://covers.openlibrary.org/b/id/7304551-L.jpg',
-    external_id: '/works/OL15415557W',
-    genre: 'Бизнес',
+    title: 'Thinking, Fast and Slow',
+    author: 'Daniel Kahneman',
+    pages: 528,
+    cover_url: cover(13290711),
+    external_id: '/works/OL15992072W',
+    genre: 'Non-fiction',
+    language: 'en',
+    status: 'want',
+    started_at: null,
+    finished_at: null,
+    sort: 1,
+  },
+  {
+    title: 'Pride and Prejudice',
+    author: 'Jane Austen',
+    pages: 351,
+    cover_url: cover(14348537),
+    external_id: '/works/OL66554W',
+    genre: 'Fiction',
     language: 'en',
     status: 'want',
     started_at: null,
@@ -52,30 +54,17 @@ export const SEED_BOOKS: SeedBook[] = [
     sort: 2,
   },
   {
-    title: 'Крыша. 20 лет со смерти СССР. Устная история рэкета',
-    author: 'Евгений Вышенков',
-    pages: null,
-    cover_url: null,
-    external_id: null,
-    genre: 'Документальное',
-    language: 'ru',
-    status: 'want',
-    started_at: null,
-    finished_at: null,
-    sort: 3,
-  },
-  {
-    title: 'Crucial Conversations',
-    author: 'Kerry Patterson',
-    pages: 272,
-    cover_url: 'https://covers.openlibrary.org/b/id/1711809-L.jpg',
-    external_id: '/works/OL282391W',
-    genre: 'Психология',
+    title: 'Meditations',
+    author: 'Marcus Aurelius',
+    pages: 158,
+    cover_url: cover(13202688),
+    external_id: '/works/OL28521353W',
+    genre: 'Philosophy',
     language: 'en',
     status: 'want',
     started_at: null,
     finished_at: null,
-    sort: 4,
+    sort: 3,
   },
 ]
 

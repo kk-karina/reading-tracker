@@ -101,10 +101,10 @@ export const DICT = {
 
   'shelf.add': { ru: 'Добавить книгу', en: 'Add a book' },
   'shelf.empty': { ru: 'Полка пока пустая.', en: 'The shelf is empty.' },
-  'shelf.loadMine': { ru: 'Загрузить мои пять книг', en: 'Load my five books' },
-  'shelf.loadMineHint': {
-    ru: 'Те, что ты назвала: Браун, Перель, Клафф, Вышенков, Паттерсон.',
-    en: 'The ones you named: Brown, Perel, Klaff, Vyshenkov, Patterson.',
+  'shelf.loadSample': { ru: 'Загрузить пример', en: 'Load a sample shelf' },
+  'shelf.sampleHint': {
+    ru: 'Четыре книги с обложками — посмотреть, как всё выглядит.',
+    en: 'Four books with covers, to see how it all looks.',
   },
 
   'book.pagesOf': { ru: '{page} из {total}', en: '{page} of {total}' },

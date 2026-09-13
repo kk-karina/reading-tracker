@@ -47,9 +47,9 @@ export function Shelf() {
           </p>
           <div className="row-tight">
             <Jelly className="btn ghost sm" onClick={loadSeed} disabled={seeding}>
-              {t('shelf.loadMine')}
+              {t('shelf.loadSample')}
             </Jelly>
-            <span className="small faint">{t('shelf.loadMineHint')}</span>
+            <span className="small faint">{t('shelf.sampleHint')}</span>
           </div>
         </div>
       ) : (

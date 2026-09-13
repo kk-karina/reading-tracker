@@ -23,13 +23,17 @@ describe('loading the starter shelf', () => {
     }
 
     const snap = await localStore.load()
-    expect(snap.books).toHaveLength(5)
-    expect(snap.books.map((b) => b.status)).toEqual(['want', 'reading', 'want', 'want', 'want'])
+    // Tied to the shape of the sample, not to which books happen to be in it.
+    expect(snap.books).toHaveLength(SEED_BOOKS.length)
+    expect(snap.books.map((b) => b.title)).toEqual(SEED_BOOKS.map((b) => b.title))
 
-    const underway = snap.books.find((b) => b.status === 'reading')
-    expect(snap.sessions).toHaveLength(1)
-    expect(snap.sessions[0].book_id).toBe(underway?.id)
-    expect(snap.sessions[0].page_to).toBe(136)
+    const started = SEED_BOOKS.filter((b) => b.page_to)
+    expect(snap.sessions).toHaveLength(started.length)
+    for (const seed of started) {
+      const book = snap.books.find((b) => b.title === seed.title)
+      const session = snap.sessions.find((s) => s.book_id === book?.id)
+      expect(session?.page_to).toBe(seed.page_to)
+    }
   })
 
   test('an empty shelf stays empty between loads', async () => {
