@@ -94,6 +94,67 @@ export const DICT = {
     ru: 'Страница книги появится на второй фазе.',
     en: 'The book page arrives in phase two.',
   },
+  'status.want': { ru: 'Хочу прочитать', en: 'Want to read' },
+  'status.reading': { ru: 'Читаю', en: 'Reading' },
+  'status.finished': { ru: 'Прочитано', en: 'Finished' },
+  'status.abandoned': { ru: 'Заброшено', en: 'Set aside' },
+
+  'shelf.add': { ru: 'Добавить книгу', en: 'Add a book' },
+  'shelf.empty': { ru: 'Полка пока пустая.', en: 'The shelf is empty.' },
+  'shelf.loadMine': { ru: 'Загрузить мои пять книг', en: 'Load my five books' },
+  'shelf.loadMineHint': {
+    ru: 'Те, что ты назвала: Браун, Перель, Клафф, Вышенков, Паттерсон.',
+    en: 'The ones you named: Brown, Perel, Klaff, Vyshenkov, Patterson.',
+  },
+
+  'book.pagesOf': { ru: '{page} из {total}', en: '{page} of {total}' },
+  'book.pagesUnknown': { ru: 'страниц не указано', en: 'page count not set' },
+  'book.notOpened': { ru: 'Ещё не открыта', en: 'Not opened yet' },
+  'book.lastRead': { ru: 'Последний раз {date}', en: 'Last read {date}' },
+  'book.makeFocus': { ru: 'Сделать главной', en: 'Make it the focus' },
+  'book.isFocus': { ru: 'Главная книга', en: 'In focus' },
+  'book.edit': { ru: 'Изменить', en: 'Edit' },
+  'book.delete': { ru: 'Удалить', en: 'Delete' },
+  'book.confirmDelete': {
+    ru: 'Удалить книгу вместе с её сессиями и заметками?',
+    en: 'Delete the book together with its sessions and notes?',
+  },
+  'book.notFound': { ru: 'Такой книги нет.', en: 'No such book.' },
+  'book.sessionsSoon': {
+    ru: 'Сессии и мысли появятся на третьей фазе.',
+    en: 'Sessions and thoughts arrive in phase three.',
+  },
+
+  'form.title': { ru: 'Название', en: 'Title' },
+  'form.author': { ru: 'Автор', en: 'Author' },
+  'form.pages': { ru: 'Страниц', en: 'Pages' },
+  'form.cover': { ru: 'Ссылка на обложку', en: 'Cover image URL' },
+  'form.coverHint': {
+    ru: 'Необязательно. Без неё обложка рисуется из названия.',
+    en: 'Optional. Without it the cover is drawn from the title.',
+  },
+  'form.genre': { ru: 'Жанр', en: 'Genre' },
+  'form.language': { ru: 'Язык книги', en: 'Book language' },
+  'form.status': { ru: 'Статус', en: 'Status' },
+  'form.save': { ru: 'Сохранить', en: 'Save' },
+  'form.cancel': { ru: 'Отмена', en: 'Cancel' },
+  'form.titleRequired': { ru: 'Без названия не сохранить.', en: 'A title is required.' },
+
+  'search.label': { ru: 'Найти по названию', en: 'Search by title' },
+  'search.action': { ru: 'Найти', en: 'Search' },
+  'search.busy': { ru: 'Ищу…', en: 'Searching…' },
+  'search.none': {
+    ru: 'Ничего не нашлось — заполни поля руками, это нормально.',
+    en: 'Nothing found — fill the fields in by hand, that is fine.',
+  },
+  'search.failed': {
+    ru: 'Поиск недоступен. Заполни поля руками.',
+    en: 'Search is unavailable. Fill the fields in by hand.',
+  },
+  'search.hint': {
+    ru: 'Open Library хорошо знает англоязычные издания и почти не знает русские.',
+    en: 'Open Library knows English editions well and Russian ones barely at all.',
+  },
 } satisfies Dict
 
 export type DictKey = keyof typeof DICT

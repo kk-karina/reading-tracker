@@ -1441,3 +1441,305 @@ button {
   padding: 4px 10px;
   font-size: 12px;
 }
+
+/* ---------- books standing on a shelf ---------- */
+
+.cover {
+  position: relative;
+  flex: none;
+  aspect-ratio: 2 / 3;
+  border-radius: 2px 5px 5px 2px;
+  background: var(--cover-bg, #2b2b2e);
+  color: var(--cover-ink, #f0efee);
+  overflow: hidden;
+  isolation: isolate;
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.14),
+    0 1px 1px rgba(0, 0, 0, 0.1),
+    0 10px 20px -8px rgba(0, 0, 0, 0.32);
+  transition: box-shadow 0.25s var(--ease-out), transform 0.25s var(--ease-out);
+}
+
+.cover-sm { width: 62px; }
+.cover-md { width: 108px; }
+.cover-lg { width: 184px; }
+
+.cover img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The spine: the page block curving away into the binding. */
+.cover-spine {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 9%;
+  min-width: 5px;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.36),
+    rgba(0, 0, 0, 0.1) 55%,
+    rgba(255, 255, 255, 0.1)
+  );
+  border-right: 1px solid rgba(255, 255, 255, 0.09);
+}
+
+/* One soft light source, top-left, so the whole shelf is lit the same way. */
+.cover-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0) 42%);
+  pointer-events: none;
+}
+
+.cover-art {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  height: 100%;
+  padding: 14% 10% 12% 16%;
+}
+
+.cover-title {
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.01em;
+  /* Russian titles are long and their words do not break on their own. */
+  overflow-wrap: anywhere;
+  hyphens: auto;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 5;
+}
+
+.cover-author {
+  margin-top: auto;
+  opacity: 0.72;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.cover-sm .cover-title { font-size: 8px; -webkit-line-clamp: 5; }
+.cover-sm .cover-author { font-size: 7px; }
+.cover-md .cover-title { font-size: 12px; -webkit-line-clamp: 6; }
+.cover-md .cover-author { font-size: 10px; }
+.cover-lg .cover-title { font-size: 17px; -webkit-line-clamp: 8; }
+.cover-lg .cover-author { font-size: 13px; }
+
+/* ---------- shelf ---------- */
+
+.shelf { margin-top: 34px; }
+
+.shelf-label {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+/* A hairline under the row reads as the shelf edge without drawing furniture. */
+.shelf-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 28px 26px;
+  padding-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+
+.shelf-book {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 108px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.shelf-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.shelf-title {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.3;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.shelf-meta .small { font-size: 11px; }
+
+.focus-dot {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: var(--hot);
+  box-shadow: 0 0 0 3px var(--bg);
+}
+
+/* ---------- progress meter ---------- */
+
+.meter {
+  height: 3px;
+  margin-top: 5px;
+  border-radius: 999px;
+  background: var(--line-2);
+  overflow: hidden;
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.5s var(--ease-out);
+}
+
+.meter.big { height: 6px; margin: 14px 0 0; max-width: 420px; }
+
+/* ---------- book page ---------- */
+
+.book-head {
+  display: flex;
+  gap: 38px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.book-info { flex: 1 1 300px; min-width: 0; }
+.book-title { font-size: clamp(26px, 4vw, 40px); margin: 0; }
+.book-author { margin: 10px 0 0; }
+
+.book-numbers {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.book-last { margin: 10px 0 0; }
+
+.book-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.btn.ghost.on {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ---------- sheet ---------- */
+
+.sheet-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6vh 16px;
+  overflow-y: auto;
+  background: rgba(18, 20, 22, 0.34);
+  backdrop-filter: blur(2px);
+}
+
+.sheet {
+  width: min(620px, 100%);
+  padding: 26px 28px 30px;
+  border-radius: var(--r-lg);
+  background: var(--paper);
+  box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.4);
+}
+
+.sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.sheet-title { font-size: 24px; margin: 0; }
+
+.book-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 14px;
+}
+
+.row-tight {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.row-tight .input { flex: 1 1 160px; }
+
+.search-box {
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg);
+}
+
+.results {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.results button {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.results button:hover { background: var(--paper); }
+.r-title { font-weight: 500; }
+
+/* The tilt is a static transform: a book leaning on the shelf, not an animation
+   the page has to wait for. */
+.book-cover-tilt {
+  transform: rotate(-1.5deg);
+  transform-origin: bottom left;
+}
