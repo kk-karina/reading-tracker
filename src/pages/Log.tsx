@@ -192,7 +192,7 @@ export function Log() {
 
           <div className="field">
             <span className="label">How did it go? (optional)</span>
-            <div className="faces" role="radiogroup" aria-label="Session rating">
+            <div className="rates" role="radiogroup" aria-label="Session rating">
               {FACES.map((f, i) => {
                 const v = i + 1
                 const on = rating === v
@@ -204,7 +204,7 @@ export function Log() {
                     aria-checked={on}
                     aria-label={FACE_LABELS[i]}
                     title={FACE_LABELS[i]}
-                    className={`face${on ? ' on' : ''}${rating && !on ? ' dim' : ''}`}
+                    className={`rate${on ? ' on' : ''}${rating && !on ? ' dim' : ''}`}
                     onClick={() => setRating(on ? null : v)}
                     whileHover={{ scale: 1.25, rotate: i % 2 ? 8 : -8 }}
                     whileTap={{ scale: 0.8 }}

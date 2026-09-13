@@ -1260,11 +1260,11 @@ button {
   color: var(--ink-2);
 }
 
-.faces {
+.rates {
   display: flex;
   gap: 6px;
 }
-.face {
+.rate {
   width: 44px;
   height: 44px;
   border-radius: 6px;
@@ -1276,14 +1276,14 @@ button {
   place-items: center;
   transition: border-color 0.2s, background 0.2s, filter 0.2s, opacity 0.2s;
 }
-.face:hover {
+.rate:hover {
   border-color: var(--ink);
 }
-.face.on {
+.rate.on {
   border-color: var(--green);
   background: var(--green-soft);
 }
-.face.dim {
+.rate.dim {
   filter: grayscale(1);
   opacity: 0.55;
 }
