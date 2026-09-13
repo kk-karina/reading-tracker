@@ -57,6 +57,7 @@ export function buildDemo(topics: Topic[]): Snapshot {
         topic_id: topic?.id ?? null,
         minutes: [5, 8, 10, 10, 12, 15, 20, 25][Math.floor(rand() * 8)],
         note: rand() < 0.3 ? 'Kept it slow. Clean attacks before speed.' : null,
+        rating: rand() < 0.7 ? 2 + Math.floor(rand() * 4) : null,
         created_at: now,
       })
     }

@@ -2,7 +2,7 @@ import type { LogEntry, Snapshot, Song, Topic } from '../types'
 
 export type NewTopic = Pick<Topic, 'category' | 'title' | 'sort'>
 export type NewSong = Pick<Song, 'artist' | 'title' | 'status' | 'link' | 'slot' | 'sort'>
-export type NewLog = Pick<LogEntry, 'date' | 'category' | 'topic_id' | 'minutes' | 'note'>
+export type NewLog = Pick<LogEntry, 'date' | 'category' | 'topic_id' | 'minutes' | 'note' | 'rating'>
 
 export interface DataStore {
   load(): Promise<Snapshot>

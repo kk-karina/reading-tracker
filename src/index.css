@@ -1260,6 +1260,42 @@ button {
   color: var(--ink-2);
 }
 
+.faces {
+  display: flex;
+  gap: 6px;
+}
+.face {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  border: 1px solid var(--line-2);
+  background: var(--paper);
+  font-size: 22px;
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  transition: border-color 0.2s, background 0.2s, filter 0.2s, opacity 0.2s;
+}
+.face:hover {
+  border-color: var(--ink);
+}
+.face.on {
+  border-color: var(--green);
+  background: var(--green-soft);
+}
+.face.dim {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+.face-sm {
+  font-size: 13px;
+  margin: 0 6px;
+  vertical-align: -1px;
+}
+.entry .m .face-sm {
+  margin: 0 0 0 8px;
+}
+
 .day {
   margin-bottom: 28px;
 }

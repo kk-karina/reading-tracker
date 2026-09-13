@@ -36,6 +36,7 @@ export interface LogEntry {
   topic_id: string | null
   minutes: number
   note: string | null
+  rating: number | null // 1–5, how the session felt; optional
   created_at: string
 }
 

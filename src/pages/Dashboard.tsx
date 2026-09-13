@@ -10,6 +10,7 @@ import { Burst, Counter } from '../components/ui'
 import { CATEGORY_BY_ID } from '../lib/categories'
 import { daysAgoISO, fmtDate, fmtMinutes, todayISO } from '../lib/format'
 import { STRINGS, pluck as play } from '../lib/pluck'
+import { face } from '../lib/rating'
 import { countByStatus, minutesByCategory, minutesByTopic, useData } from '../state/DataContext'
 
 const fadeUp = (i: number) => ({
@@ -241,7 +242,10 @@ export function Dashboard() {
                         <span className="muted"> · {topicName(l.topic_id)}</span>
                       )}
                     </span>
-                    <span className="mono small">{fmtMinutes(l.minutes)}</span>
+                    <span className="mono small">
+                      {face(l.rating) && <span className="face-sm">{face(l.rating)}</span>}
+                      {fmtMinutes(l.minutes)}
+                    </span>
                   </div>
                 ))}
               </div>

@@ -31,6 +31,7 @@ create table if not exists public.log_entries (
   topic_id uuid references public.topics(id) on delete set null,
   minutes integer not null check (minutes > 0),
   note text,
+  rating smallint check (rating between 1 and 5),
   created_at timestamptz not null default now()
 );
 

@@ -5,6 +5,7 @@ import { Toast } from '../components/fun'
 import { Burst, Jelly, Segmented, listItem } from '../components/ui'
 import { CATEGORIES, CATEGORY_BY_ID } from '../lib/categories'
 import { fmtDate, fmtMinutes, todayISO } from '../lib/format'
+import { FACES, FACE_LABELS, face } from '../lib/rating'
 import type { CategoryId, LogEntry } from '../lib/types'
 import { useData } from '../state/DataContext'
 
@@ -25,6 +26,7 @@ export function Log() {
   const [topicId, setTopicId] = useState<string>(state?.topic_id ?? '')
   const [minutes, setMinutes] = useState<string>('')
   const [note, setNote] = useState('')
+  const [rating, setRating] = useState<number | null>(null)
   const [saved, setSaved] = useState(false)
   const [burst, setBurst] = useState(0)
   const [toast, setToast] = useState<{ id: number; text: string }>({ id: 0, text: '' })
@@ -56,6 +58,7 @@ export function Log() {
     setMinutes('')
     setNote('')
     setTopicId('')
+    setRating(null)
   }
 
   function startEdit(l: LogEntry) {
@@ -65,6 +68,7 @@ export function Log() {
     setTopicId(l.topic_id ?? '')
     setMinutes(String(l.minutes))
     setNote(l.note ?? '')
+    setRating(l.rating ?? null)
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
@@ -78,6 +82,7 @@ export function Log() {
       topic_id: topicId || null,
       minutes: m,
       note: note.trim() || null,
+      rating,
     }
     if (editing) await updateLog(editing.id, payload)
     else {
@@ -185,6 +190,34 @@ export function Log() {
             />
           </label>
 
+          <div className="field">
+            <span className="label">How did it go? (optional)</span>
+            <div className="faces" role="radiogroup" aria-label="Session rating">
+              {FACES.map((f, i) => {
+                const v = i + 1
+                const on = rating === v
+                return (
+                  <motion.button
+                    key={v}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    aria-label={FACE_LABELS[i]}
+                    title={FACE_LABELS[i]}
+                    className={`face${on ? ' on' : ''}${rating && !on ? ' dim' : ''}`}
+                    onClick={() => setRating(on ? null : v)}
+                    whileHover={{ scale: 1.25, rotate: i % 2 ? 8 : -8 }}
+                    whileTap={{ scale: 0.8 }}
+                    animate={on ? { scale: [1, 1.5, 1.2], rotate: [0, -12, 0] } : { scale: 1, rotate: 0 }}
+                    transition={{ type: 'spring', stiffness: 500, damping: 14 }}
+                  >
+                    {f}
+                  </motion.button>
+                )
+              })}
+            </div>
+          </div>
+
           <label className="field">
             <span className="label">Note (optional)</span>
             <textarea
@@ -223,7 +256,10 @@ export function Log() {
                 <AnimatePresence initial={false}>
                   {d.items.map((l) => (
                     <motion.div key={l.id} className="entry" layout="position" {...listItem}>
-                      <span className="m">{l.minutes}m</span>
+                      <span className="m">
+                        {l.minutes}m
+                        {face(l.rating) && <span className="face-sm">{face(l.rating)}</span>}
+                      </span>
                       <div>
                         <span className="cat-dot" style={{ background: CATEGORY_BY_ID[l.category].color }} />
                         <span className="cat">{CATEGORY_BY_ID[l.category].name}</span>
