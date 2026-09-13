@@ -24,6 +24,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      # Every push to main publishes straight to a public site, so the tests are
+      # the gate rather than a report: a failure here means nothing is deployed.
+      - run: npm test
+      - run: npm run lint
       - run: npm run build
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
