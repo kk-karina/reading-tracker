@@ -9,14 +9,14 @@ export interface Tone {
 }
 
 const TONES: Tone[] = [
-  { bg: '#1f3a34', ink: '#f1eee4' }, // deep green
-  { bg: '#5c1f1f', ink: '#f6ece2' }, // oxblood
-  { bg: '#1d2f4a', ink: '#edf1f7' }, // navy
-  { bg: '#6b4a12', ink: '#fbf3e2' }, // tobacco
-  { bg: '#3e2350', ink: '#f2ecf7' }, // plum
-  { bg: '#12464b', ink: '#e8f3f3' }, // teal
-  { bg: '#2b2b2e', ink: '#efeeed' }, // charcoal
-  { bg: '#7a3418', ink: '#fbeee4' }, // terracotta
+  { bg: '#4b1d63', ink: '#f4ecf8' }, // aubergine
+  { bg: '#8e1e5c', ink: '#fdeaf3' }, // fuchsia wine
+  { bg: '#2b2d6b', ink: '#e9ecfb' }, // indigo
+  { bg: '#1f5566', ink: '#e6f3f6' }, // satin blue
+  { bg: '#6b2f7a', ink: '#f8ecfa' }, // orchid
+  { bg: '#a33a6e', ink: '#fdeef4' }, // rose
+  { bg: '#2e2a3d', ink: '#eeecf3' }, // slate plum
+  { bg: '#3f4a8c', ink: '#eaedf9' }, // periwinkle
 ]
 
 /** Same title, same colour, every time and on every device. */

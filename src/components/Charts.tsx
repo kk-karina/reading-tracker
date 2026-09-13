@@ -120,7 +120,7 @@ export function Rhythm({ sessions }: { sessions: Session[] }) {
                 cx={c.x}
                 cy={c.y}
                 r={r}
-                fill={c.pages === 0 ? 'var(--line-2)' : 'var(--green)'}
+                fill={c.pages === 0 ? 'var(--line-2)' : 'var(--brand)'}
                 fillOpacity={c.pages === 0 ? 1 : 0.35 + share * 0.65}
               />
               {c.iso === today && (
@@ -214,7 +214,7 @@ export function WeeklyBars({ sessions }: { sessions: Session[] }) {
                   y={y(0) - h}
                   height={h}
                   rx={4}
-                  fill={current ? 'var(--green)' : 'var(--teal-d)'}
+                  fill={current ? 'var(--brand)' : 'var(--brand-mute)'}
                 />
               ) : (
                 <circle cx={cx} cy={y(0)} r={2} fill="var(--line-2)" />

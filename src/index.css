@@ -1,18 +1,22 @@
 :root {
-  --bg: #f0f2f3;
-  --paper: #ffffff;
-  --ink: #121416;
-  --ink-2: #5c6164;
-  --ink-3: #737879;
-  --line: #e1e4e6;
-  --line-2: #ccd1d4;
-  --green: #0c3b32;
-  --green-2: #145247;
-  --green-soft: #dcebe6;
-  --accent: var(--green);
-  --accent-soft: var(--green-soft);
+  /* Confessions-era satin: lilac ground, fuchsia accent, a wash of pale blue. */
+  --bg: #f1eaf7;
+  --paper: #fdfaff;
+  --ink: #1e1526;
+  --ink-2: #5b4f6b;
+  --ink-3: #6e6282;
+  --line: #e6dcf0;
+  --line-2: #d0c1e2;
+  --brand: #63267f;
+  --brand-2: #7a3aa5;
+  --brand-mute: #a97fc6;
+  --brand-soft: #ece0f7;
+  --accent: var(--brand);
+  --accent-soft: var(--brand-soft);
+  --danger: #b3243f;
 
-  /* category + UI hues: vivid for marks and tints, deep for text and fills under white text */
+  /* Data hues stay a validated categorical set: lilac, pink and blue alone are
+     too close in hue to tell apart, especially under colour-blindness. */
   --teal: #00a884;
   --teal-d: #007a5e;
   --violet: #6c4cff;
@@ -23,11 +27,14 @@
   --blue-d: #1f4fd6;
   --orange: #f4552b;
   --orange-d: #c93a12;
-  --magenta: #ff1dce;
-  --magenta-d: #b21a98;
-  --hot: #ff1dce;
-  --hot-cyan: #1dceff;
-  --hot-lime: #ceff1d;
+  --magenta: #c0219f;
+  --magenta-d: #99167d;
+
+  /* Chrome accents: the fuchsia and the satin blue off the sleeve. */
+  --hot: #ff2fb4;
+  --hot-2: #e6199c;
+  --hot-cyan: #45d2ff;
+  --hot-blue: #9db4ff;
 
   --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
@@ -52,7 +59,12 @@
 html,
 body {
   margin: 0;
-  background: var(--bg);
+  background:
+    radial-gradient(1180px 680px at 10% -14%, #f8dcf2 0%, rgba(248, 220, 242, 0) 68%),
+    radial-gradient(980px 580px at 98% -6%, #d9e6fd 0%, rgba(217, 230, 253, 0) 64%),
+    radial-gradient(760px 520px at 50% 108%, #f0dcfa 0%, rgba(240, 220, 250, 0) 70%),
+    var(--bg);
+  background-attachment: fixed;
   color: var(--ink);
   font-family: var(--font);
   font-size: 15px;
@@ -147,7 +159,7 @@ button {
 }
 .icon {
   flex: none;
-  color: var(--green);
+  color: var(--brand);
 }
 .label .icon {
   width: 15px;
@@ -262,8 +274,8 @@ button {
   height: 42px;
   padding: 0 20px;
   border-radius: 6px;
-  border: 1px solid var(--green);
-  background: var(--green);
+  border: 1px solid var(--brand);
+  background: var(--brand);
   color: #fff;
   font-weight: 500;
   white-space: nowrap;
@@ -276,8 +288,8 @@ button {
 }
 .btn:hover {
   transform: translateY(-2px) rotate(-1.5deg);
-  background: var(--green-2);
-  border-color: var(--green-2);
+  background: var(--brand-2);
+  border-color: var(--brand-2);
 }
 .btn:active {
   transform: translateY(0) scale(0.94) rotate(1deg);
@@ -302,16 +314,16 @@ button {
   color: var(--ink);
 }
 .btn.hot:hover {
-  background: #e600b5;
-  border-color: #e600b5;
+  background: var(--hot-2);
+  border-color: var(--hot-2);
 }
 .btn.accent {
   background: var(--teal-d);
   border-color: var(--teal-d);
 }
 .btn.accent:hover {
-  background: var(--green-2);
-  border-color: var(--green-2);
+  background: var(--brand-2);
+  border-color: var(--brand-2);
 }
 
 .btn.sm {
@@ -428,7 +440,7 @@ button {
   position: absolute;
   inset: 0;
   border-radius: var(--r-sm);
-  background: var(--seg-c, var(--green));
+  background: var(--seg-c, var(--brand));
   z-index: -1;
 }
 
@@ -461,8 +473,8 @@ button {
   transform: scale(0.9);
 }
 .chip.on {
-  background: var(--green);
-  border-color: var(--green);
+  background: var(--brand);
+  border-color: var(--brand);
   color: #fff;
 }
 
@@ -647,7 +659,7 @@ button {
 
 .error {
   background: color-mix(in srgb, var(--orange) 14%, var(--paper));
-  color: #a02d0d;
+  color: var(--danger);
   border-radius: var(--r-sm);
   padding: 10px 14px;
   font-size: 13px;
@@ -923,7 +935,7 @@ button {
 .top-bar {
   height: 100%;
   border-radius: 3px;
-  background: var(--green);
+  background: var(--brand);
   transform-origin: left;
 }
 
@@ -950,8 +962,8 @@ button {
   gap: 24px;
 }
 .cat {
-  --c: var(--green);
-  --cd: var(--green);
+  --c: var(--brand);
+  --cd: var(--brand);
   background: color-mix(in srgb, var(--c) 7%, var(--paper));
   border: 1px solid color-mix(in srgb, var(--c) 28%, var(--paper));
   border-radius: var(--r-lg);
@@ -1107,8 +1119,8 @@ button {
   align-items: start;
 }
 .col {
-  --c: var(--green);
-  --cd: var(--green);
+  --c: var(--brand);
+  --cd: var(--brand);
   border-radius: var(--r-lg);
   padding: 6px;
   min-height: 240px;
@@ -1280,8 +1292,8 @@ button {
   border-color: var(--ink);
 }
 .rate.on {
-  border-color: var(--green);
-  background: var(--green-soft);
+  border-color: var(--brand);
+  background: var(--brand-soft);
 }
 .rate.dim {
   filter: grayscale(1);

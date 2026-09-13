@@ -82,7 +82,7 @@ export function Jelly({ children, ...rest }: HTMLMotionProps<'button'> & { child
 }
 
 /** A short burst of dots flying out of a point. Re-render with a new `id` to fire again. */
-export function Burst({ id, color = 'var(--hot-lime)', n = 10 }: { id: number; color?: string; n?: number }) {
+export function Burst({ id, color = 'var(--hot-blue)', n = 10 }: { id: number; color?: string; n?: number }) {
   const [live, setLive] = useState<number | null>(null)
   useEffect(() => {
     if (!id) return

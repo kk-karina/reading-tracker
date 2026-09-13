@@ -13,12 +13,14 @@ import { Segmented } from './ui'
  * relieved the same way, by naming every segment in the legend beside its colour
  * and by the 2px gaps between fills, so identity is never carried by colour alone.
  */
+// This exact order is what the validator passed; reordering changes which pairs
+// sit next to each other and so changes the result.
 const HUES = [
-  'var(--teal-d)',
+  'var(--magenta)',
+  'var(--teal)',
   'var(--violet)',
   'var(--orange)',
-  'var(--cyan-d)',
-  'var(--magenta)',
+  'var(--cyan)',
   'var(--blue)',
 ]
 
