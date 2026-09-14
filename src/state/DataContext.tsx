@@ -15,6 +15,9 @@ import { useAuth } from './AuthContext'
 interface DataValue extends Snapshot {
   loading: boolean
   error: string | null
+  /** True once a load has succeeded. Until then an empty snapshot means nothing. */
+  loaded: boolean
+  reload(): Promise<void>
 
   addBook(item: NewBook): Promise<Book | undefined>
   updateBook(id: string, patch: Partial<Book>): Promise<void>
@@ -39,6 +42,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [snap, setSnap] = useState<Snapshot>(emptySnapshot)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  // An empty shelf and a shelf that failed to arrive look identical in the
+  // snapshot, and the app used to show the second as the first: "no books yet",
+  // under an error, on an account with eight of them.
+  const [loaded, setLoaded] = useState(false)
 
   // One load at a time, so two overlapping refreshes (StrictMode, fast clicks) never race.
   const inflight = useRef<Promise<void> | null>(null)
@@ -49,6 +56,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       try {
         setSnap(await store.load())
         setError(null)
+        setLoaded(true)
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e))
       } finally {
@@ -89,6 +97,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
       ...snap,
       loading,
       error,
+      loaded,
+      reload: async () => {
+        setLoading(true)
+        await refresh()
+      },
 
       addBook: (b) => run(() => store.addBook(b)),
       updateBook: async (id, p) => void (await run(() => store.updateBook(id, p))),
@@ -105,7 +118,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
       importSnapshot: async (s) => void (await run(async () => store.replaceAll?.(s))),
     }),
-    [snap, loading, error, run],
+    [snap, loading, error, loaded, refresh, run],
   )
 
   return <DataContext.Provider value={value}>{children}</DataContext.Provider>

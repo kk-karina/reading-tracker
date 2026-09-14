@@ -7,7 +7,7 @@ import { useAuth } from '../state/AuthContext'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
 import { CursorDot } from './fun'
-import { Segmented } from './ui'
+import { Jelly, Segmented } from './ui'
 
 const LINKS: { to: string; key: DictKey }[] = [
   { to: '/', key: 'nav.progress' },
@@ -23,9 +23,13 @@ const LOCALES: { value: Locale; label: string }[] = [
 
 export function Shell() {
   const { user } = useAuth()
-  const { error } = useData()
+  const { error, loaded, loading, reload } = useData()
   const { locale, setLocale, t } = useLocale()
   const location = useLocation()
+
+  // Nothing ever arrived, so every page below would speak about an empty shelf
+  // as though it were the truth. Say what happened instead, and offer to retry.
+  const stalled = !loaded && error !== null
 
   return (
     <div className="shell">
@@ -89,7 +93,16 @@ export function Shell() {
             {error}
           </div>
         )}
-        <Outlet />
+        {stalled ? (
+          <div className="hero-empty">
+            <p className="muted">{t('error.loadFailed')}</p>
+            <Jelly className="btn" onClick={() => void reload()} disabled={loading}>
+              {t(loading ? 'error.retrying' : 'error.retry')}
+            </Jelly>
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </motion.main>
     </div>
   )

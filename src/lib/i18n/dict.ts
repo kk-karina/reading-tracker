@@ -15,6 +15,13 @@ export const DICT = {
 
   'locale.label': { ru: 'Язык интерфейса', en: 'Interface language' },
 
+  'error.loadFailed': {
+    ru: 'Не удалось загрузить данные. Твои книги на месте — до них просто не дошёл запрос.',
+    en: 'The data did not load. Your books are still there; the request just did not reach them.',
+  },
+  'error.retry': { ru: 'Попробовать снова', en: 'Try again' },
+  'error.retrying': { ru: 'Загружаю…', en: 'Loading…' },
+
   'login.greeting': { ru: 'Открой книгу. Войди.', en: 'Open the book. Log in.' },
   'login.email': { ru: 'Почта', en: 'Email' },
   'login.password': { ru: 'Пароль', en: 'Password' },
