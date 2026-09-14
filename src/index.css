@@ -1930,28 +1930,14 @@ button {
   gap: 16px;
 }
 
-/* A spine is a cover that opens the book, with the move-the-focus button under
-   it. The column is as wide as that button rather than as wide as the cover, so
-   the label is never cut; the cover sits centred above it. */
+/* A spine opens the book and does nothing else. Choosing the focus belongs to
+   the book page, where it is a labelled button you arrive at on purpose. */
 .spine {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.spine-cover {
   display: block;
   transition: transform 0.25s var(--ease-out);
 }
 
-.spine-cover:hover { transform: translateY(-6px) rotate(-2deg); }
-
-.spine .btn.sm {
-  height: 30px;
-  padding: 0 12px;
-  font-size: 12px;
-}
+.spine:hover { transform: translateY(-6px) rotate(-2deg); }
 
 /* One column, top to bottom: nothing sits beside anything, so nothing has to
    agree about its height. */

@@ -13,7 +13,7 @@ const STUCK_AFTER_DAYS = 14
 
 export function Progress() {
   const { t, locale } = useLocale()
-  const { books, sessions, notes, loading, setFocus } = useData()
+  const { books, sessions, notes, loading } = useData()
 
   if (loading) return null
 
@@ -36,7 +36,7 @@ export function Progress() {
     <>
       <section className="hero">
         {focus ? (
-          <FocusBook book={focus} sessions={sessions} others={others} onPick={setFocus} />
+          <FocusBook book={focus} sessions={sessions} others={others} />
         ) : reading.length > 0 ? (
           <div className="hero-empty">
             <p className="muted">{t('progress.pickFocus')}</p>
@@ -178,12 +178,10 @@ function FocusBook({
   book,
   sessions,
   others,
-  onPick,
 }: {
   book: Book
   sessions: Session[]
   others: Book[]
-  onPick: (id: string) => void
 }) {
   const { t } = useLocale()
   const { page, percent } = progressOf(book.id, sessions, book.pages)
@@ -217,20 +215,14 @@ function FocusBook({
             <div className="label" style={{ marginBottom: 12 }}>
               {t('progress.alsoReading')}
             </div>
-            {/* The cover opens the book, the way a cover does everywhere else on
-                the shelf. Moving the focus is a deliberate button under it —
-                the same one the book page carries — because it used to happen
-                on a single stray click and there is no undo for it. */}
+            {/* A cover opens the book and does nothing else. Moving the focus
+                lives on the book page alone: from here it used to happen on one
+                stray click, silently, with nothing to undo it. */}
             <div className="spines">
               {others.map((b) => (
-                <div key={b.id} className="spine">
-                  <Link to={`/book/${b.id}`} className="spine-cover" title={b.title}>
-                    <BookCover book={b} size="sm" />
-                  </Link>
-                  <button type="button" className="btn ghost sm" onClick={() => onPick(b.id)}>
-                    {t('book.makeFocus')}
-                  </button>
-                </div>
+                <Link key={b.id} to={`/book/${b.id}`} className="spine" title={b.title}>
+                  <BookCover book={b} size="sm" />
+                </Link>
               ))}
             </div>
           </div>
