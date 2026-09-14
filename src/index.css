@@ -1890,8 +1890,16 @@ button {
   margin-bottom: 40px;
 }
 
+/* The width is stated rather than left to the content, and that is the whole
+   point of it. As a flex item this block used to shrink to its own max-content,
+   which is set by the longest unbreakable thing inside — the title. A short
+   title made the block 565px wide, its own row needs 260 + 34 + 280 = 574, and
+   nine pixels short of it the info column wrapped under the cover. So the hero
+   collapsed or did not depending on the name of the book in focus, and putting
+   a different book there "fixed" it. */
 .focus {
   display: flex;
+  width: 100%;
   gap: 34px;
   align-items: flex-start;
   flex-wrap: wrap;
