@@ -14,7 +14,12 @@ export function useStream(): Stream {
   return useOutletContext<StreamCtx>().stream
 }
 
-export function StreamLayout() {
+/**
+ * `bare` обслуживает третий и четвёртый уровни (материал, конспект): поток
+ * им нужен, а крошка, переключатель и полоса подразделов — уже нет, у этих
+ * страниц своя `Crumbs`.
+ */
+export function StreamLayout({ bare = false }: { bare?: boolean }) {
   const { slug } = useParams()
   const { t } = useLocale()
   const { streams, loading } = useLearning()
@@ -25,6 +30,8 @@ export function StreamLayout() {
   // Промахнуться можно только устаревшей ссылкой, и витрина отвечает на это
   // лучше, чем экран со словом «не найдено».
   if (!stream) return <Navigate to="/learning" replace />
+
+  if (bare) return <Outlet context={{ stream } satisfies StreamCtx} />
 
   const others = streams.filter((s) => !s.archived && s.id !== stream.id)
 

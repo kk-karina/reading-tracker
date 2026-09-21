@@ -9,9 +9,6 @@ export const LEARNING = {
   'nav.backlog': { ru: 'Бэклог', en: 'Backlog' },
   'nav.notes': { ru: 'Заметки', en: 'Notes' },
 
-  // `learning.title` остаётся: `Material.tsx` читает его как запасное имя
-  // крошки и в этой задаче не трогается — переезжает в задаче 9.
-  'learning.title': { ru: 'Обучение', en: 'Learning' },
   'learning.newMaterial': { ru: 'Новый материал', en: 'New material' },
 
   'hub.title': { ru: 'Лернинг Хаб', en: 'Learning Hub' },
@@ -81,6 +78,8 @@ export const LEARNING = {
     en: 'No notes yet. A chapter counts as done when there is a note for it.',
   },
   'material.progress': { ru: '{done} из {total}', en: '{done} of {total}' },
+  'material.makeFocus': { ru: 'Сделать фокусом потока', en: 'Make it the stream focus' },
+  'material.isFocus': { ru: 'В фокусе потока', en: 'The stream focus' },
 
   'kind.book': { ru: 'Книга', en: 'Book' },
   'kind.article': { ru: 'Статья', en: 'Article' },

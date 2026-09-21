@@ -62,7 +62,11 @@ export function StreamDashboard() {
               {p?.total && last ? ' · ' : ''}
               {last ? t('stream.lastNote', { date: fmtDate(last, locale) }) : t('stream.neverNoted')}
             </span>
-            <Link className="btn sm" to={`/learning/${stream.slug}/m/${focus.id}`}>
+            <Link
+              className="btn sm"
+              to={`/learning/${stream.slug}/m/${focus.id}`}
+              state={{ from: { to: `/learning/${stream.slug}`, label: t('nav.dashboard') } }}
+            >
               {t('stream.open')}
             </Link>
           </>

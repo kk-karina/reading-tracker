@@ -3,27 +3,48 @@ import { Shell } from './components/Shell'
 import { Book } from './pages/Book'
 import { Journal } from './pages/Journal'
 import { Backlog } from './pages/learning/Backlog'
+import { Material } from './pages/learning/Material'
 import { Notes } from './pages/learning/Notes'
 import { StreamDashboard } from './pages/learning/StreamDashboard'
 import { StreamLayout } from './pages/learning/StreamLayout'
 import { Streams } from './pages/learning/Streams'
+import { StudyNote } from './pages/learning/StudyNote'
 import { Studying } from './pages/learning/Studying'
-import { Material } from './pages/Material'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
 import { ReadingLayout } from './pages/ReadingLayout'
 import { Settings } from './pages/Settings'
-import { StudyNote } from './pages/StudyNote'
 import { Shelf } from './pages/Shelf'
 import { AuthProvider, useAuth } from './state/AuthContext'
 import { DataProvider } from './state/DataContext'
-import { LearningProvider } from './state/LearningContext'
+import { LearningProvider, useLearning } from './state/LearningContext'
 import { LocaleProvider } from './state/LocaleContext'
 
 /** Параметр роута читается только внутри компонента, отсюда обёртка. */
 function LegacyBook() {
   const { id } = useParams()
   return <Navigate to={`/reading/book/${id}`} replace />
+}
+
+/** Адрес до перестройки: материал знал свой id, но не знал своего потока. */
+function LegacyMaterial() {
+  const { id } = useParams()
+  const { streams, materials, loading } = useLearning()
+  if (loading) return null
+  const m = materials.find((x) => x.id === id)
+  const s = m && streams.find((x) => x.id === m.stream_id)
+  return <Navigate to={s && m ? `/learning/${s.slug}/m/${m.id}` : '/learning'} replace />
+}
+
+/** Тот же случай для конспекта: старый адрес знал id, но не поток. */
+function LegacyNote() {
+  const { id } = useParams()
+  const { streams, materials, notes, loading } = useLearning()
+  if (loading) return null
+  const n = notes.find((x) => x.id === id)
+  const m = n && materials.find((x) => x.id === n.material_id)
+  const s = m && streams.find((x) => x.id === m.stream_id)
+  return <Navigate to={s && n ? `/learning/${s.slug}/n/${n.id}` : '/learning'} replace />
 }
 
 function Gate() {
@@ -52,14 +73,15 @@ function Gate() {
               <Route path="backlog" element={<Backlog />} />
               <Route path="notes" element={<Notes />} />
             </Route>
-            {/* Вложенные адреса материала и конспекта регистрируются заранее: блок
-                фокуса на дашборде уже ссылается на них. Material.tsx и StudyNote.tsx
-                резолвят всё по id и игнорируют :slug, так что работают под обоими
-                адресами без изменений — плоская пара станет редиректом в задаче 9. */}
-            <Route path="learning/:slug/m/:id" element={<Material />} />
-            <Route path="learning/:slug/n/:id" element={<StudyNote />} />
-            <Route path="learning/m/:id" element={<Material />} />
-            <Route path="learning/n/:id" element={<StudyNote />} />
+            {/* Третий и четвёртый уровни вне layout: у них крошка вместо полосы,
+                но поток им всё равно нужен, поэтому оболочка оборачивает их тоже. */}
+            <Route path="learning/:slug" element={<StreamLayout bare />}>
+              <Route path="m/:id" element={<Material />} />
+              <Route path="n/:id" element={<StudyNote />} />
+            </Route>
+
+            <Route path="learning/m/:id" element={<LegacyMaterial />} />
+            <Route path="learning/n/:id" element={<LegacyNote />} />
 
             <Route path="settings" element={<Settings />} />
 

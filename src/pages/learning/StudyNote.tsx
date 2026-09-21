@@ -1,20 +1,24 @@
 import { useEffect, useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
-import { NoteEditor } from '../components/NoteEditor'
-import { Jelly } from '../components/ui'
-import { fmtDate } from '../lib/format'
-import { renderMarkdown } from '../lib/learning/markdown'
-import type { NoteTag } from '../lib/types'
-import { useLearning } from '../state/LearningContext'
-import { useLocale } from '../state/LocaleContext'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Crumbs } from '../../components/Crumbs'
+import { NoteEditor } from '../../components/NoteEditor'
+import { Jelly } from '../../components/ui'
+import { fmtDate } from '../../lib/format'
+import { renderMarkdown } from '../../lib/learning/markdown'
+import type { NoteTag } from '../../lib/types'
+import { useLearning } from '../../state/LearningContext'
+import { useLocale } from '../../state/LocaleContext'
+import { useStream } from './StreamLayout'
 
 export function StudyNote() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, locale } = useLocale()
-  const { notes, materials, streams, loading, updateNote, deleteNote } = useLearning()
+  const stream = useStream()
+  const { notes, materials, loading, updateNote, deleteNote } = useLearning()
 
   const note = notes.find((n) => n.id === id)
+  const material = materials.find((m) => m.id === note?.material_id && m.stream_id === stream.id)
 
   const [editing, setEditing] = useState(false)
   const [part, setPart] = useState('')
@@ -33,10 +37,10 @@ export function StudyNote() {
   }, [stamp])
 
   if (loading) return null
-  if (!note) return <Navigate to="/learning" replace />
+  // Конспект чужого потока (или несуществующий) сюда не попадает: тот же
+  // приём, что и у материала — принадлежность проверяется, а не только id.
+  if (!note || !material) return <Navigate to={`/learning/${stream.slug}`} replace />
 
-  const material = materials.find((m) => m.id === note.material_id)
-  const stream = streams.find((s) => s.id === material?.stream_id)
   const dirty = part !== (note.part ?? '') || body !== note.body || tags.join() !== note.tags.join()
 
   const save = async () => {
@@ -47,24 +51,23 @@ export function StudyNote() {
   const remove = async () => {
     if (!confirm(t('note.confirmDelete'))) return
     await deleteNote(note.id)
-    navigate(material ? `/learning/m/${material.id}` : '/learning')
+    navigate(`/learning/${stream.slug}/m/${material.id}`)
   }
 
   return (
     <>
-      <div className="crumbs">
-        {material && (
-          <Link to={`/learning/m/${material.id}`} className="crumb">
-            ← {material.title}
-          </Link>
-        )}
-      </div>
+      <Crumbs
+        fallback={{
+          to: `/learning/${stream.slug}/m/${material.id}`,
+          label: material.title,
+        }}
+      />
 
-      <article className="sheet-page" data-accent={stream?.accent ?? undefined}>
+      <article className="sheet-page" data-accent={stream.accent ?? undefined}>
         <div className="sheet-head-line">
           <span className="label">
-            {stream?.accent && <i className="sheet-dot" data-accent={stream.accent} />}
-            {stream?.name} · {fmtDate(note.date, locale)}
+            {stream.accent && <i className="sheet-dot" data-accent={stream.accent} />}
+            {stream.name} · {fmtDate(note.date, locale)}
           </span>
           <div className="row-tight">
             {editing ? (
