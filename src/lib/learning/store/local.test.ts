@@ -260,6 +260,36 @@ describe('целостность фокуса', () => {
     const snap = await localLearning.load()
     expect(snap.streams.find((s) => s.id === from.id)?.focus_material_id).toBeNull()
   })
+
+  it('снимает фокус с материала, ушедшего из работы', async () => {
+    const stream = await localLearning.addStream({
+      name: 'Professional Growth', icon: 'compass', accent: null, outline: null, sort: 0,
+    })
+    const material = await localLearning.addMaterial({
+      stream_id: stream.id, title: 'Book', kind: 'book', author: null, url: null,
+      status: 'active', parts_total: null, sort: 0,
+    })
+    await localLearning.updateStream(stream.id, { focus_material_id: material.id })
+
+    await localLearning.updateMaterial(material.id, { status: 'inbox' })
+
+    expect((await localLearning.load()).streams[0].focus_material_id).toBeNull()
+  })
+
+  it('оставляет фокус, когда материал правят, не уводя из работы', async () => {
+    const stream = await localLearning.addStream({
+      name: 'Professional Growth', icon: 'compass', accent: null, outline: null, sort: 0,
+    })
+    const material = await localLearning.addMaterial({
+      stream_id: stream.id, title: 'Book', kind: 'book', author: null, url: null,
+      status: 'active', parts_total: null, sort: 0,
+    })
+    await localLearning.updateStream(stream.id, { focus_material_id: material.id })
+
+    await localLearning.updateMaterial(material.id, { title: 'Book, second edition' })
+
+    expect((await localLearning.load()).streams[0].focus_material_id).toBe(material.id)
+  })
 })
 
 describe('адрес потока', () => {

@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
+import { MaterialForm } from '../../components/MaterialForm'
 import { Jelly } from '../../components/ui'
 import { fmtDate } from '../../lib/format'
 import { backlogCounts, studying } from '../../lib/learning/buckets'
@@ -16,6 +18,7 @@ export function Studying() {
   const { t, locale } = useLocale()
   const stream = useStream()
   const { materials, notes, updateMaterial, updateStream } = useLearning()
+  const [adding, setAdding] = useState(false)
 
   const counts = backlogCounts(materials, stream.id)
   const empty = counts.inbox + counts.someday + counts.reference === 0
@@ -28,12 +31,23 @@ export function Studying() {
 
   if (mine.length === 0) {
     return (
-      <div className="hero-empty">
-        <p className="muted">{t(empty ? 'studying.emptyBacklog' : 'studying.empty')}</p>
-        <Link className="btn" to={`/learning/${stream.slug}/backlog`}>
-          {t('studying.openBacklog')}
-        </Link>
-      </div>
+      <>
+        <div className="hero-empty">
+          <p className="muted">{t(empty ? 'studying.emptyBacklog' : 'studying.empty')}</p>
+          {/* Кнопка, а не ссылка в бэклог: звать в пустой бэклог значит отправить
+              человека туда, где ему нечего делать. */}
+          {empty ? (
+            <Jelly className="btn" onClick={() => setAdding(true)}>
+              {t('learning.newMaterial')}
+            </Jelly>
+          ) : (
+            <Link className="btn" to={`/learning/${stream.slug}/backlog`}>
+              {t('studying.openBacklog')}
+            </Link>
+          )}
+        </div>
+        {adding && <MaterialForm streamId={stream.id} onClose={() => setAdding(false)} />}
+      </>
     )
   }
 

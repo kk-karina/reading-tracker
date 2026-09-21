@@ -124,6 +124,13 @@ export const localLearning: LearningStore = {
           : s,
       )
     }
+    // Фокус — это «за что сесть». Материал, ушедший из работы, перестаёт им быть,
+    // иначе дашборд продолжает звать к тому, что уже отложено или пройдено.
+    if (patch.status && patch.status !== 'active') {
+      snap.streams = snap.streams.map((s) =>
+        s.focus_material_id === id ? { ...s, focus_material_id: null, updated_at: now() } : s,
+      )
+    }
     write(snap)
   },
   async deleteMaterial(id) {
