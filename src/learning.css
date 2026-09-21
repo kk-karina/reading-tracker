@@ -1,0 +1,170 @@
+/* ---------- learning ----------
+   Отдельным файлом, а не секцией в index.css: в том файле сейчас лежит
+   незавершённая работа над лентой полки, и дописывание туда означало бы
+   риск задеть её при каждом коммите. Сворачивается обратно одним движением,
+   когда та ветка будет закоммичена. */
+
+/* Акценты категорий: набор, а не пипетка. Крупные заливки — правило ядра:
+   всё тонкое рисуется чернилами. */
+[data-accent='lemon'] { --cat: #e9f86b; }
+[data-accent='sage'] { --cat: #cfe0c3; }
+[data-accent='clay'] { --cat: #e6c9b4; }
+[data-accent='slate'] { --cat: #c6ced6; }
+[data-accent='plum'] { --cat: #d9c6de; }
+[data-accent='sky'] { --cat: #c5dcea; }
+[data-accent='sand'] { --cat: #e8dcc0; }
+[data-accent='rose'] { --cat: #eccdd3; }
+
+.cat-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 28px;
+}
+.cat-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line-2);
+  background: var(--paper);
+  color: var(--ink-2);
+  transition:
+    border-color 0.2s,
+    background 0.2s,
+    color 0.2s;
+}
+.cat-tab .icon {
+  color: currentColor;
+}
+.cat-tab:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+.cat-tab.on {
+  background: var(--cat, var(--brand));
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.cat-tab.add {
+  padding: 8px 12px;
+}
+
+.mat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.mat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 18px;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  transition:
+    border-color 0.2s,
+    transform 0.2s var(--ease-out);
+}
+.mat-row:hover {
+  border-color: var(--line-2);
+  transform: translateY(-1px);
+}
+.mat-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.mat-title {
+  font-weight: 500;
+}
+.mat-meta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex: none;
+}
+
+.icon-pick,
+.accent-pick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.icon-opt {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line-2);
+  background: var(--paper);
+  color: var(--ink-2);
+}
+.icon-opt .icon {
+  color: currentColor;
+}
+.icon-opt.on {
+  border-color: var(--ink);
+  background: var(--brand);
+  color: var(--ink);
+}
+.accent-opt {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--cat);
+  border: 1px solid rgba(14, 16, 18, 0.18);
+}
+.accent-opt.on {
+  box-shadow: 0 0 0 2px var(--ink);
+}
+
+.link-btn.danger {
+  color: var(--danger);
+}
+
+/* ---------- material ---------- */
+
+.mat-facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+.note-stack {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.note-row {
+  display: block;
+  padding: 13px 18px;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  transition:
+    border-color 0.2s,
+    transform 0.2s var(--ease-out);
+}
+.note-row:hover {
+  border-color: var(--line-2);
+  transform: translateY(-1px);
+}
+.note-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.note-row-title {
+  font-weight: 500;
+}
