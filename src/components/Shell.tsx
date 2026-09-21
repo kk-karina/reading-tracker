@@ -1,4 +1,5 @@
 import { motion } from 'motion/react'
+import { useEffect, useRef } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import type { DictKey } from '../lib/i18n/dict'
 import type { Locale } from '../lib/i18n/translate'
@@ -28,6 +29,15 @@ export function Shell() {
   const { locale, setLocale, t } = useLocale()
   const location = useLocation()
 
+  // На телефоне пять пунктов не помещаются, и меню прокручивается. Активный
+  // пункт, обрезанный краем, читается как поломка, а не как прокрутка.
+  const nav = useRef<HTMLElement>(null)
+  useEffect(() => {
+    nav.current
+      ?.querySelector('a.active')
+      ?.scrollIntoView({ block: 'nearest', inline: 'center' })
+  }, [location.pathname])
+
   // Nothing ever arrived, so every page below would speak about an empty shelf
   // as though it were the truth. Say what happened instead, and offer to retry.
   const stalled = !loaded && error !== null
@@ -37,7 +47,7 @@ export function Shell() {
       <CursorDot />
       <header className="topbar">
         <div className="topbar-inner">
-          <nav className="nav" aria-label="Main">
+          <nav className="nav" aria-label="Main" ref={nav}>
             {LINKS.map((l) => (
               <NavLink key={l.to} to={l.to} end={l.to === '/'}>
                 {({ isActive }) => (

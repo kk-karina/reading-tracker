@@ -63,6 +63,7 @@ export function StudyNote() {
       <article className="sheet-page" data-accent={category?.accent ?? undefined}>
         <div className="sheet-head-line">
           <span className="label">
+            {category?.accent && <i className="sheet-dot" data-accent={category.accent} />}
             {category?.name} · {fmtDate(note.date, locale)}
           </span>
           <div className="row-tight">
