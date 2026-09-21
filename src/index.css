@@ -2270,3 +2270,32 @@ button {
   resize: vertical;
   font-family: inherit;
 }
+
+/* ---------- shell: пятый пункт меню ----------
+   С четырьмя пунктами строка меню помещалась в телефон, с пятым — нет, и
+   шапку выносило за экран вместе со всей страницей. Меню становится
+   прокручиваемым: на русском подписи длиннее английских, поэтому урезать
+   отступы недостаточно — нужен путь, который переживёт любой перевод. */
+@media (max-width: 640px) {
+  .topbar-inner {
+    gap: 10px;
+  }
+  .nav {
+    min-width: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .nav::-webkit-scrollbar {
+    display: none;
+  }
+  .nav a {
+    flex: none;
+  }
+  .nav-item {
+    padding: 8px 10px;
+  }
+  .topbar-right {
+    flex: none;
+  }
+}
