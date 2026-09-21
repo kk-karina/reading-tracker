@@ -74,8 +74,10 @@ export function StreamDashboard() {
       {/* Пока строки-сводки, а не ссылки: экранов, куда вести, ещё нет. */}
       <ul className="stream-rows">
         <li>
-          <span className="label">{t('nav.studying')}</span>
-          <span className="small faint">{t('hub.materialCount', { n: inWork })}</span>
+          <Link className="stream-row-link" to={`/learning/${stream.slug}/active`}>
+            <span className="label">{t('nav.studying')}</span>
+            <span className="small faint">{t('hub.materialCount', { n: inWork })}</span>
+          </Link>
         </li>
         <li>
           <Link className="stream-row-link" to={`/learning/${stream.slug}/backlog`}>

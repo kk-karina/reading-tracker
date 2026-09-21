@@ -6,6 +6,7 @@ import { Backlog } from './pages/learning/Backlog'
 import { StreamDashboard } from './pages/learning/StreamDashboard'
 import { StreamLayout } from './pages/learning/StreamLayout'
 import { Streams } from './pages/learning/Streams'
+import { Studying } from './pages/learning/Studying'
 import { Material } from './pages/Material'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
@@ -46,6 +47,7 @@ function Gate() {
             <Route path="learning" element={<Streams />} />
             <Route path="learning/:slug" element={<StreamLayout />}>
               <Route index element={<StreamDashboard />} />
+              <Route path="active" element={<Studying />} />
               <Route path="backlog" element={<Backlog />} />
             </Route>
             {/* Вложенные адреса материала и конспекта регистрируются заранее: блок

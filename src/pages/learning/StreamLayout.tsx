@@ -62,6 +62,7 @@ export function StreamLayout() {
         label={stream.name}
         items={[
           { to: `/learning/${stream.slug}`, label: t('nav.dashboard'), end: true },
+          { to: `/learning/${stream.slug}/active`, label: t('nav.studying') },
           { to: `/learning/${stream.slug}/backlog`, label: t('nav.backlog') },
         ]}
       />

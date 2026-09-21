@@ -96,6 +96,20 @@ export const LEARNING = {
   'mstatus.reference': { ru: 'Справка', en: 'Reference' },
   'mstatus.dropped': { ru: 'Брошено', en: 'Dropped' },
 
+  'studying.empty': {
+    ru: 'Ничего не изучается. Возьми что-нибудь из бэклога.',
+    en: 'Nothing in progress. Take something from the backlog.',
+  },
+  'studying.emptyBacklog': {
+    ru: 'Ничего не изучается, и бэклог пуст.',
+    en: 'Nothing in progress, and the backlog is empty.',
+  },
+  'studying.continue': { ru: 'Продолжить', en: 'Continue' },
+  'studying.makeFocus': { ru: 'Сделать фокусом', en: 'Make it the focus' },
+  'studying.toBacklog': { ru: 'Вернуть в бэклог', en: 'Back to backlog' },
+  'studying.finish': { ru: 'Пройдено', en: 'Done' },
+  'studying.openBacklog': { ru: 'Открыть бэклог', en: 'Open the backlog' },
+
   // Вкладка архива в бэклоге объединяет статусы done/dropped, у неё нет
   // отдельного mstatus — имя берётся из словаря самого экрана.
   'backlog.tabArchive': { ru: 'Архив', en: 'Archive' },

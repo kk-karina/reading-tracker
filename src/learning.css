@@ -518,3 +518,40 @@
   text-decoration: none;
   color: inherit;
 }
+
+/* ---------- изучаю ---------- */
+.study-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.study-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+.study-card.focus {
+  border-color: var(--ink-3);
+}
+.study-card-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.study-card-title {
+  font-size: 17px;
+  font-weight: 600;
+}
+.study-card-acts {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
