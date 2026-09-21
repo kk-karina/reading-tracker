@@ -7,6 +7,7 @@ import { Material } from './pages/Material'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
 import { Settings } from './pages/Settings'
+import { StudyNote } from './pages/StudyNote'
 import { Shelf } from './pages/Shelf'
 import { AuthProvider, useAuth } from './state/AuthContext'
 import { DataProvider } from './state/DataContext'
@@ -28,6 +29,7 @@ function Gate() {
             <Route path="journal" element={<Journal />} />
             <Route path="learning" element={<Learning />} />
             <Route path="learning/m/:id" element={<Material />} />
+            <Route path="learning/n/:id" element={<StudyNote />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>

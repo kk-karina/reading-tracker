@@ -168,3 +168,155 @@
 .note-row-title {
   font-weight: 500;
 }
+
+/* ---------- лист конспекта ----------
+   От A3 взято ощущение — ширина, поля, воздух, — но не пропорции:
+   фиксированная высота 1:1.41 дала бы прокрутку внутри прокрутки, худшее
+   для чтения. Бумага, свет и тень те же, что у .thought-card, крупно. */
+
+.sheet-page {
+  --paper-1: #fcfcfd;
+
+  position: relative;
+  isolation: isolate;
+  max-width: 820px;
+  margin: 0 auto;
+  padding: 52px 56px 64px;
+  border-radius: 6px;
+  background:
+    radial-gradient(116% 70% at 20% 0%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0) 60%),
+    var(--paper-1);
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 16, 18, 0.05),
+    0 1px 1px rgba(14, 16, 18, 0.04),
+    0 30px 46px -34px rgba(14, 16, 18, 0.5);
+}
+/* Линия поля, как в тетради. */
+.sheet-page::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 34px;
+  width: 1px;
+  background: var(--cat, var(--line-2));
+  opacity: 0.55;
+}
+.sheet-head-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+.sheet-title-big {
+  margin: 0 0 10px;
+  font-weight: 400;
+  font-size: 30px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+.sheet-part {
+  font-size: 20px;
+  height: 48px;
+  margin-bottom: 10px;
+}
+.sheet-tags {
+  margin-bottom: 14px;
+}
+.sheet-rule {
+  height: 1px;
+  background: var(--line);
+  margin: 0 0 26px;
+}
+
+.sheet-body {
+  font-size: 16.5px;
+  line-height: 1.7;
+  max-width: 70ch;
+  overflow-wrap: anywhere;
+}
+.sheet-body > :first-child {
+  margin-top: 0;
+}
+.sheet-body h1,
+.sheet-body h2,
+.sheet-body h3 {
+  margin: 30px 0 10px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+}
+.sheet-body h1 { font-size: 24px; }
+.sheet-body h2 { font-size: 20px; }
+.sheet-body h3 { font-size: 17px; }
+.sheet-body p { margin: 0 0 16px; }
+.sheet-body ul,
+.sheet-body ol {
+  margin: 0 0 16px;
+  padding-left: 24px;
+}
+.sheet-body li { margin-bottom: 6px; }
+.sheet-body blockquote {
+  margin: 0 0 16px;
+  padding-left: 16px;
+  border-left: 3px solid var(--ink);
+  color: var(--ink-2);
+}
+.sheet-body blockquote p { margin: 0; }
+.sheet-body hr {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 26px 0;
+}
+.sheet-body code {
+  font-family: var(--mono);
+  font-size: 0.9em;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--bg);
+}
+.sheet-body a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Текстовыделитель. Акцент системы и есть лимонный маркер. */
+.sheet-body mark {
+  background: var(--brand);
+  color: var(--ink);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+.note-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.note-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.note-input {
+  width: 100%;
+  min-height: 420px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  resize: vertical;
+  font-family: var(--mono);
+  font-size: 14.5px;
+  line-height: 1.75;
+}
+.note-input:focus { outline: none; }
+.note-input::placeholder { color: var(--ink-3); }
+
+@media (max-width: 720px) {
+  .sheet-page {
+    padding: 34px 22px 44px;
+  }
+  .sheet-page::before {
+    left: 12px;
+  }
+}
