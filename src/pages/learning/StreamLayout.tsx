@@ -64,6 +64,7 @@ export function StreamLayout() {
           { to: `/learning/${stream.slug}`, label: t('nav.dashboard'), end: true },
           { to: `/learning/${stream.slug}/active`, label: t('nav.studying') },
           { to: `/learning/${stream.slug}/backlog`, label: t('nav.backlog') },
+          { to: `/learning/${stream.slug}/notes`, label: t('nav.notes') },
         ]}
       />
 

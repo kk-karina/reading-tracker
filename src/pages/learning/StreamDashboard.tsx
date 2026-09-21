@@ -89,8 +89,10 @@ export function StreamDashboard() {
           </Link>
         </li>
         <li>
-          <span className="label">{t('nav.notes')}</span>
-          <span className="small faint">{t('note.count', { n: mineNotes.length })}</span>
+          <Link className="stream-row-link" to={`/learning/${stream.slug}/notes`}>
+            <span className="label">{t('nav.notes')}</span>
+            <span className="small faint">{t('note.count', { n: mineNotes.length })}</span>
+          </Link>
         </li>
       </ul>
 

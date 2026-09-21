@@ -148,4 +148,9 @@ export const LEARNING = {
     ru: { one: '{n} конспект', few: '{n} конспекта', many: '{n} конспектов' },
     en: { one: '{n} note', other: '{n} notes' },
   },
+  'notes.empty': {
+    ru: 'Конспектов пока нет. Глава считается пройденной, когда по ней есть конспект.',
+    en: 'No notes yet. A chapter counts as done when there is a note for it.',
+  },
+  'notes.allTags': { ru: 'Все', en: 'All' },
 } satisfies Dict
