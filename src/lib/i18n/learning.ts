@@ -2,23 +2,48 @@ import type { Dict } from './translate'
 
 /** Ключи раздела обучения. Оба языка рядом — пропуск видно глазом и ловит tsc. */
 export const LEARNING = {
-  'nav.learning': { ru: 'Обучение', en: 'Learning' },
   'nav.reading': { ru: 'Чтение', en: 'Reading' },
   'nav.hub': { ru: 'Лернинг Хаб', en: 'Learning Hub' },
   'nav.dashboard': { ru: 'Дашборд', en: 'Dashboard' },
+  'nav.studying': { ru: 'Изучаю', en: 'Studying' },
+  'nav.backlog': { ru: 'Бэклог', en: 'Backlog' },
+  'nav.notes': { ru: 'Заметки', en: 'Notes' },
 
+  // `learning.title` остаётся: `Material.tsx` читает его как запасное имя
+  // крошки и в этой задаче не трогается — переезжает в задаче 9.
   'learning.title': { ru: 'Обучение', en: 'Learning' },
-  'learning.empty': {
+  'learning.newMaterial': { ru: 'Новый материал', en: 'New material' },
+
+  'hub.title': { ru: 'Лернинг Хаб', en: 'Learning Hub' },
+  'hub.empty': {
     ru: 'Пока ни одного потока. Поток — это область, в которой ты учишься.',
     en: 'No streams yet. A stream is an area you are learning in.',
   },
-  'learning.newStream': { ru: 'Новый поток', en: 'New stream' },
-  'learning.newMaterial': { ru: 'Новый материал', en: 'New material' },
-  'learning.suggest': { ru: 'Или сразу одну из этих:', en: 'Or start with one of these:' },
-  'learning.materialsEmpty': {
-    ru: 'В этом потоке пока нет материалов.',
-    en: 'No materials in this stream yet.',
+  'hub.newStream': { ru: 'Новый поток', en: 'New stream' },
+  'hub.suggest': { ru: 'Или сразу одну из этих:', en: 'Or start with one of these:' },
+  'hub.allStreams': { ru: 'Все потоки', en: 'All streams' },
+  'hub.archived': {
+    ru: { one: 'Архив потоков ({n})', few: 'Архив потоков ({n})', many: 'Архив потоков ({n})' },
+    en: { one: 'Archived streams ({n})', other: 'Archived streams ({n})' },
   },
+  'hub.noFocus': { ru: 'Фокус не выбран', en: 'No focus chosen' },
+  'hub.materialCount': {
+    ru: { one: '{n} материал', few: '{n} материала', many: '{n} материалов' },
+    en: { one: '{n} material', other: '{n} materials' },
+  },
+
+  'stream.goal': { ru: 'Цель', en: 'Goal' },
+  'stream.goalEmpty': { ru: 'Зачем этот поток?', en: 'What is this stream for?' },
+  'stream.focus': { ru: 'Сейчас в фокусе', en: 'In focus now' },
+  'stream.focusEmpty': { ru: 'Выбери, за что сесть.', en: 'Choose what to sit down with.' },
+  'stream.open': { ru: 'Открыть', en: 'Open' },
+  // Не считаемый: «из 8 недель» не склоняется от n.
+  'stream.activeWeeks': {
+    ru: 'Активна {n} из 8 недель',
+    en: 'Active {n} of the last 8 weeks',
+  },
+  'stream.lastNote': { ru: 'последняя запись {date}', en: 'last note {date}' },
+  'stream.neverNoted': { ru: 'записей пока нет', en: 'no notes yet' },
 
   'stream.name': { ru: 'Название', en: 'Name' },
   'stream.icon': { ru: 'Иконка', en: 'Icon' },

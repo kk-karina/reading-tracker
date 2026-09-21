@@ -31,14 +31,26 @@ export function StreamForm({
   const [icon, setIcon] = useState<IconName>(stream?.icon ?? 'compass')
   const [accent, setAccent] = useState<Accent | null>(stream?.accent ?? null)
   const [outline, setOutline] = useState(stream?.outline ?? '')
+  const [goal, setGoal] = useState(stream?.goal ?? '')
   const [busy, setBusy] = useState(false)
 
   async function save() {
     if (!name.trim()) return
     setBusy(true)
-    const patch = { name: name.trim(), icon, accent, outline: outline.trim() || null }
+    const patch = {
+      name: name.trim(),
+      icon,
+      accent,
+      outline: outline.trim() || null,
+      goal: goal.trim() || null,
+    }
     if (stream) await updateStream(stream.id, patch)
-    else await addStream({ ...patch, sort: streams.length })
+    else {
+      // `addStream` цель не принимает — она проставляется отдельным
+      // `updateStream` сразу после создания.
+      const made = await addStream({ name: patch.name, icon, accent, outline: patch.outline, sort: streams.length })
+      if (made && patch.goal) await updateStream(made.id, { goal: patch.goal })
+    }
     setBusy(false)
     onClose()
   }
@@ -50,10 +62,20 @@ export function StreamForm({
   }
 
   return (
-    <Sheet title={stream ? t('stream.edit') : t('learning.newStream')} onClose={onClose}>
+    <Sheet title={stream ? t('stream.edit') : t('hub.newStream')} onClose={onClose}>
       <label className="field">
         <span className="label">{t('stream.name')}</span>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
+      </label>
+
+      <label className="field">
+        <span className="label">{t('stream.goal')}</span>
+        <input
+          className="input"
+          value={goal}
+          placeholder={t('stream.goalEmpty')}
+          onChange={(e) => setGoal(e.target.value)}
+        />
       </label>
 
       <div className="field">

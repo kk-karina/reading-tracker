@@ -2,7 +2,9 @@ import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom
 import { Shell } from './components/Shell'
 import { Book } from './pages/Book'
 import { Journal } from './pages/Journal'
-import { Learning } from './pages/Learning'
+import { StreamDashboard } from './pages/learning/StreamDashboard'
+import { StreamLayout } from './pages/learning/StreamLayout'
+import { Streams } from './pages/learning/Streams'
 import { Material } from './pages/Material'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
@@ -40,7 +42,16 @@ function Gate() {
             {/* Третий уровень вне layout: вместо полосы подразделов у него крошка. */}
             <Route path="reading/book/:id" element={<Book />} />
 
-            <Route path="learning" element={<Learning />} />
+            <Route path="learning" element={<Streams />} />
+            <Route path="learning/:slug" element={<StreamLayout />}>
+              <Route index element={<StreamDashboard />} />
+            </Route>
+            {/* Вложенные адреса материала и конспекта регистрируются заранее: блок
+                фокуса на дашборде уже ссылается на них. Material.tsx и StudyNote.tsx
+                резолвят всё по id и игнорируют :slug, так что работают под обоими
+                адресами без изменений — плоская пара станет редиректом в задаче 9. */}
+            <Route path="learning/:slug/m/:id" element={<Material />} />
+            <Route path="learning/:slug/n/:id" element={<StudyNote />} />
             <Route path="learning/m/:id" element={<Material />} />
             <Route path="learning/n/:id" element={<StudyNote />} />
 
