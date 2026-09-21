@@ -17,7 +17,7 @@ export const LEARNING = {
     en: 'No streams yet. A stream is an area you are learning in.',
   },
   'hub.newStream': { ru: 'Новый поток', en: 'New stream' },
-  'hub.suggest': { ru: 'Или сразу одну из этих:', en: 'Or start with one of these:' },
+  'hub.suggest': { ru: 'Или сразу один из этих:', en: 'Or start with one of these:' },
   'hub.allStreams': { ru: 'Все потоки', en: 'All streams' },
   'hub.archived': {
     ru: { one: 'Архив потоков ({n})', few: 'Архив потоков ({n})', many: 'Архив потоков ({n})' },
@@ -147,6 +147,8 @@ export const LEARNING = {
     ru: { one: '{n} конспект', few: '{n} конспекта', many: '{n} конспектов' },
     en: { one: '{n} note', other: '{n} notes' },
   },
+  // Короткая форма для строки-сводки дашборда: рядом со счётчиком, не отдельным предложением.
+  'note.last': { ru: 'последний {date}', en: 'last {date}' },
   'notes.empty': {
     ru: 'Конспектов пока нет. Глава считается пройденной, когда по ней есть конспект.',
     en: 'No notes yet. A chapter counts as done when there is a note for it.',

@@ -15,42 +15,6 @@
 [data-accent='sand'] { --cat: #e8dcc0; }
 [data-accent='rose'] { --cat: #eccdd3; }
 
-.cat-tabs {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 28px;
-}
-.cat-tab {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
-  border-radius: var(--r-pill);
-  border: 1px solid var(--line-2);
-  background: var(--paper);
-  color: var(--ink-2);
-  transition:
-    border-color 0.2s,
-    background 0.2s,
-    color 0.2s;
-}
-.cat-tab .icon {
-  color: currentColor;
-}
-.cat-tab:hover {
-  border-color: var(--ink-3);
-  color: var(--ink);
-}
-.cat-tab.on {
-  background: var(--cat, var(--brand));
-  border-color: var(--ink);
-  color: var(--ink);
-}
-.cat-tab.add {
-  padding: 8px 12px;
-}
-
 .mat-list {
   list-style: none;
   margin: 0;
@@ -344,6 +308,10 @@
   opacity: 0.55;
 }
 .stream-card {
+  position: relative;
+  /* Обрезает полосу акцента по скруглению карточки — без этого угловатый
+     край полосы торчал бы поверх border-radius. */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -358,6 +326,15 @@
 .stream-card:hover {
   transform: translateY(-2px);
   border-color: var(--ink-3);
+}
+/* Акцент потока — заливка, а не линия: ядро требует, чтобы тонкое рисовалось
+   чернилами, а цвет жил в крупных площадях. Без акцента полоса не рисуется. */
+.stream-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: var(--cat, transparent);
 }
 .stream-card-head {
   display: flex;
@@ -415,6 +392,10 @@
   border-radius: 8px;
   text-decoration: none;
   color: inherit;
+}
+/* Тонированная шапка строки вместо линии — тот же принцип, что у карточки потока. */
+.stream-pick-list a[data-accent] {
+  background: color-mix(in srgb, var(--cat) 30%, var(--paper));
 }
 .stream-pick-list a:hover {
   background: var(--bg);

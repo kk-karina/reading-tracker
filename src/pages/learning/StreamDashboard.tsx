@@ -4,6 +4,7 @@ import { StreamForm } from '../../components/StreamForm'
 import { fmtDate } from '../../lib/format'
 import { backlogCounts, studying } from '../../lib/learning/buckets'
 import { materialProgress } from '../../lib/learning/metrics'
+import { notesOfStream } from '../../lib/learning/notes'
 import { activeWeeks, lastActivity } from '../../lib/learning/rhythm'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -17,13 +18,17 @@ export function StreamDashboard() {
   const [editingGoal, setEditingGoal] = useState(false)
   const [goal, setGoal] = useState(stream.goal ?? '')
 
-  const mine = materials.filter((m) => m.stream_id === stream.id)
-  const mineNotes = notes.filter((n) => mine.some((m) => m.id === n.material_id))
+  const mineNotes = notesOfStream(materials, notes, stream.id)
   const dates = mineNotes.map((n) => n.date)
   const focus = stream.focus_material_id
     ? materials.find((m) => m.id === stream.focus_material_id)
     : undefined
   const p = focus ? materialProgress(focus, notes) : null
+  // Заметки фокуса — только его собственные, а не все заметки потока:
+  // иначе только что сфокусированный материал показывает чужую последнюю запись.
+  const focusLast = focus
+    ? lastActivity(notes.filter((n) => n.material_id === focus.id).map((n) => n.date))
+    : null
   const counts = backlogCounts(materials, stream.id)
   const inWork = studying(materials, stream.id).length
   const last = lastActivity(dates)
@@ -47,7 +52,18 @@ export function StreamDashboard() {
           onKeyDown={(e) => e.key === 'Enter' && void saveGoal()}
         />
       ) : (
-        <button className="stream-goal" type="button" onClick={() => setEditingGoal(true)}>
+        <button
+          className="stream-goal"
+          type="button"
+          onClick={() => {
+            // Подтягиваем цель заново по клику, а не полагаемся на значение с
+            // монтирования: второй редактор на этом же экране мог поменять
+            // её, пока поле было свёрнуто, и blur иначе перезаписал бы правку
+            // старым текстом.
+            setGoal(stream.goal ?? '')
+            setEditingGoal(true)
+          }}
+        >
           {stream.goal ?? <span className="faint">{t('stream.goalEmpty')}</span>}
         </button>
       )}
@@ -59,8 +75,10 @@ export function StreamDashboard() {
             <span className="focus-box-title">{focus.title}</span>
             <span className="small faint">
               {p?.total ? t('material.progress', { done: p.done, total: p.total }) : ''}
-              {p?.total && last ? ' · ' : ''}
-              {last ? t('stream.lastNote', { date: fmtDate(last, locale) }) : t('stream.neverNoted')}
+              {p?.total && focusLast ? ' · ' : ''}
+              {focusLast
+                ? t('stream.lastNote', { date: fmtDate(focusLast, locale) })
+                : t('stream.neverNoted')}
             </span>
             <Link
               className="btn sm"
@@ -75,7 +93,6 @@ export function StreamDashboard() {
         )}
       </div>
 
-      {/* Пока строки-сводки, а не ссылки: экранов, куда вести, ещё нет. */}
       <ul className="stream-rows">
         <li>
           <Link className="stream-row-link" to={`/learning/${stream.slug}/active`}>
@@ -95,7 +112,10 @@ export function StreamDashboard() {
         <li>
           <Link className="stream-row-link" to={`/learning/${stream.slug}/notes`}>
             <span className="label">{t('nav.notes')}</span>
-            <span className="small faint">{t('note.count', { n: mineNotes.length })}</span>
+            <span className="small faint">
+              {t('note.count', { n: mineNotes.length })}
+              {last ? ` · ${t('note.last', { date: fmtDate(last, locale) })}` : ''}
+            </span>
           </Link>
         </li>
       </ul>

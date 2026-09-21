@@ -6,6 +6,7 @@ import { Jelly } from '../../components/ui'
 import { fmtDate } from '../../lib/format'
 import { backlogCounts } from '../../lib/learning/buckets'
 import { materialProgress } from '../../lib/learning/metrics'
+import { notesOfStream } from '../../lib/learning/notes'
 import { lastActivity } from '../../lib/learning/rhythm'
 import type { Stream } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
@@ -34,9 +35,7 @@ export function Streams() {
       ? materials.find((m) => m.id === s.focus_material_id)
       : undefined
     const mine = materials.filter((m) => m.stream_id === s.id)
-    const last = lastActivity(
-      notes.filter((n) => mine.some((m) => m.id === n.material_id)).map((n) => n.date),
-    )
+    const last = lastActivity(notesOfStream(materials, notes, s.id).map((n) => n.date))
     const p = focus ? materialProgress(focus, notes) : null
     const inbox = backlogCounts(materials, s.id).inbox
 

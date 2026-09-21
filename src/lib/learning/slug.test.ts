@@ -34,6 +34,8 @@ describe('streamSlug', () => {
   })
 
   it('нумерует и запасной адрес, если он уже занят', () => {
-    expect(streamSlug('🎸', ['stream-1'])).toBe('stream-2')
+    // Запасная база считается как `stream-${taken.length + 1}`: при одном занятом
+    // адресе это `stream-2` — он же и есть занятый адрес, что и провоцирует цикл.
+    expect(streamSlug('🎸', ['stream-2'])).toBe('stream-2-2')
   })
 })

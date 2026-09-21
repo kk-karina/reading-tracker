@@ -217,12 +217,65 @@ describe('переезд снимка v1 → v2', () => {
   })
 
   it('не трогает v1, когда v2 уже есть', async () => {
-    localStorage.setItem('readingtracker.learning.v1',
-      JSON.stringify({ categories: [{ id: 'c1', name: 'Old' }], materials: [], notes: [] }))
+    const v1 = JSON.stringify({ categories: [{ id: 'c1', name: 'Old' }], materials: [], notes: [] })
+    localStorage.setItem('readingtracker.learning.v1', v1)
     localStorage.setItem('readingtracker.learning.v2',
       JSON.stringify({ streams: [], materials: [], notes: [] }))
 
     expect((await localLearning.load()).streams).toEqual([])
+    // Раз v2 уже есть, переезд не запускается вовсе — v1 должен остаться байт в байт.
+    expect(localStorage.getItem('readingtracker.learning.v1')).toBe(v1)
+  })
+
+  it('достраивает недостающие materials и notes в старом снимке v1', async () => {
+    localStorage.setItem('readingtracker.learning.v1', JSON.stringify({
+      categories: [{ id: 'c1', name: 'Growth', icon: 'compass', accent: null, outline: null,
+        sort: 0, archived: false, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' }],
+      // materials и notes отсутствуют вовсе.
+    }))
+
+    const snap = await localLearning.load()
+
+    expect(snap.streams.map((s) => s.slug)).toEqual(['growth'])
+    expect(snap.materials).toEqual([])
+    expect(snap.notes).toEqual([])
+  })
+
+  it('переживает отказ записи и всё равно отдаёт мигрированный снимок', async () => {
+    localStorage.setItem('readingtracker.learning.v1', JSON.stringify({
+      categories: [{ id: 'c1', name: 'Growth', icon: 'compass', accent: null, outline: null,
+        sort: 0, archived: false, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' }],
+      materials: [], notes: [],
+    }))
+    const original = localStorage.setItem.bind(localStorage)
+    localStorage.setItem = () => {
+      throw new Error('QuotaExceededError')
+    }
+    try {
+      const snap = await localLearning.load()
+      expect(snap.streams.map((s) => s.slug)).toEqual(['growth'])
+    } finally {
+      localStorage.setItem = original
+    }
+  })
+
+  it('мигрирует категорию без имени в запасной адрес вместо падения', async () => {
+    localStorage.setItem('readingtracker.learning.v1', JSON.stringify({
+      categories: [{ id: 'c1', icon: 'compass', accent: null, outline: null,
+        sort: 0, archived: false, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' }],
+      materials: [], notes: [],
+    }))
+
+    const snap = await localLearning.load()
+
+    expect(snap.streams[0].slug).toBe('stream-1')
+  })
+
+  it('переживает v1, где categories — не массив', async () => {
+    localStorage.setItem('readingtracker.learning.v1',
+      JSON.stringify({ categories: 'oops', materials: [], notes: [] }))
+
+    expect(await localLearning.load()).toEqual({ streams: [], materials: [], notes: [] })
   })
 })
 
@@ -274,6 +327,27 @@ describe('целостность фокуса', () => {
     await localLearning.updateMaterial(material.id, { status: 'inbox' })
 
     expect((await localLearning.load()).streams[0].focus_material_id).toBeNull()
+  })
+
+  it('снимает фокус у любого потока, указывающего на материал удалённого потока', async () => {
+    const stream = await localLearning.addStream({
+      name: 'Professional Growth', icon: 'compass', accent: null, outline: null, sort: 0,
+    })
+    const other = await localLearning.addStream({
+      name: 'Other', icon: 'compass', accent: null, outline: null, sort: 1,
+    })
+    const material = await localLearning.addMaterial({
+      stream_id: stream.id, title: 'Book', kind: 'book', author: null, url: null,
+      status: 'active', parts_total: null, sort: 0,
+    })
+    // В обычном UI поток фокусируется только на своём материале, но патч
+    // хранилища это не проверяет — указатель должен сняться, чей бы поток он ни держал.
+    await localLearning.updateStream(other.id, { focus_material_id: material.id })
+
+    await localLearning.deleteStream(stream.id)
+
+    const snap = await localLearning.load()
+    expect(snap.streams.find((s) => s.id === other.id)?.focus_material_id).toBeNull()
   })
 
   it('оставляет фокус, когда материал правят, не уводя из работы', async () => {

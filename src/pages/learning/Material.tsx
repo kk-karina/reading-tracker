@@ -14,7 +14,7 @@ export function Material() {
   const navigate = useNavigate()
   const { t, locale } = useLocale()
   const stream = useStream()
-  const { materials, notes, loading, addNote, updateStream } = useLearning()
+  const { materials, notes, loading, addNote, updateStream, updateMaterial } = useLearning()
   const [editing, setEditing] = useState(false)
 
   if (loading) return null
@@ -47,6 +47,15 @@ export function Material() {
     if (made) navigate(`/learning/${stream.slug}/n/${made.id}`)
   }
 
+  /** Сделать материал фокусом потока значит сесть за него: статус ставится
+      первым же шагом. Порядок обязателен — `updateMaterial` сам снимает
+      фокус у материала, покидающего `active`, и если поставить фокус раньше,
+      этот же вызов немедленно стёр бы указатель, который мы только что задали. */
+  const makeFocus = async () => {
+    await updateMaterial(material.id, { status: 'active' })
+    void updateStream(stream.id, { focus_material_id: material.id })
+  }
+
   return (
     <>
       <Crumbs fallback={{ to: `/learning/${stream.slug}`, label: stream.name }} />
@@ -75,11 +84,7 @@ export function Material() {
         {material.id === stream.focus_material_id ? (
           <span className="chip">{t('material.isFocus')}</span>
         ) : (
-          <button
-            className="link-btn"
-            type="button"
-            onClick={() => void updateStream(stream.id, { focus_material_id: material.id })}
-          >
+          <button className="link-btn" type="button" onClick={() => void makeFocus()}>
             {t('material.makeFocus')}
           </button>
         )}

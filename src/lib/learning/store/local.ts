@@ -21,17 +21,23 @@ interface SnapshotV1 {
  * снимка всегда даёт одни и те же ссылки.
  */
 function migrate(old: SnapshotV1): LearningSnapshot {
+  // Снимок v1 приходит из JSON: доверять его форме нельзя — битые поля не
+  // должны ронять переезд и превращать read-only сессию в пустую.
+  const categories = Array.isArray(old.categories) ? old.categories : []
+  const oldMaterials = Array.isArray(old.materials) ? old.materials : []
+  const notes = Array.isArray(old.notes) ? old.notes : []
   const taken: string[] = []
-  const streams = old.categories.map((c) => {
-    const slug = streamSlug(c.name, taken)
+  const streams = categories.map((c) => {
+    // Категория без имени всё равно получает адрес: `stream-N` вместо падения на `.toLowerCase()`.
+    const slug = streamSlug(String(c.name ?? ''), taken)
     taken.push(slug)
     return { ...c, slug, goal: null, focus_material_id: null }
   })
-  const materials = old.materials.map(({ category_id, ...rest }) => ({
+  const materials = oldMaterials.map(({ category_id, ...rest }) => ({
     ...rest,
     stream_id: category_id,
   }))
-  return { streams, materials, notes: old.notes }
+  return { streams, materials, notes }
 }
 
 function read(): LearningSnapshot {
@@ -48,7 +54,14 @@ function read(): LearningSnapshot {
         notes: [],
         ...(JSON.parse(old) as Partial<SnapshotV1>),
       })
-      write(moved)
+      // Сохранить не получилось — не повод выбрасывать уже посчитанный снимок:
+      // он годен для показа независимо от записи, а его потеря выглядит для
+      // пользователя неотличимо от настоящей потери данных.
+      try {
+        write(moved)
+      } catch {
+        /* хранилище недоступно на запись: сеанс проживёт без сохранения */
+      }
       return moved
     }
   } catch {
@@ -97,7 +110,14 @@ export const localLearning: LearningStore = {
   async deleteStream(id) {
     const snap = read()
     const gone = new Set(snap.materials.filter((m) => m.stream_id === id).map((m) => m.id))
-    snap.streams = snap.streams.filter((s) => s.id !== id)
+    snap.streams = snap.streams
+      .filter((s) => s.id !== id)
+      // Указатель на удалённый материал не переживает чистку, чей бы поток он ни держал.
+      .map((s) =>
+        s.focus_material_id && gone.has(s.focus_material_id)
+          ? { ...s, focus_material_id: null, updated_at: now() }
+          : s,
+      )
     snap.materials = snap.materials.filter((m) => m.stream_id !== id)
     snap.notes = snap.notes.filter((n) => !gone.has(n.material_id))
     write(snap)

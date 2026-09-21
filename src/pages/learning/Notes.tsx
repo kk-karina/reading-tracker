@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Segmented } from '../../components/ui'
 import { fmtDate } from '../../lib/format'
+import { notesOfStream } from '../../lib/learning/notes'
 import type { NoteTag } from '../../lib/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -19,9 +20,9 @@ export function Notes() {
 
   const mine = materials.filter((m) => m.stream_id === stream.id)
   const byId = new Map(mine.map((m) => [m.id, m]))
-  const all = notes
-    .filter((n) => byId.has(n.material_id))
-    .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at))
+  const all = notesOfStream(materials, notes, stream.id).sort(
+    (a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at),
+  )
 
   // Предлагаются только теги, которые в потоке действительно встречаются:
   // фильтр не должен уметь опустошить экран.
