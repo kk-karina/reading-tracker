@@ -6,30 +6,30 @@ export const LEARNING = {
 
   'learning.title': { ru: 'Обучение', en: 'Learning' },
   'learning.empty': {
-    ru: 'Пока ни одной категории. Категория — это область, в которой ты учишься.',
-    en: 'No categories yet. A category is an area you are learning in.',
+    ru: 'Пока ни одного потока. Поток — это область, в которой ты учишься.',
+    en: 'No streams yet. A stream is an area you are learning in.',
   },
-  'learning.newCategory': { ru: 'Новая категория', en: 'New category' },
+  'learning.newStream': { ru: 'Новый поток', en: 'New stream' },
   'learning.newMaterial': { ru: 'Новый материал', en: 'New material' },
   'learning.suggest': { ru: 'Или сразу одну из этих:', en: 'Or start with one of these:' },
   'learning.materialsEmpty': {
-    ru: 'В этой категории пока нет материалов.',
-    en: 'No materials in this category yet.',
+    ru: 'В этом потоке пока нет материалов.',
+    en: 'No materials in this stream yet.',
   },
 
-  'category.name': { ru: 'Название', en: 'Name' },
-  'category.icon': { ru: 'Иконка', en: 'Icon' },
-  'category.accent': { ru: 'Цвет', en: 'Colour' },
-  'category.outline': { ru: 'Контур конспекта', en: 'Note outline' },
-  'category.outlineHint': {
-    ru: 'Подставляется в новый конспект этой категории. Можно стереть — это обычный текст.',
-    en: 'Pre-filled into a new note in this category. Delete it freely — it is plain text.',
+  'stream.name': { ru: 'Название', en: 'Name' },
+  'stream.icon': { ru: 'Иконка', en: 'Icon' },
+  'stream.accent': { ru: 'Цвет', en: 'Colour' },
+  'stream.outline': { ru: 'Контур конспекта', en: 'Note outline' },
+  'stream.outlineHint': {
+    ru: 'Подставляется в новый конспект этого потока. Можно стереть — это обычный текст.',
+    en: 'Pre-filled into a new note in this stream. Delete it freely — it is plain text.',
   },
-  'category.edit': { ru: 'Настроить категорию', en: 'Edit category' },
-  'category.delete': { ru: 'Удалить категорию', en: 'Delete category' },
-  'category.confirmDelete': {
-    ru: 'Удалить категорию вместе со всеми её материалами и конспектами?',
-    en: 'Delete the category with all its materials and notes?',
+  'stream.edit': { ru: 'Настроить поток', en: 'Edit stream' },
+  'stream.delete': { ru: 'Удалить поток', en: 'Delete stream' },
+  'stream.confirmDelete': {
+    ru: 'Удалить поток вместе со всеми его материалами и конспектами?',
+    en: 'Delete the stream with all its materials and notes?',
   },
 
   'material.title': { ru: 'Название', en: 'Title' },
@@ -63,9 +63,10 @@ export const LEARNING = {
 
   'mstatus.inbox': { ru: 'Входящее', en: 'Inbox' },
   'mstatus.active': { ru: 'В работе', en: 'Active' },
+  'mstatus.someday': { ru: 'Когда-нибудь', en: 'Someday' },
   'mstatus.done': { ru: 'Пройдено', en: 'Done' },
   'mstatus.reference': { ru: 'Справка', en: 'Reference' },
-  'mstatus.dropped': { ru: 'Отложено', en: 'Dropped' },
+  'mstatus.dropped': { ru: 'Брошено', en: 'Dropped' },
 
   'note.new': { ru: 'Новый конспект', en: 'New note' },
   'note.part': { ru: 'Глава или часть', en: 'Chapter or part' },

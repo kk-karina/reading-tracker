@@ -4,7 +4,7 @@ import type { Material, StudyNote } from './types'
 
 const material = (over: Partial<Material> = {}): Material => ({
   id: 'm1',
-  category_id: 'c1',
+  stream_id: 'c1',
   title: 'Книга',
   kind: 'book',
   author: null,

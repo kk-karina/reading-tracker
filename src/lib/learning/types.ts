@@ -9,15 +9,25 @@ export const ACCENTS = ['lemon', 'sage', 'clay', 'slate', 'plum', 'sky', 'sand',
 export type Accent = (typeof ACCENTS)[number]
 
 export type MaterialKind = 'book' | 'article' | 'course' | 'video' | 'podcast' | 'other'
-export type MaterialStatus = 'inbox' | 'active' | 'done' | 'reference' | 'dropped'
+export type MaterialStatus = 'inbox' | 'active' | 'someday' | 'reference' | 'done' | 'dropped'
 
-/** Категория — таб раздела. Позже вырастет в поток, добавив поля, а не таблицу. */
-export interface LearningCategory {
+/** Поток — область, в которой учишься. Раньше назывался категорией и был табом. */
+export interface Stream {
   id: string
+  /** Адрес. Рождается из имени и при переименовании не меняется — иначе ломаются ссылки. */
+  slug: string
   name: string
   icon: IconName
   accent: Accent | null
-  /** Markdown-скелет нового конспекта этой категории. Подставляется, не навязывается. */
+  /** Зачем этот поток. Стоит под именем на дашборде и отвечает на «а смысл». */
+  goal: string | null
+  /**
+   * За что сесть сейчас. Указатель на стороне потока, а не флаг на материале:
+   * фокус чтения один на всё приложение, фокус обучения — свой у каждого потока,
+   * и флаг заставлял бы при каждой смене обходить соседей.
+   */
+  focus_material_id: string | null
+  /** Markdown-скелет нового конспекта этого потока. Подставляется, не навязывается. */
   outline: string | null
   sort: number
   archived: boolean
@@ -27,7 +37,7 @@ export interface LearningCategory {
 
 export interface Material {
   id: string
-  category_id: string
+  stream_id: string
   title: string
   kind: MaterialKind
   author: string | null
@@ -56,14 +66,14 @@ export interface StudyNote {
 }
 
 export interface LearningSnapshot {
-  categories: LearningCategory[]
+  streams: Stream[]
   materials: Material[]
   notes: StudyNote[]
 }
 
 /** Фабрика, не константа: у общего экземпляра массивы мутировали бы на месте. */
 export const emptyLearning = (): LearningSnapshot => ({
-  categories: [],
+  streams: [],
   materials: [],
   notes: [],
 })

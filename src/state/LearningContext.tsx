@@ -9,15 +9,15 @@ import {
 } from 'react'
 import {
   learningStore,
-  type NewCategory,
   type NewMaterial,
+  type NewStream,
   type NewStudyNote,
 } from '../lib/learning/store'
 import {
   emptyLearning,
-  type LearningCategory,
   type LearningSnapshot,
   type Material,
+  type Stream,
   type StudyNote,
 } from '../lib/learning/types'
 
@@ -32,9 +32,9 @@ interface LearningValue extends LearningSnapshot {
   loading: boolean
   error: string | null
 
-  addCategory(item: NewCategory): Promise<LearningCategory | undefined>
-  updateCategory(id: string, patch: Partial<LearningCategory>): Promise<void>
-  deleteCategory(id: string): Promise<void>
+  addStream(item: NewStream): Promise<Stream | undefined>
+  updateStream(id: string, patch: Partial<Stream>): Promise<void>
+  deleteStream(id: string): Promise<void>
 
   addMaterial(item: NewMaterial): Promise<Material | undefined>
   updateMaterial(id: string, patch: Partial<Material>): Promise<void>
@@ -87,9 +87,9 @@ export function LearningProvider({ children }: { children: ReactNode }) {
       loading,
       error,
 
-      addCategory: (c) => run(() => learningStore.addCategory(c)),
-      updateCategory: async (id, p) => void (await run(() => learningStore.updateCategory(id, p))),
-      deleteCategory: async (id) => void (await run(() => learningStore.deleteCategory(id))),
+      addStream: (s) => run(() => learningStore.addStream(s)),
+      updateStream: async (id, p) => void (await run(() => learningStore.updateStream(id, p))),
+      deleteStream: async (id) => void (await run(() => learningStore.deleteStream(id))),
 
       addMaterial: (m) => run(() => learningStore.addMaterial(m)),
       updateMaterial: async (id, p) => void (await run(() => learningStore.updateMaterial(id, p))),

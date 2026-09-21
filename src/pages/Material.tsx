@@ -11,7 +11,7 @@ export function Material() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, locale } = useLocale()
-  const { materials, categories, notes, loading, addNote } = useLearning()
+  const { materials, streams, notes, loading, addNote } = useLearning()
   const [editing, setEditing] = useState(false)
 
   if (loading) return null
@@ -19,14 +19,14 @@ export function Material() {
   const material = materials.find((m) => m.id === id)
   if (!material) return <Navigate to="/learning" replace />
 
-  const category = categories.find((c) => c.id === material.category_id)
+  const stream = streams.find((s) => s.id === material.stream_id)
   const mine = notes
     .filter((n) => n.material_id === material.id)
     .sort((a, b) => a.sort - b.sort || a.created_at.localeCompare(b.created_at))
   const p = materialProgress(material, notes)
 
   /** Форма перед листом была бы лишним шагом: конспект заводится сразу
-      с контуром категории и открывается.
+      с контуром потока и открывается.
 
       Стрелочная, а не объявление: объявление поднимается, и сужение типа
       `material` от проверки выше на него не распространяется. */
@@ -35,7 +35,7 @@ export function Material() {
       material_id: material.id,
       part: null,
       title: null,
-      body: category?.outline ?? '',
+      body: stream?.outline ?? '',
       tags: [],
       date: todayISO(),
       sort: mine.length,
@@ -47,7 +47,7 @@ export function Material() {
     <>
       <div className="crumbs">
         <Link to="/learning" className="crumb">
-          ← {category?.name ?? t('learning.title')}
+          ← {stream?.name ?? t('learning.title')}
         </Link>
       </div>
 
@@ -109,7 +109,7 @@ export function Material() {
 
       {editing && (
         <MaterialForm
-          categoryId={material.category_id}
+          streamId={material.stream_id}
           material={material}
           onClose={() => {
             setEditing(false)

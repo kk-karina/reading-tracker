@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { CategoryForm } from '../components/CategoryForm'
 import { Icon, type IconName } from '../components/Icon'
 import { MaterialForm } from '../components/MaterialForm'
+import { StreamForm } from '../components/StreamForm'
 import { Jelly } from '../components/ui'
 import { materialProgress } from '../lib/learning/metrics'
 import { useLearning } from '../state/LearningContext'
@@ -17,19 +17,19 @@ const SUGGESTED: { name: string; icon: IconName }[] = [
 
 export function Learning() {
   const { t } = useLocale()
-  const { categories, materials, notes, loading, addCategory } = useLearning()
+  const { streams, materials, notes, loading, addStream } = useLearning()
 
   const [active, setActive] = useState<string | null>(null)
-  const [editingCategory, setEditingCategory] = useState<string | null>(null)
-  const [newCategory, setNewCategory] = useState(false)
+  const [editingStream, setEditingStream] = useState<string | null>(null)
+  const [newStream, setNewStream] = useState(false)
   const [newMaterial, setNewMaterial] = useState(false)
 
   if (loading) return null
 
-  const live = categories.filter((c) => !c.archived)
-  // Первая категория подставляется сама: раздел не должен открываться ничем.
-  const current = live.find((c) => c.id === active) ?? live[0] ?? null
-  const mine = current ? materials.filter((m) => m.category_id === current.id) : []
+  const live = streams.filter((s) => !s.archived)
+  // Первый поток подставляется сам: раздел не должен открываться ничем.
+  const current = live.find((s) => s.id === active) ?? live[0] ?? null
+  const mine = current ? materials.filter((m) => m.stream_id === current.id) : []
 
   return (
     <>
@@ -40,8 +40,8 @@ export function Learning() {
       {live.length === 0 ? (
         <div className="hero-empty">
           <p className="muted">{t('learning.empty')}</p>
-          <Jelly className="btn" onClick={() => setNewCategory(true)}>
-            {t('learning.newCategory')}
+          <Jelly className="btn" onClick={() => setNewStream(true)}>
+            {t('learning.newStream')}
           </Jelly>
           <p className="small faint">{t('learning.suggest')}</p>
           <div className="row-tight">
@@ -51,7 +51,7 @@ export function Learning() {
                 type="button"
                 className="btn ghost sm"
                 onClick={() =>
-                  void addCategory({
+                  void addStream({
                     name: s.name,
                     icon: s.icon,
                     accent: null,
@@ -68,25 +68,25 @@ export function Learning() {
       ) : (
         <>
           <div className="cat-tabs" role="tablist" aria-label={t('learning.title')}>
-            {live.map((c) => (
+            {live.map((s) => (
               <button
-                key={c.id}
+                key={s.id}
                 type="button"
                 role="tab"
-                aria-selected={c.id === current?.id}
-                className={`cat-tab${c.id === current?.id ? ' on' : ''}`}
-                data-accent={c.accent ?? undefined}
-                onClick={() => setActive(c.id)}
+                aria-selected={s.id === current?.id}
+                className={`cat-tab${s.id === current?.id ? ' on' : ''}`}
+                data-accent={s.accent ?? undefined}
+                onClick={() => setActive(s.id)}
               >
-                <Icon name={c.icon} size={16} />
-                {c.name}
+                <Icon name={s.icon} size={16} />
+                {s.name}
               </button>
             ))}
             <button
               type="button"
               className="cat-tab add"
-              aria-label={t('learning.newCategory')}
-              onClick={() => setNewCategory(true)}
+              aria-label={t('learning.newStream')}
+              onClick={() => setNewStream(true)}
             >
               <Icon name="plus" size={16} />
             </button>
@@ -100,9 +100,9 @@ export function Learning() {
                   <button
                     className="link-btn"
                     type="button"
-                    onClick={() => setEditingCategory(current.id)}
+                    onClick={() => setEditingStream(current.id)}
                   >
-                    {t('category.edit')}
+                    {t('stream.edit')}
                   </button>
                   <Jelly className="btn sm" onClick={() => setNewMaterial(true)}>
                     {t('learning.newMaterial')}
@@ -145,15 +145,15 @@ export function Learning() {
         </>
       )}
 
-      {newCategory && <CategoryForm onClose={() => setNewCategory(false)} />}
-      {editingCategory && (
-        <CategoryForm
-          category={live.find((c) => c.id === editingCategory)}
-          onClose={() => setEditingCategory(null)}
+      {newStream && <StreamForm onClose={() => setNewStream(false)} />}
+      {editingStream && (
+        <StreamForm
+          stream={live.find((s) => s.id === editingStream)}
+          onClose={() => setEditingStream(null)}
         />
       )}
       {newMaterial && current && (
-        <MaterialForm categoryId={current.id} onClose={() => setNewMaterial(false)} />
+        <MaterialForm streamId={current.id} onClose={() => setNewMaterial(false)} />
       )}
     </>
   )

@@ -6,14 +6,14 @@ import { Sheet } from './Sheet'
 import { Jelly, Segmented } from './ui'
 
 const KINDS: MaterialKind[] = ['book', 'article', 'course', 'video', 'podcast', 'other']
-const STATUSES: MaterialStatus[] = ['inbox', 'active', 'done', 'reference', 'dropped']
+const STATUSES: MaterialStatus[] = ['inbox', 'active', 'someday', 'reference', 'done', 'dropped']
 
 export function MaterialForm({
-  categoryId,
+  streamId,
   material,
   onClose,
 }: {
-  categoryId: string
+  streamId: string
   material?: Material
   onClose: () => void
 }) {
@@ -40,7 +40,7 @@ export function MaterialForm({
       parts_total: Number(parts) > 0 ? Number(parts) : null,
     }
     if (material) await updateMaterial(material.id, patch)
-    else await addMaterial({ ...patch, category_id: categoryId, sort: materials.length })
+    else await addMaterial({ ...patch, stream_id: streamId, sort: materials.length })
     setBusy(false)
     onClose()
   }

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ACCENTS, type Accent, type LearningCategory } from '../lib/learning/types'
+import { ACCENTS, type Accent, type Stream } from '../lib/learning/types'
 import { useLearning } from '../state/LearningContext'
 import { useLocale } from '../state/LocaleContext'
 import { Icon, type IconName } from './Icon'
@@ -17,47 +17,47 @@ const PICKABLE: IconName[] = [
   'trending-up',
 ]
 
-export function CategoryForm({
-  category,
+export function StreamForm({
+  stream,
   onClose,
 }: {
-  category?: LearningCategory
+  stream?: Stream
   onClose: () => void
 }) {
   const { t } = useLocale()
-  const { addCategory, updateCategory, deleteCategory, categories } = useLearning()
+  const { addStream, updateStream, deleteStream, streams } = useLearning()
 
-  const [name, setName] = useState(category?.name ?? '')
-  const [icon, setIcon] = useState<IconName>(category?.icon ?? 'compass')
-  const [accent, setAccent] = useState<Accent | null>(category?.accent ?? null)
-  const [outline, setOutline] = useState(category?.outline ?? '')
+  const [name, setName] = useState(stream?.name ?? '')
+  const [icon, setIcon] = useState<IconName>(stream?.icon ?? 'compass')
+  const [accent, setAccent] = useState<Accent | null>(stream?.accent ?? null)
+  const [outline, setOutline] = useState(stream?.outline ?? '')
   const [busy, setBusy] = useState(false)
 
   async function save() {
     if (!name.trim()) return
     setBusy(true)
     const patch = { name: name.trim(), icon, accent, outline: outline.trim() || null }
-    if (category) await updateCategory(category.id, patch)
-    else await addCategory({ ...patch, sort: categories.length })
+    if (stream) await updateStream(stream.id, patch)
+    else await addStream({ ...patch, sort: streams.length })
     setBusy(false)
     onClose()
   }
 
   async function remove() {
-    if (!category || !confirm(t('category.confirmDelete'))) return
-    await deleteCategory(category.id)
+    if (!stream || !confirm(t('stream.confirmDelete'))) return
+    await deleteStream(stream.id)
     onClose()
   }
 
   return (
-    <Sheet title={category ? t('category.edit') : t('learning.newCategory')} onClose={onClose}>
+    <Sheet title={stream ? t('stream.edit') : t('learning.newStream')} onClose={onClose}>
       <label className="field">
-        <span className="label">{t('category.name')}</span>
+        <span className="label">{t('stream.name')}</span>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
       </label>
 
       <div className="field">
-        <span className="label">{t('category.icon')}</span>
+        <span className="label">{t('stream.icon')}</span>
         <div className="icon-pick">
           {PICKABLE.map((n) => (
             <button
@@ -75,7 +75,7 @@ export function CategoryForm({
       </div>
 
       <div className="field">
-        <span className="label">{t('category.accent')}</span>
+        <span className="label">{t('stream.accent')}</span>
         <div className="accent-pick">
           {ACCENTS.map((a) => (
             <button
@@ -92,23 +92,23 @@ export function CategoryForm({
       </div>
 
       <label className="field">
-        <span className="label">{t('category.outline')}</span>
+        <span className="label">{t('stream.outline')}</span>
         <textarea
           className="textarea"
           rows={6}
           value={outline}
           onChange={(e) => setOutline(e.target.value)}
         />
-        <span className="small faint">{t('category.outlineHint')}</span>
+        <span className="small faint">{t('stream.outlineHint')}</span>
       </label>
 
       <div className="row-tight">
         <Jelly className="btn" onClick={() => void save()} disabled={busy || !name.trim()}>
           {t('form.save')}
         </Jelly>
-        {category && (
+        {stream && (
           <button className="link-btn danger" type="button" onClick={() => void remove()}>
-            {t('category.delete')}
+            {t('stream.delete')}
           </button>
         )}
       </div>

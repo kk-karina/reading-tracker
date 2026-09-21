@@ -12,7 +12,7 @@ export function StudyNote() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { t, locale } = useLocale()
-  const { notes, materials, categories, loading, updateNote, deleteNote } = useLearning()
+  const { notes, materials, streams, loading, updateNote, deleteNote } = useLearning()
 
   const note = notes.find((n) => n.id === id)
 
@@ -36,7 +36,7 @@ export function StudyNote() {
   if (!note) return <Navigate to="/learning" replace />
 
   const material = materials.find((m) => m.id === note.material_id)
-  const category = categories.find((c) => c.id === material?.category_id)
+  const stream = streams.find((s) => s.id === material?.stream_id)
   const dirty = part !== (note.part ?? '') || body !== note.body || tags.join() !== note.tags.join()
 
   const save = async () => {
@@ -60,11 +60,11 @@ export function StudyNote() {
         )}
       </div>
 
-      <article className="sheet-page" data-accent={category?.accent ?? undefined}>
+      <article className="sheet-page" data-accent={stream?.accent ?? undefined}>
         <div className="sheet-head-line">
           <span className="label">
-            {category?.accent && <i className="sheet-dot" data-accent={category.accent} />}
-            {category?.name} · {fmtDate(note.date, locale)}
+            {stream?.accent && <i className="sheet-dot" data-accent={stream.accent} />}
+            {stream?.name} · {fmtDate(note.date, locale)}
           </span>
           <div className="row-tight">
             {editing ? (
