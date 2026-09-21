@@ -12,6 +12,7 @@ export function ReadingLayout() {
     <>
       <SubNav
         id="reading"
+        label={t('nav.reading')}
         items={[
           { to: '/reading', label: t('nav.dashboard'), end: true },
           { to: '/reading/shelf', label: t('nav.shelf') },

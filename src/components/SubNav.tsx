@@ -15,11 +15,12 @@ export interface SubNavItem {
  * Два одинаково громких ряда спорили бы за то, какой из них главный.
  *
  * `id` разводит `layoutId` чернил: иначе полоса чтения и полоса потока
- * анимировались бы как одна при переходе между разделами.
+ * анимировались бы как одна при переходе между разделами. `label` — отдельно,
+ * потому что это имя для человека, и оно обязано быть переведённым.
  */
-export function SubNav({ items, id }: { items: SubNavItem[]; id: string }) {
+export function SubNav({ items, id, label }: { items: SubNavItem[]; id: string; label: string }) {
   return (
-    <nav className="subnav" aria-label={id}>
+    <nav className="subnav" aria-label={label}>
       {items.map((i) => (
         <NavLink key={i.to} to={i.to} end={i.end}>
           {({ isActive }) => (
