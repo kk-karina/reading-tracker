@@ -29,38 +29,6 @@ export function Streams() {
   const live = streams.filter((s) => !s.archived)
   const archived = streams.filter((s) => s.archived)
 
-  if (live.length === 0) {
-    return (
-      <>
-        <div className="page-head">
-          <h1 className="display">{t('hub.title')}</h1>
-        </div>
-        <div className="hero-empty">
-          <p className="muted">{t('hub.empty')}</p>
-          <Jelly className="btn" onClick={() => setAdding(true)}>
-            {t('hub.newStream')}
-          </Jelly>
-          <p className="small faint">{t('hub.suggest')}</p>
-          <div className="row-tight">
-            {SUGGESTED.map((s, i) => (
-              <button
-                key={s.name}
-                type="button"
-                className="btn ghost sm"
-                onClick={() =>
-                  void addStream({ name: s.name, icon: s.icon, accent: null, outline: null, sort: i })
-                }
-              >
-                {s.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        {adding && <StreamForm onClose={() => setAdding(false)} />}
-      </>
-    )
-  }
-
   const card = (s: Stream) => {
     const focus = s.focus_material_id
       ? materials.find((m) => m.id === s.focus_material_id)
@@ -101,6 +69,50 @@ export function Streams() {
     )
   }
 
+  // Архив живёт в обеих ветках: заархивировать все потоки — это состояние, а не
+  // пустота, и путь к ним из него обязан оставаться.
+  const archiveBlock = archived.length > 0 && (
+    <>
+      <button className="link-btn" type="button" onClick={() => setShowArchive((v) => !v)}>
+        {t('hub.archived', { n: archived.length })}
+      </button>
+      {showArchive && <ul className="stream-grid dim">{archived.map(card)}</ul>}
+    </>
+  )
+
+  if (live.length === 0) {
+    return (
+      <>
+        <div className="page-head">
+          <h1 className="display">{t('hub.title')}</h1>
+        </div>
+        <div className="hero-empty">
+          <p className="muted">{t('hub.empty')}</p>
+          <Jelly className="btn" onClick={() => setAdding(true)}>
+            {t('hub.newStream')}
+          </Jelly>
+          <p className="small faint">{t('hub.suggest')}</p>
+          <div className="row-tight">
+            {SUGGESTED.map((s, i) => (
+              <button
+                key={s.name}
+                type="button"
+                className="btn ghost sm"
+                onClick={() =>
+                  void addStream({ name: s.name, icon: s.icon, accent: null, outline: null, sort: i })
+                }
+              >
+                {s.name}
+              </button>
+            ))}
+          </div>
+        </div>
+        {archiveBlock}
+        {adding && <StreamForm onClose={() => setAdding(false)} />}
+      </>
+    )
+  }
+
   return (
     <>
       <div className="page-head">
@@ -113,16 +125,7 @@ export function Streams() {
       <ul className="stream-grid">{live.map(card)}</ul>
 
       {/* Архив не прячется совсем и не мешает: строка есть, только когда в нём что-то лежит. */}
-      {archived.length > 0 && (
-        <>
-          <button className="link-btn" type="button" onClick={() => setShowArchive((v) => !v)}>
-            {t('hub.archived', { n: archived.length })}
-          </button>
-          {showArchive && (
-            <ul className="stream-grid dim">{archived.map(card)}</ul>
-          )}
-        </>
-      )}
+      {archiveBlock}
 
       {adding && <StreamForm onClose={() => setAdding(false)} />}
     </>
