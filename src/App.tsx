@@ -3,6 +3,7 @@ import { Shell } from './components/Shell'
 import { Book } from './pages/Book'
 import { Journal } from './pages/Journal'
 import { Learning } from './pages/Learning'
+import { Material } from './pages/Material'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
 import { Settings } from './pages/Settings'
@@ -26,6 +27,7 @@ function Gate() {
             <Route path="book/:id" element={<Book />} />
             <Route path="journal" element={<Journal />} />
             <Route path="learning" element={<Learning />} />
+            <Route path="learning/m/:id" element={<Material />} />
             <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
