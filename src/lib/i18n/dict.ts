@@ -1,11 +1,12 @@
 import type { Dict } from './translate'
+import { LEARNING } from './learning'
 
 /**
  * Both languages sit side by side so a missing one is visible while editing.
  * Countable strings hold plural categories: Russian needs one/few/many, English one/other.
  * `satisfies Dict` keeps the shape honest without widening the key type.
  */
-export const DICT = {
+const BASE = {
   'app.name': { ru: 'Дневник чтения', en: 'Reading tracker' },
 
   'nav.progress': { ru: 'Прогресс', en: 'Progress' },
@@ -337,4 +338,6 @@ export const DICT = {
   'face.5': { ru: 'отлично', en: 'great' },
 } satisfies Dict
 
+/** Раздел обучения живёт отдельным файлом: словарь чтения и без того большой. */
+export const DICT = { ...BASE, ...LEARNING }
 export type DictKey = keyof typeof DICT

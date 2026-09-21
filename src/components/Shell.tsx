@@ -13,6 +13,7 @@ const LINKS: { to: string; key: DictKey }[] = [
   { to: '/', key: 'nav.progress' },
   { to: '/shelf', key: 'nav.shelf' },
   { to: '/journal', key: 'nav.journal' },
+  { to: '/learning', key: 'nav.learning' },
   { to: '/settings', key: 'nav.settings' },
 ]
 

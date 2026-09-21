@@ -2,12 +2,14 @@ import { HashRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { Shell } from './components/Shell'
 import { Book } from './pages/Book'
 import { Journal } from './pages/Journal'
+import { Learning } from './pages/Learning'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
 import { Settings } from './pages/Settings'
 import { Shelf } from './pages/Shelf'
 import { AuthProvider, useAuth } from './state/AuthContext'
 import { DataProvider } from './state/DataContext'
+import { LearningProvider } from './state/LearningContext'
 import { LocaleProvider } from './state/LocaleContext'
 
 function Gate() {
@@ -16,16 +18,19 @@ function Gate() {
   if (!user) return <Login />
   return (
     <DataProvider>
-      <Routes>
-        <Route element={<Shell />}>
-          <Route index element={<Progress />} />
-          <Route path="shelf" element={<Shelf />} />
-          <Route path="book/:id" element={<Book />} />
-          <Route path="journal" element={<Journal />} />
-          <Route path="settings" element={<Settings />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Route>
-      </Routes>
+      <LearningProvider>
+        <Routes>
+          <Route element={<Shell />}>
+            <Route index element={<Progress />} />
+            <Route path="shelf" element={<Shelf />} />
+            <Route path="book/:id" element={<Book />} />
+            <Route path="journal" element={<Journal />} />
+            <Route path="learning" element={<Learning />} />
+            <Route path="settings" element={<Settings />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
+      </LearningProvider>
     </DataProvider>
   )
 }
