@@ -1,4 +1,4 @@
-import { addDays, fromISO, toISO, todayISO } from '../format'
+import { fromISO, todayISO } from '../format'
 
 const WEEKS = 8
 
@@ -10,16 +10,19 @@ const WEEKS = 8
  * на который отвечает эта строка, — «я всё ещё этим занимаюсь?», и к
  * понедельникам он отношения не имеет.
  *
+ * Окно считается разницей в днях, а не граничной датой: так модуль не зависит
+ * от помощников, которых в `format` может не оказаться.
+ *
  * Тепловой карты рядом пока нет: `Rhythm` в `Charts.tsx` считает страницы из
  * сессий, а сессий в обучении ещё не существует.
  */
 export function activeWeeks(dates: string[], today: string = todayISO()): number {
-  const since = toISO(addDays(fromISO(today), -(WEEKS * 7 - 1)))
   const now = fromISO(today).getTime()
   const weeks = new Set<number>()
   for (const d of dates) {
-    if (d < since || d > today) continue
     const days = Math.round((now - fromISO(d).getTime()) / 86_400_000)
+    // Отрицательное — дата из будущего; 56 и больше — дальше восьми недель.
+    if (days < 0 || days >= WEEKS * 7) continue
     weeks.add(Math.floor(days / 7))
   }
   return weeks.size
