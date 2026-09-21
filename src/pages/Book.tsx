@@ -1,8 +1,9 @@
 import { motion } from 'motion/react'
 import { useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
 import { BookForm } from '../components/BookForm'
+import { Crumbs } from '../components/Crumbs'
 import { Review } from '../components/Review'
 import { SessionSheet } from '../components/SessionSheet'
 import { Jelly, Segmented } from '../components/ui'
@@ -77,17 +78,13 @@ export function Book() {
     if (!book) return
     if (confirm(t('book.confirmDelete'))) {
       await deleteBook(book.id)
-      nav('/shelf')
+      nav('/reading/shelf')
     }
   }
 
   return (
     <>
-      <nav className="crumbs">
-        <Link to="/shelf" className="crumb">
-          ← {t('book.back')}
-        </Link>
-      </nav>
+      <Crumbs fallback={{ to: '/reading/shelf', label: t('nav.shelf') }} />
 
       <div className="book-head">
         <div className="book-cover-tilt">

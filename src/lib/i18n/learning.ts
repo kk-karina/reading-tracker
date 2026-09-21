@@ -3,6 +3,9 @@ import type { Dict } from './translate'
 /** Ключи раздела обучения. Оба языка рядом — пропуск видно глазом и ловит tsc. */
 export const LEARNING = {
   'nav.learning': { ru: 'Обучение', en: 'Learning' },
+  'nav.reading': { ru: 'Чтение', en: 'Reading' },
+  'nav.hub': { ru: 'Лернинг Хаб', en: 'Learning Hub' },
+  'nav.dashboard': { ru: 'Дашборд', en: 'Dashboard' },
 
   'learning.title': { ru: 'Обучение', en: 'Learning' },
   'learning.empty': {

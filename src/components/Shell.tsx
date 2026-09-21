@@ -8,14 +8,13 @@ import { useAuth } from '../state/AuthContext'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
 import { CursorDot } from './fun'
+import { Icon } from './Icon'
 import { Jelly, Segmented } from './ui'
 
-const LINKS: { to: string; key: DictKey }[] = [
-  { to: '/', key: 'nav.progress' },
-  { to: '/shelf', key: 'nav.shelf' },
-  { to: '/journal', key: 'nav.journal' },
-  { to: '/learning', key: 'nav.learning' },
-  { to: '/settings', key: 'nav.settings' },
+/** Разделов ровно два. Настройки — инструмент, а не третье место. */
+const SECTIONS: { to: string; key: DictKey }[] = [
+  { to: '/reading', key: 'nav.reading' },
+  { to: '/learning', key: 'nav.hub' },
 ]
 
 const LOCALES: { value: Locale; label: string }[] = [
@@ -48,8 +47,8 @@ export function Shell() {
       <header className="topbar">
         <div className="topbar-inner">
           <nav className="nav" aria-label="Main" ref={nav}>
-            {LINKS.map((l) => (
-              <NavLink key={l.to} to={l.to} end={l.to === '/'}>
+            {SECTIONS.map((l) => (
+              <NavLink key={l.to} to={l.to} end={false}>
                 {({ isActive }) => (
                   <motion.span
                     className="nav-item"
@@ -72,6 +71,9 @@ export function Shell() {
           </nav>
           {/* In the bar rather than tucked away in settings: the language follows the book. */}
           <div className="topbar-right">
+            <NavLink to="/settings" className="icon-btn" aria-label={t('nav.settings')}>
+              <Icon name="settings" />
+            </NavLink>
             <Segmented
               name={t('locale.label')}
               value={locale}

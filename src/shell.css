@@ -1,0 +1,63 @@
+/* Стили каркаса (вторая полоса, иконка настроек) живут отдельно от
+   index.css: тот файл занят чужой незавершённой работой. */
+
+/* ---------- вторая полоса и иконка настроек ----------
+   Первая полоса говорит, в каком ты мире; вторая — в каком его углу. Она тише
+   первой намеренно: два одинаково громких ряда спорили бы за главенство. */
+.subnav {
+  display: flex;
+  gap: 2px;
+  margin: 0 0 28px;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.subnav::-webkit-scrollbar {
+  display: none;
+}
+.subnav a {
+  flex: none;
+  text-decoration: none;
+  color: var(--ink-2);
+}
+.subnav a:hover {
+  color: var(--ink);
+}
+.subnav a.active {
+  color: var(--ink);
+}
+.subnav-item {
+  position: relative;
+  display: inline-block;
+  padding: 6px 12px 10px;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+}
+.subnav-ink {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ink);
+}
+.subnav-label {
+  position: relative;
+}
+
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-pill);
+  color: var(--ink-2);
+  text-decoration: none;
+}
+.icon-btn:hover,
+.icon-btn.active {
+  color: var(--ink);
+  background: var(--bg);
+}
