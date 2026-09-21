@@ -60,7 +60,10 @@ export function StreamLayout() {
       <SubNav
         id="stream"
         label={stream.name}
-        items={[{ to: `/learning/${stream.slug}`, label: t('nav.dashboard'), end: true }]}
+        items={[
+          { to: `/learning/${stream.slug}`, label: t('nav.dashboard'), end: true },
+          { to: `/learning/${stream.slug}/backlog`, label: t('nav.backlog') },
+        ]}
       />
 
       <Outlet context={{ stream } satisfies StreamCtx} />

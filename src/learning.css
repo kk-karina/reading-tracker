@@ -464,3 +464,57 @@
 .stream-rows > li:last-child {
   border-bottom: 1px solid var(--line);
 }
+/* Строка дашборда, ведущая на свой экран, — ссылка занимает всю плашку,
+   а не только текст, и не должна выглядеть как ссылка. */
+.stream-row-link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Своя полоса вместо `.filter-bar`: тот класс живёт в чужой незакоммиченной
+   работе, и опираться на него значит зависеть от чужого черновика. */
+.hub-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 0 0 20px;
+}
+
+/* ---------- бэклог ---------- */
+.backlog-tabs {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.backlog-tab {
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: none;
+  color: var(--ink-2);
+  font-size: 14px;
+  cursor: pointer;
+}
+.backlog-tab:hover {
+  color: var(--ink);
+}
+.backlog-tab.on {
+  color: var(--ink);
+  border-color: var(--ink-3);
+  background: var(--bg);
+}
+/* Строка бэклога — ссылка плюс действие, поэтому сама строка ссылкой не является. */
+.mat-row.static {
+  cursor: default;
+}
+.mat-row.static .mat-main {
+  text-decoration: none;
+  color: inherit;
+}

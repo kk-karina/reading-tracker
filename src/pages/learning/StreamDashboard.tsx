@@ -78,11 +78,13 @@ export function StreamDashboard() {
           <span className="small faint">{t('hub.materialCount', { n: inWork })}</span>
         </li>
         <li>
-          <span className="label">{t('nav.backlog')}</span>
-          <span className="small faint">
-            {t('mstatus.inbox')} {counts.inbox} · {t('mstatus.someday')} {counts.someday} ·{' '}
-            {t('mstatus.reference')} {counts.reference}
-          </span>
+          <Link className="stream-row-link" to={`/learning/${stream.slug}/backlog`}>
+            <span className="label">{t('nav.backlog')}</span>
+            <span className="small faint">
+              {t('mstatus.inbox')} {counts.inbox} · {t('mstatus.someday')} {counts.someday} ·{' '}
+              {t('mstatus.reference')} {counts.reference}
+            </span>
+          </Link>
         </li>
         <li>
           <span className="label">{t('nav.notes')}</span>

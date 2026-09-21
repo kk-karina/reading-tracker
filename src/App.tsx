@@ -2,6 +2,7 @@ import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom
 import { Shell } from './components/Shell'
 import { Book } from './pages/Book'
 import { Journal } from './pages/Journal'
+import { Backlog } from './pages/learning/Backlog'
 import { StreamDashboard } from './pages/learning/StreamDashboard'
 import { StreamLayout } from './pages/learning/StreamLayout'
 import { Streams } from './pages/learning/Streams'
@@ -45,6 +46,7 @@ function Gate() {
             <Route path="learning" element={<Streams />} />
             <Route path="learning/:slug" element={<StreamLayout />}>
               <Route index element={<StreamDashboard />} />
+              <Route path="backlog" element={<Backlog />} />
             </Route>
             {/* Вложенные адреса материала и конспекта регистрируются заранее: блок
                 фокуса на дашборде уже ссылается на них. Material.tsx и StudyNote.tsx

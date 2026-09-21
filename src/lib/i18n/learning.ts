@@ -96,6 +96,27 @@ export const LEARNING = {
   'mstatus.reference': { ru: 'Справка', en: 'Reference' },
   'mstatus.dropped': { ru: 'Брошено', en: 'Dropped' },
 
+  // Вкладка архива в бэклоге объединяет статусы done/dropped, у неё нет
+  // отдельного mstatus — имя берётся из словаря самого экрана.
+  'backlog.tabArchive': { ru: 'Архив', en: 'Archive' },
+  'backlog.take': { ru: 'Взять в работу', en: 'Take it on' },
+  'backlog.emptyInbox': {
+    ru: 'Входящих нет. Всё разобрано.',
+    en: 'Nothing in the inbox. All sorted.',
+  },
+  'backlog.emptySomeday': {
+    ru: 'Здесь пусто. Сюда уходит то, что не выкинуть и не взять сейчас.',
+    en: 'Empty. This is where things go that you will not drop but will not start either.',
+  },
+  'backlog.emptyReference': {
+    ru: 'Справочников пока нет.',
+    en: 'No reference material yet.',
+  },
+  'backlog.emptyArchive': {
+    ru: 'Архив пуст.',
+    en: 'The archive is empty.',
+  },
+
   'note.new': { ru: 'Новый конспект', en: 'New note' },
   'note.part': { ru: 'Глава или часть', en: 'Chapter or part' },
   'note.partPlaceholder': { ru: 'Глава 1. Название', en: 'Chapter 1. Title' },
