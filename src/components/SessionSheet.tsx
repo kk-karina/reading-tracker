@@ -6,7 +6,7 @@ import type { Book, Note, NoteTag, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
 import { Sheet } from './Sheet'
-import { Jelly, Segmented } from './ui'
+import { FormStack, Jelly, Segmented } from './ui'
 
 const TAGS: NoteTag[] = ['quote', 'idea', 'question', 'disagree', 'feeling']
 
@@ -122,7 +122,7 @@ export function SessionSheet({
 
   return (
     <Sheet title={t(session ? 'session.editTitle' : 'session.title')} onClose={onClose}>
-      <div className="book-form">
+      <FormStack>
         <div className="field-row">
           <label className="field">
             <span className="label">{t('session.date')}</span>
@@ -245,7 +245,7 @@ export function SessionSheet({
             </button>
           )}
         </div>
-      </div>
+      </FormStack>
     </Sheet>
   )
 }

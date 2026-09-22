@@ -1,0 +1,44 @@
+import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
+
+/**
+ * Зона экрана: имя, линия и то, что под ней.
+ *
+ * Уровень, которого на дашборде не было вовсе. Раньше все подписи — «сейчас
+ * в фокусе», «мысль недели», «последние конспекты», «ресурсы и бэклог» — были
+ * набраны одним и тем же моноширинным капслоком в 11px, то есть семь разных
+ * по важности вещей весили одинаково. Имя зоны набрано текстом, а не капслоком,
+ * и стоит над линией: из трёх строк собирается оглавление экрана, а капслок
+ * остаётся тем, чем и должен быть, — подписью к числу внутри панели.
+ *
+ * Ссылка справа ведёт в раздел, который эта зона показывает куском. Рядом с
+ * ней может стоять действие — то, ради чего в этот раздел и идут.
+ */
+export function Zone({
+  title,
+  link,
+  action,
+  children,
+}: {
+  title: string
+  link?: { to: string; label: string }
+  action?: ReactNode
+  children: ReactNode
+}) {
+  return (
+    <section className="zone">
+      <div className="zone-head">
+        <h2 className="zone-title">{title}</h2>
+        <span className="zone-acts">
+          {action}
+          {link && (
+            <Link className="zone-link" to={link.to}>
+              {link.label}
+            </Link>
+          )}
+        </span>
+      </div>
+      {children}
+    </section>
+  )
+}

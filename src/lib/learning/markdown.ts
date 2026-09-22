@@ -143,3 +143,23 @@ export function renderMarkdown(src: string): string {
   flushAll()
   return out.join('')
 }
+
+/**
+ * Тот же текст без разметки — для превью в карточке.
+ *
+ * Не `renderMarkdown` с последующей срезкой тегов: там на входе уже
+ * экранированный HTML, и обратно из него получались бы `&amp;` вместо `&`.
+ * Здесь снимаются ровно те же знаки, которые ставит `inline`.
+ */
+export function plainText(src: string): string {
+  return src
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
+    .replace(/==(.+?)==/g, '$1')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/(^|[^*])\*([^*]+)\*/g, '$1$2')
+    // Заголовки, цитаты и маркеры списка — в начале строки.
+    .replace(/^\s*(#{1,6}|>|[-*+])\s+/gm, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+}

@@ -1,7 +1,7 @@
 import { motion } from 'motion/react'
 import { Link } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
-import { Rhythm, WeeklyBars } from '../components/Charts'
+import { pagesByDate, Rhythm, WeeklyBars } from '../components/Charts'
 import { Counter, Jelly } from '../components/ui'
 import { daysAgoISO, fmtDate, todayISO } from '../lib/format'
 import { finishedInYear, lastSessionDate, progressOf, streakDays, stuckBooks } from '../lib/reading'
@@ -83,7 +83,11 @@ export function Progress() {
             <div className="label">{t('chart.rhythm')}</div>
             <span className="small faint">{t('progress.rhythmHint')}</span>
           </div>
-          <Rhythm sessions={sessions} />
+          <Rhythm
+            byDate={pagesByDate(sessions)}
+            label={t('chart.rhythm')}
+            unit={(n) => t('count.pages', { n })}
+          />
         </section>
 
         <section className="panel">
@@ -114,9 +118,16 @@ export function Progress() {
                     <span className="label thought-tag">{t(`tag.${n.tag}`)}</span>
                     <p className="thought-body">{n.body}</p>
                     {b && (
-                      <Link to={`/book/${b.id}`} className="thought-book" title={b.title}>
+                      <Link
+                        to={`/book/${b.id}`}
+                        className="thought-book"
+                        title={b.author ? `${b.title} — ${b.author}` : b.title}
+                      >
                         <BookCover book={b} size="xs" />
-                        <span className="muted">{b.title}</span>
+                        <span className="thought-book-text">
+                          <span className="thought-book-title">{b.title}</span>
+                          {b.author && <span className="thought-book-author">{b.author}</span>}
+                        </span>
                       </Link>
                     )}
                   </article>

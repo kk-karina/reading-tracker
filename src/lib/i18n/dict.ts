@@ -110,6 +110,29 @@ const BASE = {
     ru: 'Четыре книги с обложками — посмотреть, как всё выглядит.',
     en: 'Four books with covers, to see how it all looks.',
   },
+  'shelf.view': { ru: 'Вид полки', en: 'Shelf view' },
+  'shelf.viewGrid': { ru: 'Сетка', en: 'Grid' },
+  'shelf.viewReel': { ru: 'Лента', en: 'Reel' },
+  'shelf.status': { ru: 'Статус книг', en: 'Book status' },
+  'shelf.allStatuses': { ru: 'Все', en: 'All' },
+
+  'reel.back': { ru: 'Назад по полке', en: 'Back along the shelf' },
+  'reel.forward': { ru: 'Вперёд по полке', en: 'Forward along the shelf' },
+
+  'settings.sample': { ru: 'Добавить примеры', en: 'Add the sample books' },
+  'settings.sampleLoading': { ru: 'Добавляю…', en: 'Adding…' },
+  'settings.sampleHint': {
+    ru: 'Четырнадцать книг с обложками — чтобы полка была не пустая и её было куда листать.',
+    en: 'Fourteen books with covers, so the shelf is not empty and there is something to scroll.',
+  },
+  'settings.sampleAdded': {
+    ru: { one: 'Добавлена {n} книга.', few: 'Добавлено {n} книги.', many: 'Добавлено {n} книг.' },
+    en: { one: 'Added {n} book.', other: 'Added {n} books.' },
+  },
+  'settings.sampleNone': {
+    ru: 'Все примерные книги уже на полке.',
+    en: 'Every sample book is already on the shelf.',
+  },
 
   'book.pagesOf': { ru: '{page} из {total}', en: '{page} of {total}' },
   'book.pagesUnknown': { ru: 'страниц не указано', en: 'page count not set' },

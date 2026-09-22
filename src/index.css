@@ -258,6 +258,26 @@ button {
   max-width: 48ch;
 }
 
+/* The page pattern. The head names the page; everything that changes what is
+   on it stands in one bar underneath — the toggles that narrow the page on the
+   left, the controls that belong to this page alone (a button, a search, a book
+   to look at) on the right. No captions: a segmented control and a select say
+   what they are without being introduced. Every page wears the same bar, so it
+   is learnt once. */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px 20px;
+  margin-bottom: 30px;
+}
+/* Both sides are in the markup whether or not they hold anything: an empty left
+   side is what keeps the right one on the right. */
+.filter-bar > * {
+  min-width: 0;
+}
+
 /* ---------- controls ---------- */
 
 .btn {
@@ -397,11 +417,6 @@ button {
 .field > .label {
   color: var(--ink-2);
 }
-.form-row {
-  display: grid;
-  gap: 12px;
-}
-
 .seg {
   display: inline-flex;
   flex-wrap: wrap;
@@ -413,6 +428,12 @@ button {
 .seg.grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+}
+/* Больше четырёх делений ряд не держит: flex-wrap оставляет вторую строку
+   рваной, потому что деления разной ширины. Грид даёт равные. */
+.seg.wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
 }
 .seg button {
   position: relative;
@@ -444,6 +465,12 @@ button {
   flex-wrap: wrap;
 }
 .chip {
+  /* display обязателен: без него высота и вертикальные отступы на <span>
+     молча не значат ничего — инлайновый элемент их не принимает. Отсюда и
+     брался разнобой между чипом-тегом и чипом-кнопкой. */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 32px;
   padding: 0 12px;
   border-radius: 6px;
@@ -451,6 +478,7 @@ button {
   background: var(--paper);
   font-family: var(--mono);
   font-size: 13px;
+  line-height: 1;
   color: var(--ink-2);
   transition:
     transform 0.25s var(--ease-spring),
@@ -458,12 +486,19 @@ button {
     color 0.2s,
     background 0.2s;
 }
-.chip:hover {
+.chip.sm {
+  height: 26px;
+  padding: 0 9px;
+  font-size: 12px;
+}
+/* Наклон на hover — обещание, что по этому нажимают. У тега-надписи его быть
+   не должно, поэтому отжим живёт только на кнопке. */
+button.chip:hover {
   border-color: var(--ink);
   color: var(--ink);
   transform: translateY(-2px) rotate(-3deg);
 }
-.chip:active {
+button.chip:active {
   transform: scale(0.9);
 }
 .chip.on {
@@ -868,10 +903,6 @@ button {
   position: relative;
   width: 100%;
 }
-/* Measured, not scaled: the SVG fills the box at one unit per pixel. */
-.chart-fill {
-  width: 100%;
-}
 .chart-svg {
   display: block;
   width: 100%;
@@ -904,6 +935,117 @@ button {
 }
 .chart-tip span {
   color: rgba(255, 255, 255, 0.65);
+}
+
+/* ---------- weeks: a week is a pile of books ---------- */
+
+.wk-plot {
+  position: relative;
+  display: grid;
+  align-items: end;
+  /* The books drop in from above the plot, so the box is also the clip — and
+     the border is the shelf they come to rest on, painted behind them. */
+  overflow: hidden;
+  border-bottom: 1px solid var(--line-2);
+}
+.wk-col {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* Grid tracks default to their content's minimum width; without this a phone
+     gets twelve 46px columns and the chart runs off the panel. */
+  min-width: 0;
+}
+/* A week with nothing in it: a dot on the shelf, not a gap in the row. */
+.wk-none {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--line-2);
+}
+/* Width comes from the component: it is the same number the book thickness is
+   derived from, so the proportions cannot drift apart. */
+.wk-stack {
+  position: relative;
+  height: 100%;
+}
+/* A book lying flat, seen spine-on: a slab of bright cloth catching the light
+   along its top edge and shading under. Width and left edge come from the
+   component — no two books in a pile are the same size or quite squared up. */
+.wk-book {
+  position: absolute;
+  background-image:
+    /* The lit top edge and the shaded underside, both a fixed height, so a
+       two-page book and a two-hundred-page one are lit the same way. */
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.3) 0 1px,
+      rgba(255, 255, 255, 0.12) 1px 3px,
+      rgba(255, 255, 255, 0.02) 3px 7px,
+      rgba(0, 0, 0, 0) 7px calc(100% - 6px),
+      rgba(0, 0, 0, 0.16) calc(100% - 2px),
+      rgba(0, 0, 0, 0.28) calc(100% - 1px)
+    ),
+    /* Head and tail caps, where the cloth turns the corner. */
+    linear-gradient(
+      90deg,
+      rgba(0, 0, 0, 0.22),
+      rgba(0, 0, 0, 0) 9%,
+      rgba(0, 0, 0, 0) 91%,
+      rgba(0, 0, 0, 0.22)
+    );
+  box-shadow: 0 1px 2px rgba(14, 16, 18, 0.16);
+}
+.wk-avg {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ink-3);
+  z-index: 2;
+}
+.wk-avg .wk-cap {
+  position: absolute;
+  bottom: 4px;
+  left: 0;
+}
+.wk-labels {
+  display: grid;
+  align-items: center;
+}
+.wk-labels > * {
+  min-width: 0;
+}
+.wk-cap {
+  font-family: var(--mono);
+  font-size: 10px;
+  line-height: 1;
+  color: var(--ink-3);
+}
+.wk-label {
+  text-align: center;
+  white-space: nowrap;
+}
+.wk-label.is-now {
+  color: var(--ink);
+}
+/* Twelve dates only fit on a wide panel. Narrower, they thin out to every
+   second and then every third — always counted back from "now", which is the
+   one date that has to survive. */
+@media (max-width: 860px) {
+  .wk-labels > :nth-child(odd) {
+    visibility: hidden;
+  }
+}
+@media (max-width: 560px) {
+  .wk-labels > * {
+    visibility: hidden;
+  }
+  .wk-labels > :nth-child(3n) {
+    visibility: visible;
+  }
 }
 
 .top-topics {
@@ -948,6 +1090,9 @@ button {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  /* Переносится: длинная подпись и подсказка рядом иначе сминают друг друга
+     на узком экране. Пока они влезают в строку, ничего не меняется. */
+  flex-wrap: wrap;
   gap: 12px;
   margin-bottom: 20px;
 }
@@ -1355,16 +1500,6 @@ button {
   border-bottom: 0;
 }
 
-/* Status on the left, the book on the right, and no captions: a segmented
-   control and a select say what they are without being introduced. */
-.journal-filters {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
-  margin-bottom: 30px;
-}
 .entry-main {
   display: flex;
   align-items: flex-start;
@@ -1816,7 +1951,7 @@ button {
 
 .sheet-title { font-size: 24px; margin: 0; }
 
-.book-form {
+.form-stack {
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -1960,11 +2095,14 @@ button {
   gap: 20px;
 }
 .thought-card {
-  --paper-1: #f4f5f7;
-  --core: #fbfbfc;
-  --ring: #dfe3ea;
+  --paper-1: #f5f6f8;
+  --core: #fcfcfd;
+  --ring: #e5e8ee;
 
   position: relative;
+  /* The swirl below sits at z-index -1; the card has to be its own stacking
+     context or it would slide under the page instead of under the text. */
+  isolation: isolate;
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -1972,22 +2110,75 @@ button {
   border-radius: 18px;
   overflow: hidden;
   color: var(--ink);
-  /* One ellipse, three stops: a lit centre, the colour at mid-radius, and the
-     paper again before the edge — the ring is what makes it an aura and not a
-     wash. The last stop is the paper colour itself, so nothing greys out on
-     the way to transparent. */
-  background: radial-gradient(
-    74% 60% at 50% 52%,
-    var(--core) 0%,
-    var(--ring) 46%,
-    var(--paper-1) 84%
-  );
+  /* Paper, lit from the top-left like every cover on the shelf. */
+  background:
+    radial-gradient(116% 96% at 20% 6%, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 0) 58%),
+    var(--paper-1);
   box-shadow:
     inset 0 0 0 1px rgba(14, 16, 18, 0.05),
     0 1px 1px rgba(14, 16, 18, 0.04),
     0 20px 30px -24px rgba(14, 16, 18, 0.55);
   transition: transform 0.25s var(--ease-out), box-shadow 0.25s var(--ease-out);
 }
+
+/* The aura is a spiral, and a spiral is two turns of the same sweep at two
+   radii: ::before keeps a short arm near the centre, ::after carries it on
+   around further out through a ring-shaped mask, rotated on from where the
+   inner one ended. Blur dissolves the seam every conic gradient has at 0deg —
+   enough to soften the arm, not so much that it flattens into a wash. Both
+   layers sit at z-index -1, under the ink, inside the card's own stacking
+   context. */
+.thought-card::before,
+.thought-card::after {
+  content: '';
+  position: absolute;
+  inset: -35%;
+  z-index: -1;
+  filter: blur(10px);
+  pointer-events: none;
+  /* Turned about the eye itself on hover, not about the middle of the card. */
+  transform-origin: 78% 84%;
+  transition: transform 0.55s var(--ease-out);
+}
+/* The eye of the swirl sits off the bottom-right corner, so what crosses the
+   paper is a long arc of it and not a blob in the middle of the text. */
+.thought-card::before {
+  background: conic-gradient(
+    from 186deg at 78% 84%,
+    rgba(255, 255, 255, 0) 0deg,
+    var(--ring) 70deg,
+    var(--core) 132deg,
+    rgba(255, 255, 255, 0) 205deg
+  );
+  mask-image: radial-gradient(
+    50% 48% at 78% 84%,
+    #000 8%,
+    rgba(0, 0, 0, 0.9) 30%,
+    rgba(0, 0, 0, 0) 58%
+  );
+}
+/* The same arc carried on one more turn, further out: rotated on from where
+   the inner one fades, so the two read as one line winding outwards. */
+.thought-card::after {
+  background: conic-gradient(
+    from 6deg at 78% 84%,
+    rgba(255, 255, 255, 0) 0deg,
+    var(--core) 64deg,
+    var(--ring) 138deg,
+    rgba(255, 255, 255, 0) 218deg
+  );
+  mask-image: radial-gradient(
+    112% 108% at 78% 84%,
+    rgba(0, 0, 0, 0) 40%,
+    #000 66%,
+    rgba(0, 0, 0, 0) 95%
+  );
+  opacity: 0.95;
+}
+
+/* The card is a link to the journal, so it answers the cursor: it lifts, its
+   shadow deepens, and the spiral turns a few degrees under the text — slower
+   than the lift, the way something heavy comes round. */
 .thought-cards > .thought-card:hover {
   transform: translateY(-3px);
   box-shadow:
@@ -1995,40 +2186,49 @@ button {
     0 1px 1px rgba(14, 16, 18, 0.04),
     0 26px 36px -24px rgba(14, 16, 18, 0.6);
 }
+.thought-cards > .thought-card:hover::before,
+.thought-cards > .thought-card:hover::after {
+  transform: rotate(8deg) scale(1.04);
+}
 
-/* Cream and apricot, cool blue, periwinkle, rose, mint: pale enough that ink
-   stays the loudest thing on the card. */
+/* Cream and apricot, cool blue, periwinkle, rose, mint — one step paler than
+   the tints they started as: the arm is a stroke of colour now rather than a
+   wash, and a stroke reads at half the strength a wash needed. */
 .thought-card[data-tag='quote'] {
-  --paper-1: #fdfaee;
-  --ring: #dfe7c2;
-  --core: #f1cfac;
+  --paper-1: #fdfbf3;
+  --ring: #e3e5c8;
+  --core: #f3dcc4;
 }
 .thought-card[data-tag='idea'] {
-  --paper-1: #eef6fd;
-  --ring: #a7cdea;
-  --core: #d8ecfa;
+  --paper-1: #f2f7fc;
+  --ring: #bcd7ec;
+  --core: #e0eef9;
 }
 .thought-card[data-tag='question'] {
-  --paper-1: #f2f3fb;
-  --ring: #d3dcf2;
+  --paper-1: #f4f5fb;
+  --ring: #ccd5ee;
   --core: #fbfbff;
 }
 .thought-card[data-tag='disagree'] {
-  --paper-1: #fdf3f4;
-  --ring: #f0ccd2;
-  --core: #fdeaec;
+  --paper-1: #fdf6f7;
+  --ring: #eed2d8;
+  --core: #fbe9ec;
 }
 .thought-card[data-tag='feeling'] {
-  --paper-1: #eefaf5;
-  --ring: #c3e6d8;
-  --core: #f0fbf6;
+  --paper-1: #f1faf6;
+  --ring: #c9e4d8;
+  --core: #eef9f4;
 }
 
 /* The stamped box in the corner, like the date field on a memo pad. */
 .thought-tag {
   align-self: flex-start;
-  padding: 4px 9px 3px;
-  border: 1px solid rgba(14, 16, 18, 0.22);
+  /* A size under .label: mono caps read larger than they measure, and this one
+     sits above 14px body copy that has to stay the loudest thing on the card. */
+  font-size: 9.5px;
+  letter-spacing: 0.07em;
+  padding: 3px 8px 2px;
+  border: 1px solid rgba(14, 16, 18, 0.2);
   border-radius: 5px;
   background: rgba(255, 255, 255, 0.55);
   color: var(--ink-2);
@@ -2047,25 +2247,45 @@ button {
 .thought-book {
   margin-top: auto;
 }
+/* Where the thought came from: a credit line, so it is set quietly and kept
+   away from the thought by air and a hairline rather than by size. */
 .thought-book {
   display: flex;
   align-items: center;
-  gap: 9px;
-  padding-top: 12px;
-  border-top: 1px solid rgba(14, 16, 18, 0.09);
+  gap: 10px;
+  margin-top: auto;
+  padding-top: 13px;
+  border-top: 1px solid rgba(14, 16, 18, 0.07);
 }
-/* The title is a caption under a thought, not a heading: small, tight, and cut
-   at two lines. The full one is in the tooltip. */
-.thought-book span {
-  font-size: 11.5px;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
+.thought-book-text {
+  display: flex;
+  min-width: 0; /* or a long word in the title pushes the cover out of the card */
+  flex-direction: column;
+  gap: 3px;
+}
+/* Two lines that must never read as one run of text: each is cut to a single
+   line with an ellipsis, and the pair in full is in the tooltip. */
+.thought-book-title,
+.thought-book-author {
   overflow: hidden;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  line-height: 1.15;
 }
-.thought-book:hover span {
+.thought-book-title {
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  color: var(--ink-2);
+}
+/* A byline: a size down, a shade lighter and let out a little, which separates
+   it from the title far better than another 0.5px of size would. */
+.thought-book-author {
+  font-size: 10px;
+  letter-spacing: 0.03em;
+  color: var(--ink-3);
+}
+.thought-book:hover .thought-book-title {
   text-decoration: underline;
 }
 
@@ -2269,6 +2489,323 @@ button {
   width: 100%;
   resize: vertical;
   font-family: inherit;
+}
+
+
+
+/* ---------- the shelf as a turntable ---------- */
+
+/* Registered so they can be transitioned: the browser needs to know these are
+   numbers before it will animate between two of them. */
+@property --pull {
+  syntax: '<number>';
+  inherits: true;
+  initial-value: 0;
+}
+
+.reel-wrap {
+  position: relative;
+  margin-top: 28px;
+}
+
+/* The camera stands still in front of the stand while the stand turns, so
+   perspective belongs to the frame and not to the moving track. */
+.reel {
+  --reel-slab: 240px;
+  --reel-thick: 30px;
+  /* How far a book rises when it is taken down, and how far it comes forward. */
+  --reel-lift: 26px;
+  /* Far enough forward to clear the whole stand: a book standing at the front
+     of the ring already reaches half its own depth towards you, so anything
+     less and its neighbour cuts straight through the book in your hand. */
+  --reel-reach: 290px;
+
+  position: relative;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Room above for a book to be taken down, and below for the shadow it casts
+     once it is out — a clipped shadow shows as a hard line across the page. */
+  padding: 92px 0 118px;
+  margin: 0 -32px;
+  perspective: 1700px;
+  perspective-origin: 50% 52%;
+  cursor: grab;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  /* Books fade out as they go round the back, but on a narrow window the edge
+     of the screen comes first — this is the fog they go into there. */
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  /* The stand settles with a book facing front. It has to come off while a
+     hand is on it, or the drag would be yanked back on every pixel. */
+  scroll-snap-type: x mandatory;
+}
+
+.reel.dragging {
+  cursor: grabbing;
+  scroll-snap-type: none;
+}
+
+.reel::-webkit-scrollbar {
+  display: none;
+}
+
+.reel-track {
+  position: relative;
+  /* Covers are 2:3, and the books are as tall as the stand they sit on. */
+  height: calc(var(--reel-slab) * 1.5);
+  transform-style: preserve-3d;
+  /* The track lies at the front of the stand while every book but the nearest
+     is set back behind it. It has no paint of its own, but it is still a target
+     — so without this it swallows the pointer for all of them, and only the
+     book at the very front can be picked up. */
+  pointer-events: none;
+}
+
+/* Where the stand comes to rest: one per book, placed each frame. */
+.reel-stop {
+  position: absolute;
+  top: 0;
+  width: 1px;
+  height: 1px;
+  scroll-snap-align: center;
+  pointer-events: none;
+}
+
+/* Placed around the ring each frame. The box is only the spine's width — the
+   boards behind it are hit-tested where they are drawn, so a book never catches
+   a pointer meant for its neighbour. A book taken down rises above the rest. */
+.reel-item {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: var(--reel-thick);
+  height: 100%;
+  margin-left: calc(var(--reel-thick) / -2);
+  z-index: calc(var(--depth, 0) + var(--pull) * 500);
+  pointer-events: auto;
+  color: inherit;
+  text-decoration: none;
+  transform-style: preserve-3d;
+  transition: --pull 520ms var(--ease-spring);
+}
+
+.reel-item:hover,
+.reel-item:focus-visible {
+  --pull: 1;
+  outline: none;
+}
+
+/* Taking a book down lifts it off the stand and brings it towards you. */
+.reel-slab {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform: translateY(calc(var(--pull) * var(--reel-lift) * -1))
+    translateZ(calc(var(--pull) * var(--reel-reach)));
+  will-change: transform;
+}
+
+/* The book turns on its own axis, standing on the ring — and then turns the
+   rest of the way over in your hand, to 90°, where the cover faces you. */
+.reel-book {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  transform-style: preserve-3d;
+  transform-origin: 50% 50% calc(var(--reel-slab) / -2);
+  transform: rotateY(calc((var(--turn, 0) + var(--pull) * (90 - var(--turn, 0))) * 1deg));
+}
+
+/* The face you read on a shelf. It is the front of the book here, not an edge:
+   the spine is what a book on a stand actually shows you. */
+.reel-spine {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 3px 1px 1px 3px;
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.14), rgba(0, 0, 0, 0) 38%, rgba(0, 0, 0, 0.3)),
+    var(--cover-bg, #2b2b2e);
+}
+
+/* The two boards, running back from the spine's edges. */
+.reel-face {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: var(--reel-slab);
+  backface-visibility: hidden;
+}
+
+.reel-face.front {
+  right: 100%;
+  transform-origin: right center;
+  transform: rotateY(-90deg);
+}
+
+.reel-face.back {
+  left: 100%;
+  transform-origin: left center;
+  transform: rotateY(90deg);
+  border-radius: 2px 5px 5px 2px;
+  /* A back board is cloth and nothing else, which is what a real one is. */
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.26), rgba(255, 255, 255, 0.06)),
+    var(--cover-bg, #2b2b2e);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.14);
+}
+
+.reel-face .cover {
+  width: 100%;
+  height: 100%;
+}
+
+/* Light falls on the front of the stand, so a book dims as it turns away. It
+   comes back the moment the book is in your hand. */
+.reel-spine::after,
+.reel-face::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: #0e1012;
+  opacity: calc((1 - var(--face, 1)) * 0.55 * (1 - var(--pull)));
+}
+
+.reel-spine,
+.reel-face.back,
+.reel-book .cover {
+  box-shadow: 0 calc(10px + var(--pull) * 28px) calc(24px + var(--pull) * 50px)
+    rgba(14, 16, 18, calc(0.18 + var(--pull) * 0.2));
+  transition: box-shadow 520ms var(--ease-out);
+}
+
+.reel-spine {
+  box-shadow:
+    inset 0 0 0 1px rgba(0, 0, 0, 0.16),
+    0 calc(10px + var(--pull) * 28px) calc(24px + var(--pull) * 50px)
+      rgba(14, 16, 18, calc(0.18 + var(--pull) * 0.2));
+}
+
+/* The title runs down the spine, cut with an ellipsis when the book is not tall
+   enough to hold it — which is what a real spine does too. */
+.reel-spine-title {
+  position: absolute;
+  inset: 16px 0;
+  display: block;
+  margin: 0 auto;
+  writing-mode: vertical-rl;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--cover-ink, #f0efee);
+  opacity: 0.92;
+}
+
+/* Progress belongs on the spine: it is the one thing worth knowing about a book
+   you have not taken down yet. */
+.reel-meter {
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  bottom: 8px;
+  height: 3px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.28);
+  overflow: hidden;
+}
+
+.reel-meter span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+}
+
+.reel-steps {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 6px;
+}
+
+.reel-step {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 19px;
+  line-height: 1;
+  color: var(--ink-2);
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  transition:
+    transform 0.2s var(--ease-spring),
+    border-color 0.2s var(--ease-out);
+}
+
+.reel-step:hover {
+  color: var(--ink);
+  border-color: var(--ink);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 720px) {
+  .reel {
+    --reel-slab: 168px;
+    --reel-lift: 18px;
+    --reel-reach: 200px;
+    padding: 58px 0 62px;
+    margin: 0 -16px;
+    perspective: 1000px;
+  }
+}
+
+/* The stand does not turn. Without it there is no solid to look at either —
+   a book seen edge-on with no perspective is nothing at all — so the shelf
+   flattens into a plain row of covers that still scrolls. */
+@media (prefers-reduced-motion: reduce) {
+  .reel {
+    perspective: none;
+    scroll-snap-type: none;
+  }
+  .reel-item {
+    width: var(--reel-slab);
+    margin-left: 0;
+    transition: none;
+  }
+  .reel-slab,
+  .reel-book {
+    transform: none;
+  }
+  .reel-spine,
+  .reel-face.back {
+    display: none;
+  }
+  .reel-face.front {
+    right: auto;
+    left: 0;
+    width: 100%;
+    transform: none;
+  }
+  .reel-face::after {
+    display: none;
+  }
+  .reel-book .cover {
+    transition: none;
+  }
 }
 
 /* ---------- shell: пятый пункт меню ----------

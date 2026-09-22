@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { Segmented } from '../components/ui'
 import type { Locale } from '../lib/i18n/translate'
+import { addSampleShelf } from '../lib/seed'
 import { emptySnapshot, type Snapshot } from '../lib/types'
 import { useAuth } from '../state/AuthContext'
 import { useData } from '../state/DataContext'
@@ -13,10 +14,18 @@ const LOCALES: { value: Locale; label: string }[] = [
 
 export function Settings() {
   const { user, mode, signOut } = useAuth()
-  const { books, sessions, notes, importSnapshot } = useData()
+  const { books, sessions, notes, addBook, addSession, importSnapshot } = useData()
   const { locale, setLocale, t } = useLocale()
   const [msg, setMsg] = useState<string | null>(null)
+  const [seeding, setSeeding] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  async function loadSample() {
+    setSeeding(true)
+    const added = await addSampleShelf(books, addBook, addSession)
+    setSeeding(false)
+    setMsg(added > 0 ? t('settings.sampleAdded', { n: added }) : t('settings.sampleNone'))
+  }
 
   function exportJSON() {
     const snap: Snapshot = { books, sessions, notes }
@@ -88,6 +97,15 @@ export function Settings() {
             </span>
             <button className="btn ghost sm" onClick={exportJSON}>
               {t('settings.export')}
+            </button>
+          </div>
+
+          {/* Not only for an empty shelf: a shelf with three books on it is no
+              use for seeing what the shelf does either. */}
+          <div className="row">
+            <span>{t('settings.sampleHint')}</span>
+            <button className="btn ghost sm" onClick={loadSample} disabled={seeding}>
+              {t(seeding ? 'settings.sampleLoading' : 'settings.sample')}
             </button>
           </div>
 

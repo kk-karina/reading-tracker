@@ -1,5 +1,7 @@
-import { Link, Navigate, Outlet, useOutletContext, useParams } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, Navigate, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
+import { StreamForm } from '../../components/StreamForm'
 import { SubNav } from '../../components/SubNav'
 import type { Stream } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
@@ -16,53 +18,85 @@ export function useStream(): Stream {
 
 /**
  * `bare` обслуживает третий и четвёртый уровни (материал, конспект): поток
- * им нужен, а крошка, переключатель и полоса подразделов — уже нет, у этих
- * страниц своя `Crumbs`.
+ * им нужен, а полоса потоков и полоса подразделов — уже нет, у этих страниц
+ * своя `Crumbs`.
  */
 export function StreamLayout({ bare = false }: { bare?: boolean }) {
   const { slug } = useParams()
   const { t } = useLocale()
   const { streams, loading } = useLearning()
+  const navigate = useNavigate()
+  const [adding, setAdding] = useState(false)
+  const [showArchive, setShowArchive] = useState(false)
 
   if (loading) return null
 
   const stream = streams.find((s) => s.slug === slug)
-  // Промахнуться можно только устаревшей ссылкой, и витрина отвечает на это
-  // лучше, чем экран со словом «не найдено».
+  // Промахнуться можно только устаревшей ссылкой, и первый поток отвечает на
+  // это лучше, чем экран со словом «не найдено».
   if (!stream) return <Navigate to="/learning" replace />
 
   if (bare) return <Outlet context={{ stream } satisfies StreamCtx} />
 
-  const others = streams.filter((s) => !s.archived && s.id !== stream.id)
+  const archived = streams.filter((s) => s.archived)
+  // Порядок сортировки и ничего больше. Ряд, который перестраивается под
+  // активный, заставляет искать соседей заново после каждого переключения.
+  const tabs = [
+    ...streams.filter((s) => !s.archived),
+    ...archived.filter((s) => showArchive || s.id === stream.id),
+  ]
 
   return (
     <>
-      <nav className="crumbs">
-        <Link to="/learning" className="crumb">
-          ← {t('hub.title')}
-        </Link>
-      </nav>
+      {/*
+        Три уровня громкости вместо двух спорящих: раздел пилюлей в верхней
+        полосе, поток здесь, подраздел ниже чернильной полосой. Активный поток
+        крупнее соседей ровно настолько, чтобы читаться заголовком зоны, —
+        отдельного экрана-витрины под выбор не нужно.
+      */}
+      <nav className="stream-tabs" aria-label={t('hub.title')}>
+        {tabs.map((s) => {
+          const on = s.id === stream.id
+          return (
+            <Link
+              key={s.id}
+              to={`/learning/${s.slug}`}
+              className="stream-tab"
+              // Размер живёт на самой ссылке, а не на вложенном заголовке:
+              // узел таба переживает переключение, и рост разыгрывается
+              // переходом, а не скачком.
+              data-on={on || undefined}
+              data-archived={s.archived || undefined}
+              aria-current={on ? 'page' : undefined}
+            >
+              <Icon name={s.icon} size={15} />
+              {on ? <h1 className="stream-tab-name">{s.name}</h1> : s.name}
+            </Link>
+          )
+        })}
 
-      {/* Родной <details>: закрывается по Escape и работает с клавиатуры без кода. */}
-      <details className="stream-pick">
-        <summary>
-          <h1 className="display">{stream.name}</h1>
-          <Icon name="chevron-down" size={18} />
-        </summary>
-        <ul className="stream-pick-list">
-          {others.map((s) => (
-            <li key={s.id}>
-              <Link to={`/learning/${s.slug}`} data-accent={s.accent ?? undefined}>
-                <Icon name={s.icon} size={16} />
-                {s.name}
-              </Link>
-            </li>
-          ))}
-          <li>
-            <Link to="/learning">{t('hub.allStreams')}</Link>
-          </li>
-        </ul>
-      </details>
+        {/* Архив живёт тут же: витрины, где он лежал раньше, больше нет. */}
+        {archived.length > 0 && (
+          <button
+            className="stream-tab-side"
+            type="button"
+            aria-expanded={showArchive}
+            onClick={() => setShowArchive((v) => !v)}
+          >
+            {t('hub.archiveShort', { n: archived.length })}
+          </button>
+        )}
+
+        <button
+          className="stream-tab-side"
+          type="button"
+          aria-label={t('hub.newStream')}
+          title={t('hub.newStream')}
+          onClick={() => setAdding(true)}
+        >
+          <Icon name="plus" size={15} />
+        </button>
+      </nav>
 
       <SubNav
         id="stream"
@@ -76,6 +110,15 @@ export function StreamLayout({ bare = false }: { bare?: boolean }) {
       />
 
       <Outlet context={{ stream } satisfies StreamCtx} />
+
+      {/* Новый поток заводится прямо отсюда, и открыть его надо сразу: иначе
+          создание из чужого потока проходит вообще без видимого следа. */}
+      {adding && (
+        <StreamForm
+          onClose={() => setAdding(false)}
+          onCreated={(made) => navigate(`/learning/${made.slug}`)}
+        />
+      )}
     </>
   )
 }

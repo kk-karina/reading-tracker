@@ -1,5 +1,6 @@
+import { motion, useInView, useReducedMotion } from 'motion/react'
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { fromISO, localeTag, toISO, todayISO } from '../lib/format'
+import { addDays, fromISO, localeTag, toISO, todayISO } from '../lib/format'
 import type { Session } from '../lib/types'
 import { useLocale } from '../state/LocaleContext'
 
@@ -7,18 +8,22 @@ import { useLocale } from '../state/LocaleContext'
  * Two charts, both fed by sessions and both measured in pages rather than
  * minutes: minutes are optional by design, so half the days would read as empty.
  *
- * The marks carry no entrance animation. A chart is structure, not decoration —
- * an empty grid still has to say "nothing here yet", and a mark that starts at
- * scale zero says nothing at all until an animation happens to run.
+ * The rhythm grid carries no entrance animation. A chart is structure, not
+ * decoration — an empty grid still has to say "nothing here yet", and a mark
+ * that starts at scale zero says nothing at all until an animation happens to
+ * run. The weekly piles are the one exception and they earn it by being
+ * literal: a pile there is a pile of books, and books land on a shelf. They
+ * drop once, on the first scroll that brings them into view, and nothing moves
+ * after.
  */
 
 /**
  * The width the chart actually got, in CSS pixels.
  *
- * A bar chart that spans a whole dashboard cannot keep a fixed aspect ratio —
- * it would be half a screen tall — and it cannot scale a small viewBox up
- * either, because that blows the axis type up with it. So it measures its box
- * and draws one SVG unit per pixel.
+ * The pile needs it: a book is a book because it is much wider than it is
+ * thick, and on a phone a column is a quarter of the width it has on a laptop.
+ * Thickness is derived from the measurement, so the same pile reads as books at
+ * either size instead of turning into a row of squares.
  */
 function useWidth<T extends HTMLElement>() {
   const ref = useRef<T>(null)
@@ -52,8 +57,6 @@ function Tooltip({ tip }: { tip: Tip | null }) {
   )
 }
 
-const DAY = 86_400_000
-
 /** Monday of the week containing `d`. */
 function mondayOf(d: Date): Date {
   const x = new Date(d)
@@ -62,7 +65,7 @@ function mondayOf(d: Date): Date {
   return x
 }
 
-function pagesByDate(sessions: Session[]): Map<string, number> {
+export function pagesByDate(sessions: Session[]): Map<string, number> {
   const m = new Map<string, number>()
   for (const s of sessions) m.set(s.date, (m.get(s.date) ?? 0) + (s.page_to - s.page_from))
   return m
@@ -75,27 +78,46 @@ const CELL = 22
 const PAD_L = 26
 const PAD_T = 22
 
-export function Rhythm({ sessions }: { sessions: Session[] }) {
+/**
+ * Карта «число в день». Сам график ничего не знает ни про сессии, ни про
+ * конспекты: чтение передаёт страницы, обучение — конспекты, а подпись и
+ * единицу измерения даёт тот, кто вызывает, — переводы живут у него.
+ */
+export function Rhythm({
+  byDate,
+  label,
+  unit,
+  full,
+}: {
+  byDate: Map<string, number>
+  label: string
+  unit: (n: number) => string
+  /**
+   * Сколько за день — это «полный» кружок. Без него шкала берётся от максимума
+   * в данных, и там, где за день бывает одна запись, эта одна запись рисуется
+   * самой жирной точкой: страницы дают разброс, конспекты — нет.
+   */
+  full?: number
+}) {
   const { t, locale } = useLocale()
   const [tip, setTip] = useState<Tip | null>(null)
   const today = todayISO()
-  const byDate = useMemo(() => pagesByDate(sessions), [sessions])
 
-  const start = mondayOf(new Date(fromISO(today).getTime() - (WEEKS - 1) * 7 * DAY))
-  const max = Math.max(1, ...byDate.values())
+  const start = addDays(mondayOf(fromISO(today)), -(WEEKS - 1) * 7)
+  const max = full ?? Math.max(1, ...byDate.values())
 
   const W = PAD_L + WEEKS * CELL
   const H = PAD_T + 7 * CELL
   const tag = localeTag(locale)
 
-  const cells: { iso: string; x: number; y: number; pages: number; future: boolean }[] = []
+  const cells: { iso: string; x: number; y: number; value: number; future: boolean }[] = []
   const months: { x: number; label: string }[] = []
   for (let w = 0; w < WEEKS; w++) {
     for (let d = 0; d < 7; d++) {
-      const date = new Date(start.getTime() + (w * 7 + d) * DAY)
+      const date = addDays(start, w * 7 + d)
       const iso = toISO(date)
       if (d === 0) {
-        const prev = new Date(date.getTime() - 7 * DAY)
+        const prev = addDays(date, -7)
         if (w === 0 || prev.getMonth() !== date.getMonth()) {
           months.push({ x: PAD_L + w * CELL, label: date.toLocaleDateString(tag, { month: 'short' }) })
         }
@@ -104,7 +126,7 @@ export function Rhythm({ sessions }: { sessions: Session[] }) {
         iso,
         x: PAD_L + w * CELL + CELL / 2,
         y: PAD_T + d * CELL + CELL / 2,
-        pages: byDate.get(iso) ?? 0,
+        value: byDate.get(iso) ?? 0,
         future: iso > today,
       })
     }
@@ -115,7 +137,7 @@ export function Rhythm({ sessions }: { sessions: Session[] }) {
 
   return (
     <div className="chart" style={{ aspectRatio: `${W} / ${H}` }}>
-      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" role="img" aria-label={t('chart.rhythm')}>
+      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" role="img" aria-label={label}>
         {months.map((m) => (
           <text key={m.x} x={m.x} y={12} className="chart-axis" style={{ fontSize: 7 }}>
             {m.label}
@@ -134,20 +156,38 @@ export function Rhythm({ sessions }: { sessions: Session[] }) {
           </text>
         ))}
         {cells.map((c) => {
-          if (c.future) return null
-          const share = c.pages / max
-          const r = c.pages === 0 ? 1.6 : 3 + share * 5
+          /* The days of this week that have not happened yet are drawn too, a
+             shade paler than a rest day: a column that stops mid-air reads as
+             missing data, where a pale dot reads as a day still to come. They
+             take no tooltip — there is nothing to say about them. */
+          if (c.future) {
+            return (
+              <circle key={c.iso} data-day={c.iso} cx={c.x} cy={c.y} r={1.6} fill="var(--line)" />
+            )
+          }
+          const share = Math.min(1, c.value / max)
+          const r = c.value === 0 ? 1.6 : 3 + share * 5
           return (
-            <g key={c.iso}>
+            <g key={c.iso} data-day={c.iso}>
               <circle
                 cx={c.x}
                 cy={c.y}
                 r={r}
-                fill={c.pages === 0 ? 'var(--line-2)' : 'var(--brand-strong)'}
-                fillOpacity={c.pages === 0 ? 1 : 0.35 + share * 0.65}
+                fill={c.value === 0 ? 'var(--line-2)' : 'var(--brand-strong)'}
+                fillOpacity={c.value === 0 ? 1 : 0.35 + share * 0.65}
               />
+              {/* Today is where the eye starts, so it is ringed whether it was
+                  read on or not — and the ring keeps a floor, or a rest day
+                  today would wear one two pixels wide. */}
               {c.iso === today && (
-                <circle cx={c.x} cy={c.y} r={r + 2.5} fill="none" stroke="var(--ink)" strokeWidth={1.2} />
+                <circle
+                  cx={c.x}
+                  cy={c.y}
+                  r={Math.max(r + 3, 5.5)}
+                  fill="none"
+                  stroke="var(--ink)"
+                  strokeWidth={1.4}
+                />
               )}
               <rect
                 x={c.x - CELL / 2}
@@ -159,7 +199,7 @@ export function Rhythm({ sessions }: { sessions: Session[] }) {
                   setTip({
                     x: (c.x / W) * 100,
                     y: ((c.y - CELL / 2) / H) * 100,
-                    text: c.pages ? t('count.pages', { n: c.pages }) : t('chart.rest'),
+                    text: c.value ? unit(c.value) : t('chart.rest'),
                     sub: dayLabel(c.iso),
                   })
                 }
@@ -174,28 +214,125 @@ export function Rhythm({ sessions }: { sessions: Session[] }) {
   )
 }
 
-/* ---------- Weeks: pages per week, last 12 ---------- */
+/* ---------- Weeks: pages per week, last 12, as a pile of books ---------- */
 
 const NWEEKS = 12
+
+/* The plot box in CSS pixels: headroom above the tallest week, the pile, then
+   the date row. Percent heights keep it responsive without measuring. */
+const PAD_TOP = 16
+const LABELS_H = 24
+/* Shorter on a phone: the pile there is built of thinner books, and eighteen of
+   them stacked to the full height reads as stripes rather than as a stack. */
+const PLOT_H = 180
+const PLOT_H_SM = 140
+const NARROW = 420
+
+/* How thick a book is here. The pile is not a ledger — it does not claim one
+   slab per title or one millimetre per page. It says "this much reading" the
+   way a stack on a bedside table does, and a stack of books that size has about
+   this many books in it. What is exact is the height: piles compare honestly.
+
+   Thickness follows the column's width, because that ratio is the whole tell —
+   a block as thick as it is wide is a brick, not a book. */
+const COL_MAX_W = 46
+const BOOK_RATIO = 0.46
+const BOOK_MIN_H = 10
+const BOOK_MAX_H = 22
+
+const clamp = (lo: number, x: number, hi: number) => Math.min(hi, Math.max(lo, x))
+
+/* Bright cloth, because a shelf is not a spreadsheet. Ordered so that stepping
+   five along — which is what the pile does — never lands on a neighbour twice. */
+const CLOTH = [
+  '#e8543f', // vermilion
+  '#f3a03c', // amber
+  '#e3c02c', // ochre
+  '#57b65a', // leaf
+  '#2aa89f', // teal
+  '#3d87d6', // blue
+  '#8a63d2', // violet
+  '#e4589a', // pink
+]
+
+/* The drop: one height, one spring, one stagger. The pile builds bottom up and
+   oldest week first, so the eye is carried left to right and lands on "now". */
+const DROP = 72
+const COL_STAGGER = 0.022
+const BOOK_STAGGER = 0.04
+
+interface Slab {
+  /** Shelf to the underside of the book, in pixels. */
+  y: number
+  h: number
+  /** Width and left edge as fractions of the column, so no two books match. */
+  w: number
+  left: number
+  color: string
+}
+
+/** Stable noise in 0..1: the same week piles up the same way on every device. */
+function jitter(a: number, b: number): number {
+  let h = (a * 374761393 + b * 668265263) >>> 0
+  h = Math.imul(h ^ (h >>> 13), 1274126177) >>> 0
+  return (h % 1000) / 1000
+}
+
+/**
+ * A week's pages as a pile of books of roughly book thickness — no two quite
+ * the same size, none quite squared up with the one below, which is what tells
+ * a stack of books from a column of colour.
+ */
+function pileOf(barH: number, seed: number, bookH: number, gap: number): Slab[] {
+  if (barH <= 0) return []
+  const n = Math.max(1, Math.round(barH / bookH))
+  const weights = Array.from({ length: n }, (_, k) => 0.8 + jitter(seed, k) * 0.4)
+  const total = weights.reduce((a, x) => a + x, 0)
+
+  let y = 0
+  return weights.map((weight, k) => {
+    const h = (weight / total) * barH
+    const w = 0.76 + jitter(seed, k + 100) * 0.24
+    const slack = 1 - w
+    // Nudged off centre, then held inside the column: a leaning pile, not a
+    // spilt one.
+    const left = Math.min(slack, Math.max(0, slack / 2 + (jitter(seed, k + 200) - 0.5) * 0.22))
+    const book = { y, h: Math.max(3, h - gap), w, left, color: CLOTH[(seed * 3 + k * 5) % CLOTH.length] }
+    y += h
+    return book
+  })
+}
 
 export function WeeklyBars({ sessions }: { sessions: Session[] }) {
   const { t, locale } = useLocale()
   const [tip, setTip] = useState<Tip | null>(null)
   const [ref, box] = useWidth<HTMLDivElement>()
-  const thisMonday = mondayOf(fromISO(todayISO()))
+  const reduce = !!useReducedMotion()
+  const inView = useInView(ref, { once: true, amount: 0.3 })
+  // Server-rendered markup has no observer to fire, so it skips the drop and
+  // renders the pile already standing; in the browser a timer stands it up
+  // anyway if the observer somehow never reports. A chart is data before it is
+  // an effect, and no effect is allowed to leave it invisible.
+  const canPlay = typeof window !== 'undefined'
+  const [lateShow, setLateShow] = useState(false)
+  useEffect(() => {
+    const id = setTimeout(() => setLateShow(true), 4000)
+    return () => clearTimeout(id)
+  }, [])
+  const shown = inView || lateShow
   const tag = localeTag(locale)
 
+  const thisMonday = useMemo(() => toISO(mondayOf(fromISO(todayISO()))), [])
+
   const weeks = useMemo(() => {
-    const out: { start: Date; iso: string; pages: number; days: Set<string> }[] = []
+    const out: { start: Date; iso: string; pages: number }[] = []
     for (let i = NWEEKS - 1; i >= 0; i--) {
-      const start = new Date(thisMonday.getTime() - i * 7 * DAY)
-      out.push({ start, iso: toISO(start), pages: 0, days: new Set() })
+      const start = addDays(fromISO(thisMonday), -i * 7)
+      out.push({ start, iso: toISO(start), pages: 0 })
     }
     for (const s of sessions) {
       const week = out.find((x) => x.iso === toISO(mondayOf(fromISO(s.date))))
-      if (!week) continue
-      week.pages += s.page_to - s.page_from
-      week.days.add(s.date)
+      if (week) week.pages += s.page_to - s.page_from
     }
     return out
   }, [sessions, thisMonday])
@@ -204,74 +341,113 @@ export function WeeklyBars({ sessions }: { sessions: Session[] }) {
   const active = weeks.filter((w) => w.pages > 0)
   const avg = active.length ? Math.round(active.reduce((a, w) => a + w.pages, 0) / active.length) : 0
 
-  const H = 220
-  const W = Math.max(300, Math.round(box))
-  const PAD_B = 24
-  const PAD_TOP = 16
-  const plotH = H - PAD_B - PAD_TOP
-  const slot = W / NWEEKS
-  const barW = Math.min(46, slot * 0.55)
-  // Twelve dates need room; on a phone every second one is enough.
-  const sparseLabels = slot < 62
-  const y = (pages: number) => PAD_TOP + plotH - (pages / max) * plotH
+  // Before the first measurement the chart is a full-width panel until told
+  // otherwise, which is the common case and never the wrong shape by much.
+  const width = box || 1000
+  const narrow = width < NARROW
+  const plotH = narrow ? PLOT_H_SM : PLOT_H
+  const H = PAD_TOP + plotH + 1 + LABELS_H // the +1 is the shelf line
+  const colW = clamp(10, (width / NWEEKS) * 0.88, COL_MAX_W)
+  const bookH = clamp(BOOK_MIN_H, colW * BOOK_RATIO, BOOK_MAX_H)
+  const gap = narrow ? 1 : 3
+
+  const piles = useMemo(
+    () => weeks.map((w, i) => pileOf((w.pages / max) * plotH, i + 1, bookH, gap)),
+    [weeks, max, plotH, bookH, gap],
+  )
+
+  const dateOf = (start: Date) => start.toLocaleDateString(tag, { day: 'numeric', month: 'short' })
+  /** Column centre and the height of a pile, both as a % of the chart box. */
+  const colX = (i: number) => ((i + 0.5) / NWEEKS) * 100
+  const topY = (px: number) => ((PAD_TOP + plotH - px) / H) * 100
+
+  const weekTip = (i: number): Tip => ({
+    x: colX(i),
+    y: topY((weeks[i].pages / max) * plotH),
+    text: weeks[i].pages ? t('count.pages', { n: weeks[i].pages }) : t('chart.nothing'),
+    sub: dateOf(weeks[i].start),
+  })
+
+  const cols = { gridTemplateColumns: `repeat(${NWEEKS}, 1fr)` }
 
   return (
-    <div className="chart chart-fill" ref={ref} style={{ height: H }}>
-      {box > 0 && (
-        <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" role="img" aria-label={t('chart.weeks')}>
-          <line x1={0} x2={W} y1={y(0)} y2={y(0)} stroke="var(--line-2)" />
-          {avg > 0 && (
-            <g>
-              <line x1={0} x2={W} y1={y(avg)} y2={y(avg)} stroke="var(--ink-3)" />
-              <text x={0} y={y(avg) - 5} className="chart-axis">
-                {t('chart.avg', { n: avg })}
-              </text>
-            </g>
-          )}
-          {weeks.map((w, i) => {
-            const cx = slot * i + slot / 2
-            const h = Math.max(0, y(0) - y(w.pages))
-            const current = i === NWEEKS - 1
-            return (
-              <g key={w.iso}>
-                {w.pages > 0 ? (
-                  <rect
-                    x={cx - barW / 2}
-                    width={barW}
-                    y={y(0) - h}
-                    height={h}
-                    rx={4}
-                    fill={current ? 'var(--brand-strong)' : 'var(--brand-mute)'}
-                  />
-                ) : (
-                  <circle cx={cx} cy={y(0)} r={2} fill="var(--line-2)" />
-                )}
-                {(!sparseLabels || i % 2 === (NWEEKS - 1) % 2) && (
-                  <text x={cx} y={H - 6} textAnchor="middle" className="chart-axis">
-                    {current ? t('chart.now') : w.start.toLocaleDateString(tag, { day: 'numeric', month: 'short' })}
-                  </text>
-                )}
-                <rect
-                  x={slot * i}
-                  y={0}
-                  width={slot}
-                  height={H - PAD_B}
-                  fill="transparent"
-                  onMouseEnter={() =>
-                    setTip({
-                      x: (cx / W) * 100,
-                      y: ((y(w.pages) - 6) / H) * 100,
-                      text: w.pages ? t('count.pages', { n: w.pages }) : t('chart.nothing'),
-                      sub: w.start.toLocaleDateString(tag, { day: 'numeric', month: 'short' }),
-                    })
-                  }
-                  onMouseLeave={() => setTip(null)}
-                />
-              </g>
-            )
-          })}
-        </svg>
-      )}
+    <div className="chart wk" ref={ref} style={{ height: H }}>
+      <div className="wk-plot" style={{ height: PAD_TOP + plotH + 1, ...cols }}>
+        {avg > 0 && (
+          <motion.div
+            className="wk-avg"
+            style={{ bottom: (avg / max) * plotH }}
+            initial={canPlay ? { opacity: 0 } : false}
+            animate={{ opacity: !canPlay || shown ? 1 : 0 }}
+            /* Held back until the first books are down: a lone reference line
+               over an empty shelf has nothing to be a reference to. */
+            transition={{ duration: 0.2, delay: reduce ? 0 : 0.34 }}
+          >
+            <span className="wk-cap">{t('chart.avg', { n: avg })}</span>
+          </motion.div>
+        )}
+
+        {weeks.map((w, i) => (
+          <div
+            key={w.iso}
+            className="wk-col"
+            onMouseEnter={() => setTip(weekTip(i))}
+            onMouseLeave={() => setTip(null)}
+          >
+            {w.pages === 0 ? (
+              <span className="wk-none" />
+            ) : (
+              <div className="wk-stack" style={{ width: colW }}>
+                {piles[i].map((b, k) => {
+                  const delay = i * COL_STAGGER + k * BOOK_STAGGER
+                  // Deterministic, so the same chart falls the same way twice.
+                  const tilt = (jitter(i, k + 300) - 0.5) * 11
+                  const fallen = reduce
+                    ? { opacity: 0 }
+                    : { opacity: 0, transform: `translateY(${-(DROP + (k % 3) * 12)}px) rotate(${tilt}deg)` }
+                  const rested = reduce
+                    ? { opacity: 1 }
+                    : { opacity: 1, transform: 'translateY(0px) rotate(0deg)' }
+                  return (
+                    <motion.span
+                      key={k}
+                      className="wk-book"
+                      style={{
+                        bottom: b.y,
+                        height: b.h,
+                        borderRadius: Math.min(3, b.h / 3),
+                        left: `${b.left * 100}%`,
+                        width: `${b.w * 100}%`,
+                        backgroundColor: b.color,
+                      }}
+                      initial={canPlay && !shown ? fallen : false}
+                      animate={canPlay && !shown ? fallen : rested}
+                      transition={
+                        reduce
+                          ? { duration: 0.2, delay: i * 0.02 }
+                          : {
+                              transform: { type: 'spring', duration: 0.44, bounce: 0.3, delay },
+                              opacity: { duration: 0.16, ease: [0.23, 1, 0.32, 1], delay },
+                            }
+                      }
+                    />
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Twelve dates need room; on a narrow panel CSS thins them out. */}
+      <div className="wk-labels" style={{ height: LABELS_H, ...cols }}>
+        {weeks.map((w, i) => (
+          <span key={w.iso} className={`wk-cap wk-label${i === NWEEKS - 1 ? ' is-now' : ''}`}>
+            {i === NWEEKS - 1 ? t('chart.now') : dateOf(w.start)}
+          </span>
+        ))}
+      </div>
+
       <Tooltip tip={tip} />
     </div>
   )

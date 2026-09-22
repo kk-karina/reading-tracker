@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { MaterialForm } from '../../components/MaterialForm'
-import { Jelly } from '../../components/ui'
+import { Chip, Jelly } from '../../components/ui'
 import type { DictKey } from '../../lib/i18n/dict'
 import { BACKLOG_TABS, backlog, backlogCounts, type BacklogTab } from '../../lib/learning/buckets'
 import { useLearning } from '../../state/LearningContext'
@@ -81,7 +81,7 @@ export function Backlog() {
                   </Link>
                   <span className="mat-meta">
                     {tab === 'archive' ? (
-                      <span className="chip sm">{t(`mstatus.${m.status}`)}</span>
+                      <Chip sm>{t(`mstatus.${m.status}`)}</Chip>
                     ) : (
                       <button
                         className="link-btn"

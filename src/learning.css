@@ -295,85 +295,80 @@
   }
 }
 
-/* ---------- витрина потоков ---------- */
-.stream-grid {
-  list-style: none;
-  margin: 0 0 28px;
-  padding: 0;
-  display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+/* ---------- оболочка потока ---------- */
+/* Полоса потоков — заголовок и навигация одним рядом. Активный поток набран
+   заголовком страницы, соседи стоят на той же базовой линии мельче и тише:
+   ряд читается как «вот где я, вот что рядом», а не как меню под названием. */
+.stream-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 18px;
+  margin: 0 0 18px;
 }
-.stream-grid.dim {
+.stream-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  flex: none;
+  max-width: 100%;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-3);
+  text-decoration: none;
+  transition: font-size 0.28s var(--ease-out), color 0.2s ease;
+}
+.stream-tab .icon {
+  color: var(--ink-3);
+}
+.stream-tab:hover,
+.stream-tab:hover .icon {
+  color: var(--ink);
+}
+/* Архивный поток стоит в ряду, но не притворяется рабочим. */
+.stream-tab[data-archived]:not([data-on]) {
   opacity: 0.55;
 }
-.stream-card {
-  position: relative;
-  /* Обрезает полосу акцента по скруглению карточки — без этого угловатый
-     край полосы торчал бы поверх border-radius. */
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  text-decoration: none;
-  color: inherit;
-  background: var(--paper);
-  transition: transform 0.15s ease, border-color 0.15s ease;
+.stream-tab[data-on] {
+  font-weight: 400;
+  font-size: clamp(26px, 3.4vw, 32px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
 }
-.stream-card:hover {
-  transform: translateY(-2px);
-  border-color: var(--ink-3);
+.stream-tab[data-on] .icon {
+  color: var(--brand);
 }
-/* Акцент потока — заливка, а не линия: ядро требует, чтобы тонкое рисовалось
-   чернилами, а цвет жил в крупных площадях. Без акцента полоса не рисуется. */
-.stream-card::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 4px;
-  background: var(--cat, transparent);
-}
-.stream-card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-weight: 600;
-}
-.stream-card-focus {
-  font-size: 15px;
-}
-.stream-card-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 4px;
-}
-
-/* ---------- оболочка потока ---------- */
-.stream-pick {
-  margin: 0 0 4px;
-}
-.stream-pick > summary {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  cursor: pointer;
-  list-style: none;
-}
-.stream-pick > summary::-webkit-details-marker {
-  display: none;
-}
-.stream-pick > summary h1 {
+.stream-tab-name {
+  font: inherit;
+  letter-spacing: inherit;
   margin: 0;
 }
-.stream-pick[open] > summary .icon {
-  transform: rotate(180deg);
+/* Архив и «плюс» — служебные пункты ряда: тише самих потоков. */
+.stream-tab-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-3);
+  cursor: pointer;
 }
-.stream-pick-list {
+.stream-tab-side:hover,
+.stream-tab-side:hover .icon {
+  color: var(--ink);
+}
+.stream-tab-side .icon {
+  color: var(--ink-3);
+}
+
+/* Список потоков строками — на пустом экране раздела, где полосы ещё нет. */
+.stream-list {
   list-style: none;
   margin: 8px 0 0;
   padding: 6px;
@@ -384,7 +379,7 @@
   border-radius: 12px;
   background: var(--paper);
 }
-.stream-pick-list a {
+.stream-list a {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -393,68 +388,575 @@
   text-decoration: none;
   color: inherit;
 }
-/* Тонированная шапка строки вместо линии — тот же принцип, что у карточки потока. */
-.stream-pick-list a[data-accent] {
+/* Тонированная шапка строки вместо линии: тонкое рисуется чернилами, цвет
+   живёт в площадях. */
+.stream-list a[data-accent] {
   background: color-mix(in srgb, var(--cat) 30%, var(--paper));
 }
-.stream-pick-list a:hover {
+.stream-list a:hover {
   background: var(--bg);
 }
 
-/* ---------- дашборд потока ---------- */
-.stream-goal,
-.stream-goal-input {
+/* ---------- дашборд потока ----------
+
+   Ритм отступов один на весь экран и держится на четырёх значениях: 8 внутри
+   строки, 16 внутри блока, 24 внутри зоны, 56 между зонами. Раньше здесь
+   стояли 32, 44, 48, 24, 28, 26, 20, 14, 10 — каждый компонент решал за себя,
+   и экран рассыпался на семь несвязанных кусков.
+
+   Уровней набора тоже стало три вместо одного: цель (крупно, на подложке),
+   имя зоны (15/600 текстом) и подпись внутри панели (11 моно капслоком).
+   Капслок вернулся к своей работе — подписывать число, а не называть раздел. */
+
+/* ---------- подложка: цель и фокус ----------
+
+   Единственный тёмный объект экрана и единственное место, где фирменный
+   лимон вообще виден. На белом #e9f86b даёт 1.25:1 — кнопка такого цвета
+   читается как наклейка, а не как действие; на графите он светится. Отсюда
+   правило: лимон живёт крупными заливками на тёмном, а тонкое по-прежнему
+   рисуется чернилами.
+
+   Градиент собран из акцента потока, поэтому Professional Growth и Driving
+   отличаются подложкой. До этого `--cat` был заведён, размечен восемью
+   значениями — и не использовался на дашборде ни разу. */
+.stream-hero {
+  --cat: var(--brand);
+  --hero-ink: #f6f7f8;
+  --hero-ink-2: color-mix(in oklab, var(--cat) 18%, #a7aeb5);
+
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin: 0 0 56px;
+  border-radius: 22px;
+  color: var(--hero-ink);
+  background:
+    radial-gradient(118% 128% at 100% 0%, color-mix(in oklab, var(--cat) 30%, transparent), transparent 60%),
+    radial-gradient(86% 120% at 2% 104%, color-mix(in oklab, var(--cat) 10%, transparent), transparent 66%),
+    linear-gradient(154deg, #1c2027 0%, #111419 56%, #0c0e12 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 1px 2px rgba(14, 16, 18, 0.08),
+    0 30px 52px -34px rgba(14, 16, 18, 0.75);
+}
+
+/* Цель — заголовок экрана. Подписи над ней нет: строка такого кегля не
+   нуждается в том, чтобы её представили. Правится по месту, и поле обязано
+   совпадать с кнопкой по отступам и метрике — иначе клик дёргает страницу. */
+.hero-goal,
+.hero-goal-input {
   display: block;
   width: 100%;
-  margin: 0 0 24px;
-  padding: 4px 0;
-  font-size: 16px;
+  max-width: 26ch;
+  margin: 0;
+  padding: 40px 44px 32px;
+  font-family: inherit;
+  font-weight: 300;
+  font-size: clamp(26px, 3.1vw, 38px);
+  line-height: 1.14;
+  letter-spacing: -0.028em;
   text-align: left;
+  color: var(--hero-ink);
   background: none;
-  border: none;
-  color: var(--ink-2);
+  border: 0;
   cursor: text;
 }
-.focus-box {
+.hero-goal-input {
+  max-width: none;
+  outline: none;
+}
+.hero-goal-input:focus {
+  box-shadow: inset 0 -1px 0 color-mix(in oklab, var(--cat) 70%, transparent);
+}
+.hero-goal {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 0.2s ease;
+}
+.hero-goal:hover {
+  text-decoration-color: color-mix(in oklab, var(--cat) 55%, transparent);
+}
+.hero-goal-empty {
+  color: var(--hero-ink-2);
+}
+
+/* Нижний ярус той же подложки, а не вторая карточка внутри карточки:
+   отделён линией и тончайшим осветлением, но это одна плоскость. */
+.hero-focus {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    'cover main'
+    'also  also';
+  gap: 24px 26px;
+  padding: 28px 44px 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.028);
+}
+.hero-focus-cover {
+  grid-area: cover;
+  display: block;
+  transition: transform 0.25s var(--ease-out);
+}
+.hero-focus-cover:hover {
+  transform: translateY(-3px);
+}
+.hero-focus-main {
+  grid-area: main;
+  align-self: center;
+  min-width: 0;
+}
+.hero-focus-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.18;
+  letter-spacing: -0.02em;
+}
+.hero-focus-title a {
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 0.2s ease;
+}
+.hero-focus-title a:hover {
+  text-decoration-color: rgba(255, 255, 255, 0.5);
+}
+/* Вторичный текст на цветной подложке тонируется её же тоном, а не серым:
+   нейтральный серый на тёплом графите выглядит грязью. */
+.hero-focus-by {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  color: var(--hero-ink-2);
+}
+.hero-meter {
+  height: 5px;
+  max-width: 320px;
+  margin: 16px 0 0;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.13);
+}
+.hero-meter span {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: linear-gradient(90deg, var(--cat), color-mix(in oklab, var(--cat) 55%, #ffffff));
+  transition: width 0.5s var(--ease-out);
+}
+.hero-focus-meta {
+  margin: 8px 0 0;
+  font-size: 13px;
+  color: var(--hero-ink-2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Единственное действие экрана. Лимон целиком, без чернильной обводки: на
+   графите она только глушит цвет. Свечение под кнопкой со смещением и
+   размытием — тень, а не нимб. */
+.btn.hero-btn {
+  margin-top: 20px;
+  border-color: var(--brand);
+  background: var(--brand);
+  color: #0e1012;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.4),
+    0 10px 22px -14px rgba(233, 248, 107, 0.95);
+}
+.btn.hero-btn:hover {
+  border-color: var(--brand-2);
+  background: var(--brand-2);
+}
+.hero-focus-empty {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 8px;
-  padding: 20px;
-  margin: 0 0 28px;
-  border: 1px solid var(--ink-3);
-  border-radius: 16px;
+  gap: 16px;
+  grid-template-columns: none;
+  grid-template-areas: none;
 }
-.focus-box-title {
-  font-size: 20px;
-  font-weight: 600;
+.hero-focus-emptytext {
+  margin: 0;
+  font-size: 17px;
+  color: var(--hero-ink-2);
 }
-.stream-rows {
-  list-style: none;
-  margin: 0 0 20px;
+
+/* «Ещё изучаю» — обложками: ряд корешков узнаётся боковым зрением, список
+   названий приходится читать. */
+.hero-also {
+  grid-area: also;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.hero-also-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.52);
+}
+.hero-also-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.hero-also-item {
+  display: block;
+  transition: transform 0.22s var(--ease-out);
+}
+.hero-also-item:hover {
+  transform: translateY(-4px);
+}
+.hero-also-more {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.62);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.25);
+}
+.hero-also-more:hover {
+  color: var(--hero-ink);
+  border-bottom-color: var(--hero-ink);
+}
+
+/* ---------- обложка материала ----------
+   Один прямоугольник 3:4 на все виды: ряд из книги, ролика и подкаста с
+   тремя пропорциями читается как сбой вёрстки. Под картинкой всегда лежит
+   нарисованная обложка — она же остаётся, когда чужой файл исчез. */
+.mcover {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  flex: none;
+  aspect-ratio: 3 / 4;
+  border-radius: 4px;
+  background: var(--cover-bg, #2b3a44);
+  color: var(--cover-ink, #eceff1);
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 16, 18, 0.22),
+    0 1px 2px rgba(14, 16, 18, 0.16),
+    0 12px 22px -14px rgba(14, 16, 18, 0.6);
+}
+.mcover-sm {
+  width: 38px;
+  border-radius: 3px;
+}
+.mcover-md {
+  width: 64px;
+}
+.mcover-lg {
+  width: 116px;
+  border-radius: 6px;
+}
+.mcover img {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.mcover-art {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 9px;
+}
+.mcover-art .icon {
+  color: currentColor;
+  opacity: 0.75;
+}
+.mcover-title {
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.22;
+  letter-spacing: -0.005em;
+  display: -webkit-box;
+  -webkit-line-clamp: 4;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.mcover-foot {
+  font-family: var(--mono);
+  font-size: 8px;
+  letter-spacing: 0.04em;
+  opacity: 0.68;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+/* Миниатюра рядом со строкой текста нужна, чтобы её узнали, а не прочли. */
+.mcover-sm .mcover-title,
+.mcover-sm .mcover-foot {
+  display: none;
+}
+.mcover-sm .mcover-art {
+  place-content: center;
   padding: 0;
 }
-.stream-rows > li {
+.mcover-lg .mcover-title {
+  font-size: 13px;
+  -webkit-line-clamp: 6;
+}
+.mcover-lg .mcover-foot {
+  font-size: 9px;
+}
+.mcover-sheen {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(148deg, rgba(255, 255, 255, 0.17), rgba(255, 255, 255, 0) 44%);
+  pointer-events: none;
+}
+
+/* ---------- зона ----------
+   Уровень, которого на экране не было. Имя зоны набрано текстом и стоит над
+   линией: три такие строки складываются в оглавление экрана. */
+.zone {
+  margin: 0 0 56px;
+}
+.zone-head {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   gap: 16px;
-  padding: 14px 0;
-  border-top: 1px solid var(--line);
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-2);
 }
-.stream-rows > li:last-child {
-  border-bottom: 1px solid var(--line);
+.zone-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: var(--ink);
 }
-/* Строка дашборда, ведущая на свой экран, — ссылка занимает всю плашку,
-   а не только текст, и не должна выглядеть как ссылка. */
-.stream-row-link {
+.zone-link {
+  font-size: 13px;
+  color: var(--ink-3);
+  transition: color 0.2s ease;
+}
+.zone-link:hover {
+  color: var(--ink);
+}
+
+/* ---------- как идёт ----------
+   Показания стоят внутри панели ритма, а не отдельным рядом над ней: раньше
+   это была сетка в три колонки с двумя заполненными — треть ширины уходила
+   в дыру, а числа стояли отдельно от графика, который их объясняет. */
+.rhythm-panel {
+  display: grid;
+  gap: 28px;
+}
+.readings {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 56px;
+}
+/* Число раньше подписи: метрику читают как «34 конспекта», а не как
+   «конспектов: 34». Заодно это снимает с экрана ещё два капслока. */
+.reading-num {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  width: 100%;
+  gap: 8px;
+  font-size: 34px;
+  font-weight: 300;
+  line-height: 1;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+.reading-suffix {
+  font-size: 15px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--ink-2);
+}
+.reading-cap {
+  margin-top: 10px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.reading-scope {
+  color: var(--ink-3);
+}
+.rhythm-plot {
+  display: grid;
+  gap: 10px;
+}
+.rhythm-cap {
+  margin: 0;
+  text-align: right;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* ---------- что осталось ----------
+   Мысль недели стоит на лимонной заливке, и это не украшение: строка попала
+   сюда ровно потому, что была отчёркнута маркером в конспекте, а маркер
+   системы и есть лимон. Заливка обнимает строки по их длине — как `mark`
+   внутри листа, только крупно. */
+.thought-week {
+  margin: 0 0 28px;
+}
+.thought-week-text {
+  margin: 0;
+  max-width: 44ch;
+  font-size: clamp(21px, 2.3vw, 27px);
+  font-weight: 400;
+  line-height: 1.62;
+  letter-spacing: -0.015em;
+}
+.thought-week-mark {
+  padding: 4px 9px;
+  border-radius: 3px;
+  background: var(--brand);
+  box-shadow: 0 0 0 1px rgba(14, 16, 18, 0.07);
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+}
+.thought-week-source {
+  display: inline-block;
+  margin-top: 18px;
+  font-size: 13px;
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line-2);
+}
+.thought-week-source:hover {
+  color: var(--ink);
+  border-bottom-color: var(--ink);
+}
+
+/* ---------- очередь ----------
+   У строки есть обложка и источник. Раньше это были четыре подчёркнутых
+   названия, по которым нельзя было сказать, лежит там доклад, статья или
+   четырёхсотстраничная книга, — а это ровно то решение, которое здесь
+   и принимают. */
+.queue {
+  display: grid;
+  gap: 20px;
+}
+.queue-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+}
+.queue-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 0 -12px;
+  padding: 10px 12px;
+  border-radius: 10px;
   color: inherit;
-  text-decoration: none;
+  transition: background 0.18s ease;
+}
+.queue-row:hover {
+  background: var(--paper);
+}
+.queue-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+.queue-title {
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+.queue-sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.queue-counts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 28px;
+  margin: 0;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.queue-counts b {
+  margin-right: 5px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.queue-empty {
+  padding: 8px 0 24px;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.dash-foot {
+  padding-top: 8px;
+}
+
+/* ---------- лист занятия ----------
+   Тот же лист, что у чтения. Поле конспекта здесь ниже, чем на собственной
+   странице: в листе поверх страницы 420px выталкивают кнопку за край экрана. */
+.study-sheet-what {
+  margin: -6px 0 0;
+}
+.study-sheet-after {
+  margin: -4px 0 0;
+  font-variant-numeric: tabular-nums;
+}
+.study-sheet-part {
+  flex: 2 1 240px;
+}
+.sheet .note-input {
+  min-height: 170px;
+}
+
+@media (max-width: 860px) {
+  .hero-goal,
+  .hero-goal-input {
+    padding: 30px 26px 24px;
+  }
+  .hero-focus {
+    gap: 20px;
+    padding: 24px 26px 28px;
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .mcover-lg {
+    width: 88px;
+  }
+  .hero-focus-title {
+    font-size: 21px;
+  }
+  .zone,
+  .stream-hero {
+    margin-bottom: 40px;
+  }
+  .readings {
+    gap: 16px 36px;
+  }
+}
+
+@media (max-width: 560px) {
+  .hero-focus {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'cover'
+      'main'
+      'also';
+  }
+  .reading-num {
+    font-size: 28px;
+  }
 }
 
 /* Своя полоса вместо `.filter-bar`: тот класс живёт в чужой незакоммиченной
@@ -535,4 +1037,139 @@
   gap: 14px;
   flex-wrap: wrap;
   margin-top: 4px;
+}
+
+/* ---------- материал: прогресс, части, обложка ---------- */
+
+/* Скрыто глазами, но не от экранного диктора и не от клавиатуры. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.zone-acts {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.icon-btn {
+  width: 42px;
+  padding: 0;
+  flex: 0 0 auto;
+}
+
+.mat-progress {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-top: 14px;
+}
+.mat-progress .meter {
+  flex: 1 1 220px;
+  margin: 0;
+}
+.mat-page {
+  flex: 0 0 auto;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+.mat-page .input {
+  width: 84px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  cursor: pointer;
+}
+.toggle input {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--ink);
+}
+
+.part-list {
+  list-style: none;
+  margin: 10px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.part-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--line);
+}
+.part-check {
+  display: inline-flex;
+  align-items: center;
+}
+.part-check input {
+  width: 17px;
+  height: 17px;
+  accent-color: var(--ink);
+}
+/* Пройденная часть гаснет, но не зачёркивается: список ещё читают, чтобы
+   понять, что осталось, а зачёркнутое читается плохо. */
+.part-row.done .part-name {
+  color: var(--ink-3);
+}
+.part-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 30px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+.part-name:hover {
+  border-color: var(--line-2);
+}
+.part-name:focus {
+  outline: none;
+  border-color: var(--ink);
+  background: var(--paper);
+}
+
+.cover-pick {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.cover-pick-art {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 72px;
+  flex: 0 0 auto;
+  overflow: hidden;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  color: var(--ink-3);
+}
+.cover-pick-art img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* Кнопка выбора файла — это `<label>` вокруг скрытого input: своего вида у
+   файлового поля нет, а стилизуется оно только так. */
+.cover-pick label.btn {
+  cursor: pointer;
 }

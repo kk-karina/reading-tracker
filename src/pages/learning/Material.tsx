@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Crumbs } from '../../components/Crumbs'
+import { Meter, useProgressText } from '../../components/learning/Progress'
 import { MaterialForm } from '../../components/MaterialForm'
-import { Jelly } from '../../components/ui'
+import { Chip, Jelly } from '../../components/ui'
 import { fmtDate, todayISO } from '../../lib/format'
-import { materialProgress } from '../../lib/learning/metrics'
+import { materialProgress, noteCount } from '../../lib/learning/metrics'
+import { hasParts, partLabel, partWord, partsOf } from '../../lib/learning/parts'
+import type { MaterialPart } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 import { useStream } from './StreamLayout'
@@ -14,7 +17,19 @@ export function Material() {
   const navigate = useNavigate()
   const { t, locale } = useLocale()
   const stream = useStream()
-  const { materials, notes, loading, addNote, updateStream, updateMaterial } = useLearning()
+  const progressText = useProgressText()
+  const {
+    materials,
+    parts,
+    notes,
+    loading,
+    addNote,
+    addPart,
+    updatePart,
+    deletePart,
+    updateStream,
+    updateMaterial,
+  } = useLearning()
   const [editing, setEditing] = useState(false)
 
   if (loading) return null
@@ -27,7 +42,11 @@ export function Material() {
   const mine = notes
     .filter((n) => n.material_id === material.id)
     .sort((a, b) => a.sort - b.sort || a.created_at.localeCompare(b.created_at))
-  const p = materialProgress(material, notes)
+  const chapters = partsOf(parts, material.id)
+  const p = materialProgress(material, parts)
+  const word = partWord(material.kind)
+  const isFlag = material.kind === 'article' || material.kind === 'video'
+  const done = material.status === 'done'
 
   /** Форма перед листом была бы лишним шагом: конспект заводится сразу
       с контуром потока и открывается.
@@ -56,6 +75,22 @@ export function Material() {
     void updateStream(stream.id, { focus_material_id: material.id })
   }
 
+  /** Тумблер статьи и видео. Снятая отметка возвращает в работу: снять её
+      можно только с того, что уже открывали, а это и значит «в работе». */
+  const toggleDone = () => void updateMaterial(material.id, { status: done ? 'active' : 'done' })
+
+  const setPage = (value: string) => {
+    const n = Number(value.replace(/\D/g, ''))
+    const capped = material.pages_total ? Math.min(n, material.pages_total) : n
+    void updateMaterial(material.id, { page_current: capped > 0 ? capped : null })
+  }
+
+  const addChapter = () =>
+    void addPart({ material_id: material.id, title: '', done: false, sort: chapters.length })
+
+  const label = (part: MaterialPart, i: number) =>
+    partLabel(part, i, (n) => t(word === 'lecture' ? 'part.lecture' : 'part.chapter', { n }))
+
   return (
     <>
       <Crumbs fallback={{ to: `/learning/${stream.slug}`, label: stream.name }} />
@@ -65,14 +100,9 @@ export function Material() {
       </div>
 
       <div className="mat-facts">
-        <span className="chip">{t(`kind.${material.kind}`)}</span>
-        <span className="chip">{t(`mstatus.${material.status}`)}</span>
+        <Chip>{t(`kind.${material.kind}`)}</Chip>
+        <Chip>{t(`mstatus.${material.status}`)}</Chip>
         {material.author && <span className="small muted">{material.author}</span>}
-        <span className="small faint mono">
-          {p.total
-            ? t('material.progress', { done: p.done, total: p.total })
-            : t('note.count', { n: p.done })}
-        </span>
         {material.url && (
           <a className="link-btn" href={material.url} target="_blank" rel="noopener noreferrer">
             {t('material.url')}
@@ -82,7 +112,7 @@ export function Material() {
           {t('material.edit')}
         </button>
         {material.id === stream.focus_material_id ? (
-          <span className="chip">{t('material.isFocus')}</span>
+          <Chip on>{t('material.isFocus')}</Chip>
         ) : (
           <button className="link-btn" type="button" onClick={() => void makeFocus()}>
             {t('material.makeFocus')}
@@ -90,10 +120,87 @@ export function Material() {
         )}
       </div>
 
-      {p.percent !== null && (
-        <div className="meter" aria-hidden>
-          <span style={{ width: `${p.percent}%` }} />
-        </div>
+      {/* Прогресс и написанное — две разные величины, и стоят они раздельно.
+          Раньше это было одно число, и потому статью нельзя было закрыть. */}
+      <div className="mat-progress">
+        {isFlag ? (
+          <label className="toggle">
+            <input type="checkbox" checked={done} onChange={toggleDone} />
+            <span>{t(material.kind === 'video' ? 'material.watched' : 'material.read')}</span>
+          </label>
+        ) : (
+          <>
+            <Meter percent={p.percent} />
+            <span className="small faint mono">{progressText(p)}</span>
+          </>
+        )}
+
+        {material.kind === 'book' && material.scale === 'pages' && (
+          <label className="field mat-page">
+            <span className="label">{t('material.page')}</span>
+            <input
+              className="input"
+              inputMode="numeric"
+              defaultValue={material.page_current ?? ''}
+              onBlur={(e) => setPage(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') e.currentTarget.blur()
+              }}
+            />
+          </label>
+        )}
+
+        <span className="small faint">{t('note.count', { n: noteCount(material.id, notes) })}</span>
+      </div>
+
+      {hasParts(material) && (
+        <>
+          <div className="panel-head" style={{ marginTop: 28 }}>
+            <span className="label">{t(word === 'lecture' ? 'part.lectures' : 'part.chapters')}</span>
+            <button className="link-btn" type="button" onClick={addChapter}>
+              {t('part.add')}
+            </button>
+          </div>
+
+          {chapters.length === 0 ? (
+            <div className="empty small">{t('material.partsHint')}</div>
+          ) : (
+            <ul className="part-list">
+              {chapters.map((part, i) => (
+                <li key={part.id} className={`part-row${part.done ? ' done' : ''}`}>
+                  <label className="part-check">
+                    <input
+                      type="checkbox"
+                      checked={part.done}
+                      onChange={() => void updatePart(part.id, { done: !part.done })}
+                    />
+                    <span className="visually-hidden">{label(part, i)}</span>
+                  </label>
+                  {/* Имя правится на месте. Пустое остаётся пустым — тогда часть
+                      зовётся своим номером и перенумеровывается сама. */}
+                  <input
+                    className="part-name"
+                    defaultValue={part.title}
+                    placeholder={label(part, i)}
+                    aria-label={t('part.rename')}
+                    onBlur={(e) => {
+                      if (e.target.value !== part.title) {
+                        void updatePart(part.id, { title: e.target.value })
+                      }
+                    }}
+                  />
+                  <button
+                    className="link-btn"
+                    type="button"
+                    onClick={() => void deletePart(part.id)}
+                  >
+                    {t('part.remove')}
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       <div className="panel-head" style={{ marginTop: 28 }}>

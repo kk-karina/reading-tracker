@@ -6,7 +6,7 @@ import type { Book, BookStatus } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
 import { Sheet } from './Sheet'
-import { Jelly, Segmented } from './ui'
+import { FormStack, Jelly, Segmented } from './ui'
 
 const STATUSES: BookStatus[] = ['want', 'reading', 'finished', 'abandoned']
 
@@ -86,7 +86,7 @@ export function BookForm({ book, onClose }: { book?: Book; onClose: () => void }
 
   return (
     <Sheet title={book ? t('book.edit') : t('shelf.add')} onClose={onClose}>
-      <div className="book-form">
+      <FormStack>
         <section className="search-box">
           <label className="field">
             <span className="label">{t('search.label')}</span>
@@ -183,7 +183,7 @@ export function BookForm({ book, onClose }: { book?: Book; onClose: () => void }
         <Jelly className="btn" onClick={save} style={{ alignSelf: 'flex-start' }}>
           {t('form.save')}
         </Jelly>
-      </div>
+      </FormStack>
     </Sheet>
   )
 }

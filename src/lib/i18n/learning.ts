@@ -18,12 +18,11 @@ export const LEARNING = {
   },
   'hub.newStream': { ru: 'Новый поток', en: 'New stream' },
   'hub.suggest': { ru: 'Или сразу один из этих:', en: 'Or start with one of these:' },
-  'hub.allStreams': { ru: 'Все потоки', en: 'All streams' },
+  'hub.archiveShort': { ru: 'Архив ({n})', en: 'Archive ({n})' },
   'hub.archived': {
     ru: { one: 'Архив потоков ({n})', few: 'Архив потоков ({n})', many: 'Архив потоков ({n})' },
     en: { one: 'Archived streams ({n})', other: 'Archived streams ({n})' },
   },
-  'hub.noFocus': { ru: 'Фокус не выбран', en: 'No focus chosen' },
   'hub.materialCount': {
     ru: { one: '{n} материал', few: '{n} материала', many: '{n} материалов' },
     en: { one: '{n} material', other: '{n} materials' },
@@ -41,6 +40,48 @@ export const LEARNING = {
   },
   'stream.lastNote': { ru: 'последняя запись {date}', en: 'last note {date}' },
   'stream.neverNoted': { ru: 'записей пока нет', en: 'no notes yet' },
+
+  'stream.continue': { ru: 'Продолжить', en: 'Continue' },
+
+  // Дашборд: три зоны экрана. Названия отвечают на вопрос, а не называют
+  // сущность, — «Как идёт», а не «Статистика».
+  'stream.zoneNow': { ru: 'Сейчас', en: 'Right now' },
+  'stream.zoneRhythm': { ru: 'Как идёт', en: 'How it is going' },
+  'stream.zoneThinking': { ru: 'Что осталось', en: 'What it left' },
+  'stream.zoneQueue': { ru: 'Очередь', en: 'The queue' },
+  'stream.goalHint': { ru: 'Нажми, чтобы изменить цель', en: 'Click to edit the goal' },
+  'stream.moreStudying': {
+    ru: { one: 'и ещё {n}', few: 'и ещё {n}', many: 'и ещё {n}' },
+    en: { one: 'and {n} more', other: 'and {n} more' },
+  },
+
+  'study.log': { ru: 'Записать занятие', en: 'Log a session' },
+  'study.logShort': { ru: 'Записать', en: 'Log it' },
+  'study.willBe': { ru: 'Станет {done} из {total}', en: 'That makes it {done} of {total}' },
+  'study.willBeNoTotal': {
+    ru: { one: 'Станет {n} конспект', few: 'Станет {n} конспекта', many: 'Станет {n} конспектов' },
+    en: { one: 'That makes {n} note', other: 'That makes {n} notes' },
+  },
+  'stream.alsoStudying': { ru: 'Ещё изучаю', en: 'Also studying' },
+  'stream.weekNotes': { ru: 'Конспектов за 7 дней', en: 'Notes in the last 7 days' },
+  'stream.inDays': {
+    ru: { one: 'в {n} дне', few: 'в {n} днях', many: 'в {n} днях' },
+    en: { one: 'on {n} day', other: 'on {n} days' },
+  },
+  'stream.streakScope': { ru: 'во всём обучении', en: 'across all learning' },
+  'stream.notesRecent': { ru: 'Последние конспекты', en: 'Latest notes' },
+  'stream.notesAll': { ru: 'Все заметки', en: 'All notes' },
+  'stream.notesNone': { ru: 'Конспектов пока нет.', en: 'No notes yet.' },
+  'stream.resources': { ru: 'Ресурсы и бэклог', en: 'Resources and backlog' },
+  'stream.resourcesNone': {
+    ru: 'В бэклоге пусто — добавить нечего разбирать.',
+    en: 'The backlog is empty — nothing waiting to be sorted.',
+  },
+  'stream.thought': { ru: 'Мысль недели', en: 'Thought of the week' },
+  'chart.studyRhythm': {
+    ru: 'Конспектов в день за полгода',
+    en: 'Notes per day, last 26 weeks',
+  },
 
   'stream.name': { ru: 'Название', en: 'Name' },
   'stream.icon': { ru: 'Иконка', en: 'Icon' },
@@ -62,7 +103,45 @@ export const LEARNING = {
   'material.url': { ru: 'Ссылка', en: 'Link' },
   'material.kind': { ru: 'Вид', en: 'Kind' },
   'material.status': { ru: 'Статус', en: 'Status' },
-  'material.parts': { ru: 'Сколько глав', en: 'How many chapters' },
+  'material.scale': { ru: 'Считать по', en: 'Count by' },
+  'scale.pages': { ru: 'Страницам', en: 'Pages' },
+  'scale.parts': { ru: 'Главам', en: 'Chapters' },
+
+  'material.pagesTotal': { ru: 'Сколько страниц', en: 'How many pages' },
+  'material.chaptersTotal': { ru: 'Сколько глав', en: 'How many chapters' },
+  'material.lecturesTotal': { ru: 'Сколько лекций', en: 'How many lectures' },
+  'material.page': { ru: 'На какой странице', en: 'Current page' },
+
+  'part.chapter': { ru: 'Глава {n}', en: 'Chapter {n}' },
+  'part.lecture': { ru: 'Лекция {n}', en: 'Lecture {n}' },
+  'part.chapters': { ru: 'Главы', en: 'Chapters' },
+  'part.lectures': { ru: 'Лекции', en: 'Lectures' },
+  'part.add': { ru: 'Добавить', en: 'Add' },
+  'part.remove': { ru: 'Убрать', en: 'Remove' },
+  'part.rename': { ru: 'Название части', en: 'Part name' },
+  'part.confirmDrop': {
+    ru: 'Среди убираемых частей есть пройденные. Отметки пропадут. Убрать?',
+    en: 'Some of the parts being removed are marked done. Those marks will be lost. Remove?',
+  },
+
+  'material.read': { ru: 'Прочитано', en: 'Read' },
+  'material.watched': { ru: 'Просмотрено', en: 'Watched' },
+
+  'material.coverUpload': { ru: 'Загрузить файл', en: 'Upload a file' },
+  'material.coverBadType': {
+    ru: 'Это не картинка. Нужен файл изображения.',
+    en: 'That is not an image file.',
+  },
+  'material.coverTooBig': {
+    ru: 'Картинка слишком тяжёлая даже после сжатия. Возьми файл поменьше.',
+    en: 'The image is too heavy even after compression. Try a smaller file.',
+  },
+  'material.coverBroken': {
+    ru: 'Не получилось прочитать эту картинку.',
+    en: 'That image could not be read.',
+  },
+
+  'material.progressPages': { ru: '{done} из {total} стр.', en: 'p. {done} of {total}' },
   'material.partsHint': {
     ru: 'Необязательно. Если указано, виден прогресс.',
     en: 'Optional. Fills in the progress line when set.',
@@ -78,6 +157,18 @@ export const LEARNING = {
     en: 'No notes yet. A chapter counts as done when there is a note for it.',
   },
   'material.progress': { ru: '{done} из {total}', en: '{done} of {total}' },
+  'material.cover': { ru: 'Обложка', en: 'Cover' },
+  'material.fetch': { ru: 'Заполнить по ссылке', en: 'Fill in from the link' },
+  'material.fetching': { ru: 'Читаю ссылку…', en: 'Reading the link…' },
+  'material.fetchNothing': {
+    ru: 'По этой ссылке ничего не нашлось — впиши руками.',
+    en: 'Nothing came back from that link — type it in by hand.',
+  },
+  'material.fetchHint': {
+    ru: 'Адрес уйдёт стороннему сервису, который читает разметку страницы.',
+    en: 'The address goes to a third-party service that reads the page markup.',
+  },
+  'material.coverClear': { ru: 'Убрать обложку', en: 'Remove the cover' },
   'material.makeFocus': { ru: 'Сделать фокусом потока', en: 'Make it the stream focus' },
   'material.isFocus': { ru: 'В фокусе потока', en: 'The stream focus' },
 
@@ -85,8 +176,6 @@ export const LEARNING = {
   'kind.article': { ru: 'Статья', en: 'Article' },
   'kind.course': { ru: 'Курс', en: 'Course' },
   'kind.video': { ru: 'Видео', en: 'Video' },
-  'kind.podcast': { ru: 'Подкаст', en: 'Podcast' },
-  'kind.other': { ru: 'Другое', en: 'Other' },
 
   'mstatus.inbox': { ru: 'Входящее', en: 'Inbox' },
   'mstatus.active': { ru: 'В работе', en: 'Active' },

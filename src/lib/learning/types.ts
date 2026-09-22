@@ -8,8 +8,22 @@ import type { NoteTag } from '../types'
 export const ACCENTS = ['lemon', 'sage', 'clay', 'slate', 'plum', 'sky', 'sand', 'rose'] as const
 export type Accent = (typeof ACCENTS)[number]
 
-export type MaterialKind = 'book' | 'article' | 'course' | 'video' | 'podcast' | 'other'
+/**
+ * Четыре вида, и у каждого своё поведение. Подкаста и «другого» здесь нет
+ * намеренно: вид, который ничем не отличается от соседа кроме значка, не вид,
+ * а лишний вопрос в форме.
+ */
+export const KINDS = ['book', 'article', 'course', 'video'] as const
+export type MaterialKind = (typeof KINDS)[number]
+
 export type MaterialStatus = 'inbox' | 'active' | 'someday' | 'reference' | 'done' | 'dropped'
+
+/**
+ * Чем меряется книга. Спрашивается явно, а не выводится из заполненного:
+ * пустое поле «глав» одинаково значит «глав нет» и «не знаю сколько».
+ */
+export const BOOK_SCALES = ['pages', 'parts'] as const
+export type BookScale = (typeof BOOK_SCALES)[number]
 
 /** Поток — область, в которой учишься. Раньше назывался категорией и был табом. */
 export interface Stream {
@@ -43,11 +57,37 @@ export interface Material {
   author: string | null
   url: string | null
   status: MaterialStatus
-  /** Сколько всего глав или частей. У статьи пусто. */
-  parts_total: number | null
+  /**
+   * Обложка. Достаётся по `url` — превью ролика, картинка Open Graph статьи,
+   * обложка издания, — и хранится адресом, а не картинкой: чужой файл всё
+   * равно живёт на чужом сервере, а протухшую ссылку рисованная обложка
+   * закрывает собой.
+   */
+  cover_url: string | null
+  /** Только у книги: по страницам или по главам. У остальных видов null. */
+  scale: BookScale | null
+  /** Только при scale === 'pages'. */
+  pages_total: number | null
+  page_current: number | null
   sort: number
   created_at: string
   updated_at: string
+}
+
+/**
+ * Глава книги или лекция курса. Один список на оба вида: разница между ними
+ * только в слове, которым это называют на экране.
+ *
+ * Отдельной коллекцией, а не полем внутри материала: у части есть `id`, за
+ * который позже зацепится конспект, и отметить одну лекцию — это изменить
+ * одну строку, а не переписать материал целиком.
+ */
+export interface MaterialPart {
+  id: string
+  material_id: string
+  title: string
+  done: boolean
+  sort: number
 }
 
 /** Конспект. На главу, а не на материал: так это и пишется на самом деле. */
@@ -68,6 +108,7 @@ export interface StudyNote {
 export interface LearningSnapshot {
   streams: Stream[]
   materials: Material[]
+  parts: MaterialPart[]
   notes: StudyNote[]
 }
 
@@ -75,5 +116,6 @@ export interface LearningSnapshot {
 export const emptyLearning = (): LearningSnapshot => ({
   streams: [],
   materials: [],
+  parts: [],
   notes: [],
 })

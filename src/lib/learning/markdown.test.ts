@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { renderMarkdown } from './markdown'
+import { plainText, renderMarkdown } from './markdown'
 
 describe('renderMarkdown', () => {
   it('экранирует HTML до всего остального', () => {
@@ -116,5 +116,27 @@ describe('renderMarkdown', () => {
         '<blockquote><p>Экспертиза создаёт приор.</p></blockquote>' +
         '<ul><li>первое</li><li>второе</li></ul>',
     )
+  })
+})
+
+describe('plainText', () => {
+  it('снимает выделение, жирный и курсив', () => {
+    expect(plainText('==раз== **два** *три*')).toBe('раз два три')
+  })
+
+  it('оставляет от ссылки только подпись', () => {
+    expect(plainText('см. [доки](https://example.com)')).toBe('см. доки')
+  })
+
+  it('снимает заголовки, цитаты и маркеры списка', () => {
+    expect(plainText('## Глава\n- пункт\n> цитата')).toBe('Глава пункт цитата')
+  })
+
+  it('схлопывает переносы и лишние пробелы в одну строку', () => {
+    expect(plainText('первая\n\n  вторая  ')).toBe('первая вторая')
+  })
+
+  it('не трогает амперсанд и угловые скобки', () => {
+    expect(plainText('a & b < c')).toBe('a & b < c')
   })
 })

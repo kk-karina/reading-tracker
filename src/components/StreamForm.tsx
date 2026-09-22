@@ -4,7 +4,7 @@ import { useLearning } from '../state/LearningContext'
 import { useLocale } from '../state/LocaleContext'
 import { Icon, type IconName } from './Icon'
 import { Sheet } from './Sheet'
-import { Jelly } from './ui'
+import { Field, FormStack, Jelly } from './ui'
 
 const PICKABLE: IconName[] = [
   'compass',
@@ -20,9 +20,12 @@ const PICKABLE: IconName[] = [
 export function StreamForm({
   stream,
   onClose,
+  onCreated,
 }: {
   stream?: Stream
   onClose: () => void
+  /** Заведённый поток отдаётся наружу: экран создания не всегда тот, на котором его видно. */
+  onCreated?: (made: Stream) => void
 }) {
   const { t } = useLocale()
   const { addStream, updateStream, deleteStream, streams } = useLearning()
@@ -50,6 +53,7 @@ export function StreamForm({
       // `updateStream` сразу после создания.
       const made = await addStream({ name: patch.name, icon, accent, outline: patch.outline, sort: streams.length })
       if (made && patch.goal) await updateStream(made.id, { goal: patch.goal })
+      if (made) onCreated?.(made)
     }
     setBusy(false)
     onClose()
@@ -63,23 +67,21 @@ export function StreamForm({
 
   return (
     <Sheet title={stream ? t('stream.edit') : t('hub.newStream')} onClose={onClose}>
-      <label className="field">
-        <span className="label">{t('stream.name')}</span>
+      <FormStack>
+      <Field label={t('stream.name')}>
         <input className="input" value={name} onChange={(e) => setName(e.target.value)} autoFocus />
-      </label>
+      </Field>
 
-      <label className="field">
-        <span className="label">{t('stream.goal')}</span>
+      <Field label={t('stream.goal')}>
         <input
           className="input"
           value={goal}
           placeholder={t('stream.goalEmpty')}
           onChange={(e) => setGoal(e.target.value)}
         />
-      </label>
+      </Field>
 
-      <div className="field">
-        <span className="label">{t('stream.icon')}</span>
+      <Field label={t('stream.icon')} group>
         <div className="icon-pick">
           {PICKABLE.map((n) => (
             <button
@@ -94,10 +96,9 @@ export function StreamForm({
             </button>
           ))}
         </div>
-      </div>
+      </Field>
 
-      <div className="field">
-        <span className="label">{t('stream.accent')}</span>
+      <Field label={t('stream.accent')} group>
         <div className="accent-pick">
           {ACCENTS.map((a) => (
             <button
@@ -111,18 +112,16 @@ export function StreamForm({
             />
           ))}
         </div>
-      </div>
+      </Field>
 
-      <label className="field">
-        <span className="label">{t('stream.outline')}</span>
+      <Field label={t('stream.outline')} hint={t('stream.outlineHint')}>
         <textarea
           className="textarea"
           rows={6}
           value={outline}
           onChange={(e) => setOutline(e.target.value)}
         />
-        <span className="small faint">{t('stream.outlineHint')}</span>
-      </label>
+      </Field>
 
       <div className="row-tight">
         <Jelly className="btn" onClick={() => void save()} disabled={busy || !name.trim()}>
@@ -134,6 +133,7 @@ export function StreamForm({
           </button>
         )}
       </div>
+      </FormStack>
     </Sheet>
   )
 }

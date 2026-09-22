@@ -10,6 +10,7 @@ import {
 import {
   learningStore,
   type NewMaterial,
+  type NewMaterialPart,
   type NewStream,
   type NewStudyNote,
 } from '../lib/learning/store'
@@ -17,6 +18,7 @@ import {
   emptyLearning,
   type LearningSnapshot,
   type Material,
+  type MaterialPart,
   type Stream,
   type StudyNote,
 } from '../lib/learning/types'
@@ -39,6 +41,10 @@ interface LearningValue extends LearningSnapshot {
   addMaterial(item: NewMaterial): Promise<Material | undefined>
   updateMaterial(id: string, patch: Partial<Material>): Promise<void>
   deleteMaterial(id: string): Promise<void>
+
+  addPart(item: NewMaterialPart): Promise<MaterialPart | undefined>
+  updatePart(id: string, patch: Partial<MaterialPart>): Promise<void>
+  deletePart(id: string): Promise<void>
 
   addNote(item: NewStudyNote): Promise<StudyNote | undefined>
   updateNote(id: string, patch: Partial<StudyNote>): Promise<void>
@@ -94,6 +100,10 @@ export function LearningProvider({ children }: { children: ReactNode }) {
       addMaterial: (m) => run(() => learningStore.addMaterial(m)),
       updateMaterial: async (id, p) => void (await run(() => learningStore.updateMaterial(id, p))),
       deleteMaterial: async (id) => void (await run(() => learningStore.deleteMaterial(id))),
+
+      addPart: (p) => run(() => learningStore.addPart(p)),
+      updatePart: async (id, p) => void (await run(() => learningStore.updatePart(id, p))),
+      deletePart: async (id) => void (await run(() => learningStore.deletePart(id))),
 
       addNote: (n) => run(() => learningStore.addNote(n)),
       updateNote: async (id, p) => void (await run(() => learningStore.updateNote(id, p))),

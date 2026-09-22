@@ -116,3 +116,82 @@ export const listItem = {
   exit: { opacity: 0, scale: 0.96, transition: { duration: 0.15 } },
   transition: { type: 'spring' as const, stiffness: 420, damping: 26 },
 }
+
+/**
+ * Вертикальный стек полей формы.
+ *
+ * Раньше это был класс `.book-form`, который три формы из пяти ставили, а две
+ * забыли — и поля в них стояли вплотную, потому что сам `.sheet` отступов
+ * детям не задаёт. Компонент отнимает возможность забыть; заодно уходит имя
+ * «book», неверное с тех пор, как в него завернули лист сессии.
+ */
+export function FormStack({ children, className }: { children: ReactNode; className?: string }) {
+  return <div className={`form-stack${className ? ` ${className}` : ''}`}>{children}</div>
+}
+
+interface FieldProps {
+  label: string
+  /** Строка под полем: подсказка, единица, предупреждение. */
+  hint?: ReactNode
+  /** Группе переключателей подпись через `<label>` не годится — она метит одно поле. */
+  group?: boolean
+  children: ReactNode
+  className?: string
+}
+
+/** Подпись, поле и подсказка — пара, которая иначе повторяется в каждой форме. */
+export function Field({ label, hint, group, children, className }: FieldProps) {
+  const Tag = group ? 'div' : 'label'
+  return (
+    <Tag className={`field${className ? ` ${className}` : ''}`}>
+      <span className="label">{label}</span>
+      {children}
+      {hint && <span className="small faint">{hint}</span>}
+    </Tag>
+  )
+}
+
+/**
+ * Тег: вид материала, статус, счётчик.
+ *
+ * Компонент, а не класс, потому что классом его писали то на `<span>`, то на
+ * `<button>`, а высоту `.chip` задавал, не задав `display` — и у инлайнового
+ * `<span>` она молча ничего не значила. Отсюда и брался разнобой по высоте.
+ */
+export function Chip({
+  children,
+  sm,
+  on,
+  className,
+}: {
+  children: ReactNode
+  sm?: boolean
+  on?: boolean
+  className?: string
+}) {
+  return (
+    <span className={`chip${sm ? ' sm' : ''}${on ? ' on' : ''}${className ? ` ${className}` : ''}`}>
+      {children}
+    </span>
+  )
+}
+
+/** Тот же тег, но по нему нажимают. Отжим и наклон на hover живут только здесь. */
+export function ChipButton({
+  children,
+  sm,
+  on,
+  className,
+  ...rest
+}: HTMLMotionProps<'button'> & { children: ReactNode; sm?: boolean; on?: boolean }) {
+  return (
+    <motion.button
+      type="button"
+      className={`chip${sm ? ' sm' : ''}${on ? ' on' : ''}${className ? ` ${className}` : ''}`}
+      whileTap={{ scale: 0.92 }}
+      {...rest}
+    >
+      {children}
+    </motion.button>
+  )
+}

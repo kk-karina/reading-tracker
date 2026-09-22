@@ -55,6 +55,21 @@ export function toISO(d: Date): string {
   return new Date(d.getTime() - off * 60_000).toISOString().slice(0, 10)
 }
 
+/**
+ * `n` days from `d`, as a new date at local midnight.
+ *
+ * Charts walk months of days, and walking them by adding 86_400_000 ms breaks
+ * twice a year: an hour goes missing in spring and comes back in autumn, so
+ * the walk drifts off midnight and eventually lands on the wrong day. Calendar
+ * arithmetic has no such thing as a short day.
+ */
+export function addDays(d: Date, n: number): Date {
+  const x = new Date(d)
+  x.setDate(x.getDate() + n)
+  x.setHours(0, 0, 0, 0)
+  return x
+}
+
 export function daysAgoISO(n: number): string {
   const d = new Date()
   d.setDate(d.getDate() - n)

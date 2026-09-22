@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { MaterialForm } from '../../components/MaterialForm'
-import { Jelly } from '../../components/ui'
+import { Chip, Jelly } from '../../components/ui'
 import { fmtDate } from '../../lib/format'
 import { backlogCounts, studying } from '../../lib/learning/buckets'
 import { materialProgress } from '../../lib/learning/metrics'
@@ -17,7 +17,7 @@ import { useStream } from './StreamLayout'
 export function Studying() {
   const { t, locale } = useLocale()
   const stream = useStream()
-  const { materials, notes, updateMaterial, updateStream } = useLearning()
+  const { materials, notes, parts, updateMaterial, updateStream } = useLearning()
   const [adding, setAdding] = useState(false)
 
   const counts = backlogCounts(materials, stream.id)
@@ -54,14 +54,14 @@ export function Studying() {
   return (
     <ul className="study-list">
       {mine.map((m) => {
-        const p = materialProgress(m, notes)
+        const p = materialProgress(m, parts)
         const last = lastActivity(notes.filter((n) => n.material_id === m.id).map((n) => n.date))
         const isFocus = m.id === stream.focus_material_id
         return (
           <li key={m.id} className={`study-card${isFocus ? ' focus' : ''}`}>
             <span className="study-card-head">
               <span className="study-card-title">{m.title}</span>
-              <span className="chip sm">{t(`kind.${m.kind}`)}</span>
+              <Chip sm>{t(`kind.${m.kind}`)}</Chip>
             </span>
             {p.percent !== null && (
               <div className="meter" aria-hidden>

@@ -48,31 +48,34 @@ export function Journal() {
         </div>
       </div>
 
-      {/* No captions: the control on the left says what is shown, the one on
-          the right says whose. */}
-      <div className="journal-filters">
-        <Segmented
-          name={t('journal.show')}
-          value={filter}
-          options={FILTERS.map((f) => ({ value: f, label: t(`journal.${f}`) }))}
-          onChange={setFilter}
-          className="sm"
-        />
-        {books.length > 1 && (
-          <select
-            className="select sm"
-            value={bookId}
-            aria-label={t('journal.book')}
-            onChange={(e) => setBookId(e.target.value)}
-          >
-            <option value="">{t('journal.allBooks')}</option>
-            {books.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.title}
-              </option>
-            ))}
-          </select>
-        )}
+      {/* The page bar: what is shown on the left, whose it is on the right. */}
+      <div className="filter-bar">
+        <div className="row-tight">
+          <Segmented
+            name={t('journal.show')}
+            value={filter}
+            options={FILTERS.map((f) => ({ value: f, label: t(`journal.${f}`) }))}
+            onChange={setFilter}
+            className="sm"
+          />
+        </div>
+        <div className="row-tight">
+          {books.length > 1 && (
+            <select
+              className="select sm"
+              value={bookId}
+              aria-label={t('journal.book')}
+              onChange={(e) => setBookId(e.target.value)}
+            >
+              <option value="">{t('journal.allBooks')}</option>
+              {books.map((b) => (
+                <option key={b.id} value={b.id}>
+                  {b.title}
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
       </div>
 
       {days.length === 0 ? (

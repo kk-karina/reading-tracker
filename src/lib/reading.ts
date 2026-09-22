@@ -33,7 +33,6 @@ export function lastSessionDate(bookId: string, sessions: Session[]): string | n
 
 /* ---------- habit ---------- */
 
-const DAY = 86_400_000
 const iso = (d: Date) => {
   const off = d.getTimezoneOffset()
   return new Date(d.getTime() - off * 60_000).toISOString().slice(0, 10)
@@ -76,11 +75,16 @@ export function stuckBooks(
   today: string,
   days: number,
 ): Book[] {
-  const cutoff = parse(today).getTime() - days * DAY
+  // Counted in calendar days, not in 86_400_000 ms: an hour goes missing in
+  // spring and comes back in autumn, which would move the cutoff by a day.
+  const from = parse(today)
+  from.setDate(from.getDate() - days)
+  const cutoff = iso(from)
+
   return books.filter((b) => {
     if (b.status !== 'reading') return false
     const last = lastSessionDate(b.id, sessions)
-    return last === null || parse(last).getTime() < cutoff
+    return last === null || last < cutoff
   })
 }
 

@@ -3,11 +3,11 @@ import { Shell } from './components/Shell'
 import { Book } from './pages/Book'
 import { Journal } from './pages/Journal'
 import { Backlog } from './pages/learning/Backlog'
+import { LearningIndex } from './pages/learning/LearningIndex'
 import { Material } from './pages/learning/Material'
 import { Notes } from './pages/learning/Notes'
 import { StreamDashboard } from './pages/learning/StreamDashboard'
 import { StreamLayout } from './pages/learning/StreamLayout'
-import { Streams } from './pages/learning/Streams'
 import { StudyNote } from './pages/learning/StudyNote'
 import { Studying } from './pages/learning/Studying'
 import { Login } from './pages/Login'
@@ -66,7 +66,9 @@ function Gate() {
             {/* Третий уровень вне layout: вместо полосы подразделов у него крошка. */}
             <Route path="reading/book/:id" element={<Book />} />
 
-            <Route path="learning" element={<Streams />} />
+            {/* У раздела нет витрины: адрес ведёт на дашборд первого потока,
+                собственный экран показывается, только когда потоков нет. */}
+            <Route path="learning" element={<LearningIndex />} />
             <Route path="learning/:slug" element={<StreamLayout />}>
               <Route index element={<StreamDashboard />} />
               <Route path="active" element={<Studying />} />

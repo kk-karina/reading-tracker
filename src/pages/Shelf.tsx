@@ -3,10 +3,10 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
 import { BookForm } from '../components/BookForm'
-import { Jelly } from '../components/ui'
-import { todayISO } from '../lib/format'
+import { CoverReel } from '../components/CoverReel'
+import { Jelly, Segmented } from '../components/ui'
 import { progressOf } from '../lib/reading'
-import { SEED_BOOKS, seedSessionFor } from '../lib/seed'
+import { addSampleShelf } from '../lib/seed'
 import type { Book, BookStatus, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
@@ -14,30 +14,99 @@ import { useT } from '../state/LocaleContext'
 // Reading first: the shelf should answer "where am I now" before anything else.
 const ORDER: BookStatus[] = ['reading', 'want', 'finished', 'abandoned']
 
+/**
+ * Two ways to stand in front of the same shelf. The grid is the working view —
+ * books sorted into what you are doing with them, progress where you can scan
+ * it. The reel is the shelf itself: one folded ribbon you walk along, pulling
+ * out whatever catches the eye. The choice is remembered, since it is a mood
+ * rather than a setting.
+ */
+type View = 'grid' | 'reel'
+const VIEW_KEY = 'shelf-view'
+
+/** Which shelf you are standing in front of. Not remembered: it is a question
+ *  asked of the page now, not a way of keeping it. */
+type StatusFilter = BookStatus | 'all'
+
+function rememberedView(): View {
+  try {
+    return localStorage.getItem(VIEW_KEY) === 'reel' ? 'reel' : 'grid'
+  } catch {
+    return 'grid'
+  }
+}
+
 export function Shelf() {
   const t = useT()
   const { books, sessions, loading, addBook, addSession } = useData()
   const [adding, setAdding] = useState(false)
   const [seeding, setSeeding] = useState(false)
+  const [view, setView] = useState<View>(rememberedView)
+  const [status, setStatus] = useState<StatusFilter>('all')
+
+  function chooseView(next: View) {
+    setView(next)
+    try {
+      localStorage.setItem(VIEW_KEY, next)
+    } catch {
+      // Private browsing: the view still changes, it just will not be here next time.
+    }
+  }
 
   async function loadSeed() {
     setSeeding(true)
-    for (const { page_to, ...fields } of SEED_BOOKS) {
-      const created = await addBook(fields)
-      if (created && page_to) await addSession(seedSessionFor(created.id, page_to, todayISO()))
-    }
+    await addSampleShelf(books, addBook, addSession)
     setSeeding(false)
   }
 
   if (loading) return null
 
+  // Only shelves that hold something are offered, so the filter can never empty
+  // the page — and a status that empties while you are on it falls back to all.
+  const present = ORDER.filter((s) => books.some((b) => b.status === s))
+  const active: StatusFilter = status !== 'all' && present.includes(status) ? status : 'all'
+  const shown = active === 'all' ? present : [active]
+
   return (
     <>
       <div className="page-head">
         <h1 className="display">{t('nav.shelf')}</h1>
-        <Jelly className="btn" onClick={() => setAdding(true)}>
-          {t('shelf.add')}
-        </Jelly>
+      </div>
+
+      {/* The page bar: what you are looking at on the left, what you can do
+          about it on the right. */}
+      <div className="filter-bar">
+        <div className="row-tight">
+          {books.length > 0 && (
+            <Segmented
+              name={t('shelf.view')}
+              value={view}
+              options={[
+                { value: 'grid', label: t('shelf.viewGrid') },
+                { value: 'reel', label: t('shelf.viewReel') },
+              ]}
+              onChange={chooseView}
+              className="sm"
+            />
+          )}
+          {present.length > 1 && (
+            <Segmented
+              name={t('shelf.status')}
+              value={active}
+              options={[
+                { value: 'all' as StatusFilter, label: t('shelf.allStatuses') },
+                ...present.map((s) => ({ value: s as StatusFilter, label: t(`status.${s}`) })),
+              ]}
+              onChange={setStatus}
+              className="sm"
+            />
+          )}
+        </div>
+        <div className="row-tight">
+          <Jelly className="btn" onClick={() => setAdding(true)}>
+            {t('shelf.add')}
+          </Jelly>
+        </div>
       </div>
 
       {books.length === 0 ? (
@@ -52,14 +121,18 @@ export function Shelf() {
             <span className="small faint">{t('shelf.sampleHint')}</span>
           </div>
         </div>
+      ) : view === 'reel' ? (
+        <CoverReel
+          books={shown.flatMap((s) => books.filter((b) => b.status === s))}
+          sessions={sessions}
+        />
       ) : (
-        ORDER.map((status) => {
-          const shelf = books.filter((b) => b.status === status)
-          if (shelf.length === 0) return null
+        shown.map((s) => {
+          const shelf = books.filter((b) => b.status === s)
           return (
-            <section key={status} className="shelf">
+            <section key={s} className="shelf">
               <div className="label shelf-label">
-                {t(`status.${status}`)} <span className="faint">{shelf.length}</span>
+                {t(`status.${s}`)} <span className="faint">{shelf.length}</span>
               </div>
               <div className="shelf-row">
                 {shelf.map((b, i) => (
