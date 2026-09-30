@@ -16,7 +16,17 @@ export type Accent = (typeof ACCENTS)[number]
 export const KINDS = ['book', 'article', 'course', 'video'] as const
 export type MaterialKind = (typeof KINDS)[number]
 
-export type MaterialStatus = 'inbox' | 'active' | 'someday' | 'reference' | 'done' | 'dropped'
+/**
+ * Четыре состояния, и каждое отвечает на свой вопрос: за это села, это ждёт,
+ * это позади, это брошено.
+ *
+ * Бэклог был разделён на входящее, «когда-нибудь» и справку. Разбирать очередь
+ * это различие не помогало: класть материал приходилось в одну из трёх корзин
+ * ещё при заведении, то есть решать про него раньше, чем вообще успела на него
+ * посмотреть, — а смотрят на очередь ровно затем, чтобы это решить. Осталось
+ * одно «ждёт».
+ */
+export type MaterialStatus = 'backlog' | 'active' | 'done' | 'dropped'
 
 /**
  * Чем меряется книга. Спрашивается явно, а не выводится из заполненного:
@@ -94,6 +104,17 @@ export interface MaterialPart {
 export interface StudyNote {
   id: string
   material_id: string
+  /**
+   * Часть, к которой конспект относится. Указатель, а не имя: переименованная
+   * глава уносит свои конспекты с собой, а перенумерованная не оставляет за
+   * собой «Главу 3» в списке из девятнадцати — см. `partLabel`.
+   */
+  part_id: string | null
+  /**
+   * Имя части текстом. Осталось от времён, когда глава набиралась руками, и
+   * держит все написанные тогда конспекты. Новые пишут `part_id` и оставляют
+   * это поле пустым; показывается оно только когда `part_id` нет.
+   */
   part: string | null // «Глава 1. Nobody Thinks Like You»
   title: string | null
   body: string // markdown, включая ==выделение==

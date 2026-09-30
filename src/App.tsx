@@ -2,14 +2,13 @@ import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom
 import { Shell } from './components/Shell'
 import { Book } from './pages/Book'
 import { Journal } from './pages/Journal'
-import { Backlog } from './pages/learning/Backlog'
 import { LearningIndex } from './pages/learning/LearningIndex'
 import { Material } from './pages/learning/Material'
+import { Materials } from './pages/learning/Materials'
 import { Notes } from './pages/learning/Notes'
 import { StreamDashboard } from './pages/learning/StreamDashboard'
 import { StreamLayout } from './pages/learning/StreamLayout'
 import { StudyNote } from './pages/learning/StudyNote'
-import { Studying } from './pages/learning/Studying'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
 import { ReadingLayout } from './pages/ReadingLayout'
@@ -47,6 +46,12 @@ function LegacyNote() {
   return <Navigate to={s && n ? `/learning/${s.slug}/n/${n.id}` : '/learning'} replace />
 }
 
+/** Бывшие подразделы потока: оба теперь срез одного раздела. */
+function LegacyView({ view }: { view: 'active' | 'backlog' }) {
+  const { slug } = useParams()
+  return <Navigate to={`/learning/${slug}/materials?view=${view}`} replace />
+}
+
 function Gate() {
   const { ready, user } = useAuth()
   if (!ready) return null
@@ -71,8 +76,7 @@ function Gate() {
             <Route path="learning" element={<LearningIndex />} />
             <Route path="learning/:slug" element={<StreamLayout />}>
               <Route index element={<StreamDashboard />} />
-              <Route path="active" element={<Studying />} />
-              <Route path="backlog" element={<Backlog />} />
+              <Route path="materials" element={<Materials />} />
               <Route path="notes" element={<Notes />} />
             </Route>
             {/* Третий и четвёртый уровни вне layout: у них крошка вместо полосы,
@@ -81,6 +85,18 @@ function Gate() {
               <Route path="m/:id" element={<Material />} />
               <Route path="n/:id" element={<StudyNote />} />
             </Route>
+
+            {/* «Изучаю» и «Бэклог» стали срезами «Материалов». Адреса
+                разошлись по закладкам и по ссылкам внутри самих конспектов,
+                поэтому оба ведут в свой срез, а не в никуда. */}
+            <Route
+              path="learning/:slug/active"
+              element={<LegacyView view="active" />}
+            />
+            <Route
+              path="learning/:slug/backlog"
+              element={<LegacyView view="backlog" />}
+            />
 
             <Route path="learning/m/:id" element={<LegacyMaterial />} />
             <Route path="learning/n/:id" element={<LegacyNote />} />

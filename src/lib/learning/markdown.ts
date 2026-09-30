@@ -49,6 +49,11 @@ function inline(text: string): string {
 
   out = out.replace(/==(.+?)==/g, '<mark>$1</mark>')
   out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  // Волна идёт после жирного и до курсива: знака для волнистого подчёркивания
+  // в markdown нет, и `__` занят под него здесь. В чужом редакторе он выродится
+  // в жирный — это тоже акцент, и потерять смысл он не даёт. Двойное
+  // подчёркивание не трогает `snake_case`: там они одиночные.
+  out = out.replace(/__(.+?)__/g, '<u>$1</u>')
   out = out.replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
 
   return out.replace(HOLD_BACK, (_, i: string) => code[Number(i)])
@@ -157,6 +162,7 @@ export function plainText(src: string): string {
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(/==(.+?)==/g, '$1')
     .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/__(.+?)__/g, '$1')
     .replace(/(^|[^*])\*([^*]+)\*/g, '$1$2')
     // Заголовки, цитаты и маркеры списка — в начале строки.
     .replace(/^\s*(#{1,6}|>|[-*+])\s+/gm, '')

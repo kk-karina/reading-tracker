@@ -1,6 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { materialProgress, noteCount, weekNotes } from './metrics'
+import {
+  barWidth,
+  doneAfterPart,
+  lastNoteDate,
+  materialProgress,
+  remainingOf,
+  weekNotes,
+} from './metrics'
 import type { Material, MaterialPart, StudyNote } from './types'
+
+/** Тот же порог, что в metrics: ниже него полоса читается как пустая. */
+const MIN_BAR = 3
 
 const material = (over: Partial<Material> = {}): Material => ({
   id: 'm1',
@@ -32,6 +42,7 @@ const part = (over: Partial<MaterialPart> = {}): MaterialPart => ({
 const note = (over: Partial<StudyNote> = {}): StudyNote => ({
   id: crypto.randomUUID(),
   material_id: 'm1',
+  part_id: null,
   part: null,
   title: null,
   body: '',
@@ -142,12 +153,6 @@ describe('materialProgress: книга по страницам', () => {
   })
 })
 
-describe('noteCount', () => {
-  it('считает конспекты только своего материала', () => {
-    expect(noteCount('m1', [note(), note(), note({ material_id: 'другой' })])).toBe(2)
-  })
-})
-
 describe('weekNotes', () => {
   const TODAY = '2026-09-21'
 
@@ -173,5 +178,104 @@ describe('weekNotes', () => {
 
   it('не берёт даты из будущего', () => {
     expect(weekNotes([note({ date: '2026-09-22' })], TODAY)).toEqual({ count: 0, days: 0 })
+  })
+})
+
+describe('doneAfterPart', () => {
+  const p = (done: number, total: number | null) => ({
+    done,
+    total,
+    percent: null,
+    unit: 'part' as const,
+  })
+
+  it('отметить непройденную главу — станет на одну больше', () => {
+    expect(doneAfterPart(p(3, 12), false, true)).toBe(4)
+  })
+
+  it('снять отметку с пройденной — станет на одну меньше', () => {
+    expect(doneAfterPart(p(3, 12), true, false)).toBe(2)
+  })
+
+  it('галочку не трогали — число не меняется', () => {
+    expect(doneAfterPart(p(3, 12), true, true)).toBe(3)
+    expect(doneAfterPart(p(3, 12), false, false)).toBe(3)
+  })
+
+  it('ниже нуля не уходит', () => {
+    expect(doneAfterPart(p(0, 12), true, false)).toBe(0)
+  })
+
+  it('выше общего числа не поднимается', () => {
+    expect(doneAfterPart(p(12, 12), false, true)).toBe(12)
+  })
+
+  it('без общего числа растёт свободно', () => {
+    expect(doneAfterPart(p(3, null), false, true)).toBe(4)
+  })
+})
+
+describe('remainingOf', () => {
+  const p = (done: number, total: number | null, unit: 'page' | 'part' | 'flag' = 'part') => ({
+    done,
+    total,
+    percent: null,
+    unit,
+  })
+
+  it('считает, сколько осталось до конца', () => {
+    expect(remainingOf(p(4, 12))).toBe(8)
+  })
+
+  it('пройденное целиком не оставляет остатка', () => {
+    expect(remainingOf(p(12, 12))).toBe(0)
+  })
+
+  it('мерить нечем — остатка нет', () => {
+    expect(remainingOf(p(4, null))).toBe(null)
+  })
+
+  it('у статьи и видео остатка не бывает', () => {
+    expect(remainingOf(p(0, 1, 'flag'))).toBe(null)
+  })
+
+  it('перелёт за конец не уходит в минус', () => {
+    expect(remainingOf(p(14, 12))).toBe(0)
+  })
+})
+
+describe('lastNoteDate', () => {
+  it('без конспектов даты нет', () => {
+    expect(lastNoteDate('m1', [])).toBe(null)
+  })
+
+  it('берёт самую позднюю дату', () => {
+    const notes = [note({ date: '2026-09-14' }), note({ date: '2026-09-21' }), note({ date: '2026-09-18' })]
+    expect(lastNoteDate('m1', notes)).toBe('2026-09-21')
+  })
+
+  it('чужие конспекты не в счёт', () => {
+    const notes = [note({ date: '2026-09-14' }), note({ material_id: 'другой', date: '2026-09-30' })]
+    expect(lastNoteDate('m1', notes)).toBe('2026-09-14')
+  })
+})
+
+describe('barWidth', () => {
+  it('мерить нечем — ширины нет', () => {
+    expect(barWidth(null)).toBe(null)
+  })
+
+  it('едва начатое видно глазом, а не только числом', () => {
+    expect(barWidth(2)).toBe(MIN_BAR)
+    expect(barWidth(1)).toBe(MIN_BAR)
+  })
+
+  it('нетронутое остаётся пустым', () => {
+    expect(barWidth(0)).toBe(0)
+  })
+
+  it('дальше порога ширина своя', () => {
+    expect(barWidth(8)).toBe(8)
+    expect(barWidth(100)).toBe(100)
   })
 })

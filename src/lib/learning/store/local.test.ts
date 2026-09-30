@@ -79,7 +79,7 @@ describe('localLearning', () => {
       kind: 'video',
       author: null,
       url: null,
-      status: 'inbox',
+      status: 'backlog',
       cover_url: null,
       scale: null,
       pages_total: null,
@@ -88,6 +88,7 @@ describe('localLearning', () => {
     })
     await localLearning.addNote({
       material_id: mat.id,
+      part_id: null,
       part: 'Глава 1',
       title: null,
       body: 'текст',
@@ -125,7 +126,7 @@ describe('localLearning', () => {
       kind: 'article',
       author: null,
       url: null,
-      status: 'inbox',
+      status: 'backlog',
       cover_url: null,
       scale: null,
       pages_total: null,
@@ -134,6 +135,7 @@ describe('localLearning', () => {
     })
     await localLearning.addNote({
       material_id: a.id,
+      part_id: null,
       part: null,
       title: null,
       body: 'а',
@@ -143,6 +145,7 @@ describe('localLearning', () => {
     })
     const keep = await localLearning.addNote({
       material_id: b.id,
+      part_id: null,
       part: null,
       title: null,
       body: 'б',
@@ -175,6 +178,7 @@ describe('localLearning', () => {
     })
     const note = await localLearning.addNote({
       material_id: mat.id,
+      part_id: null,
       part: null,
       title: null,
       body: 'было',
@@ -345,7 +349,7 @@ describe('целостность фокуса', () => {
     })
     await localLearning.updateStream(stream.id, { focus_material_id: material.id })
 
-    await localLearning.updateMaterial(material.id, { status: 'inbox' })
+    await localLearning.updateMaterial(material.id, { status: 'backlog' })
 
     expect((await localLearning.load()).streams[0].focus_material_id).toBeNull()
   })
@@ -445,6 +449,7 @@ describe('переезд v2 → v3', () => {
   const noteV2 = (over: Record<string, unknown> = {}) => ({
     id: crypto.randomUUID(),
     material_id: 'm1',
+    part_id: null,
     part: null,
     title: null,
     body: '',
@@ -523,11 +528,30 @@ describe('переезд v2 → v3', () => {
   })
 
   it('у статьи ни частей, ни шкалы, и статус не трогается конспектами', async () => {
-    put([matV2({ kind: 'article', parts_total: 7, status: 'inbox' })], [noteV2(), noteV2()])
+    put([matV2({ kind: 'article', parts_total: 7, status: 'someday' })], [noteV2(), noteV2()])
     const snap = await localLearning.load()
 
     expect(snap.parts).toEqual([])
-    expect(snap.materials[0]).toMatchObject({ scale: null, status: 'inbox' })
+    expect(snap.materials[0]).toMatchObject({ scale: null, status: 'backlog' })
+  })
+
+  // Корзины бэклога были тремя словами про одно и то же: материал заведён и
+  // ждёт. Старые снимки несут эти слова и должны читаться очередью, а не
+  // выпадать из всех фильтров разом.
+  it('бывшие корзины бэклога читаются одной очередью', async () => {
+    put([
+      matV2({ id: 'a', status: 'inbox' }),
+      matV2({ id: 'b', status: 'someday' }),
+      matV2({ id: 'c', status: 'reference' }),
+      matV2({ id: 'd', status: 'active' }),
+      matV2({ id: 'e', status: 'done' }),
+      matV2({ id: 'f', status: 'dropped' }),
+    ])
+    const snap = await localLearning.load()
+
+    expect(snap.materials.map((m) => m.status)).toEqual([
+      'backlog', 'backlog', 'backlog', 'active', 'done', 'dropped',
+    ])
   })
 
   it('parts_total из материала исчезает', async () => {
@@ -647,5 +671,39 @@ describe('части', () => {
     await localLearning.updateMaterial(m.id, { title: 'Другое имя' })
 
     expect((await localLearning.load()).parts).toHaveLength(1)
+  })
+})
+
+describe('снимок, написанный до появления указателя на главу', () => {
+  it('читает конспект без part_id и не роняет на нём загрузку', async () => {
+    localStorage.setItem(
+      'readingtracker.learning.v3',
+      JSON.stringify({
+        streams: [],
+        materials: [],
+        parts: [],
+        notes: [
+          {
+            id: 'n1',
+            material_id: 'm1',
+            part: 'Глава 1. Название руками',
+            title: null,
+            body: 'текст',
+            tags: [],
+            date: '2026-09-01',
+            sort: 0,
+            created_at: '',
+            updated_at: '',
+          },
+        ],
+      }),
+    )
+
+    const snap = await localLearning.load()
+
+    expect(snap.notes).toHaveLength(1)
+    expect(snap.notes[0].part_id).toBe(null)
+    // Имя, набранное руками, остаётся: связать его с главой задним числом нечем.
+    expect(snap.notes[0].part).toBe('Глава 1. Название руками')
   })
 })

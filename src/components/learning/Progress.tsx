@@ -18,13 +18,3 @@ export function useProgressText() {
       : t('material.progress', { done: p.done, total: p.total })
   }
 }
-
-/** Полоса. Не рисуется, когда мерить нечем: врать шириной хуже, чем молчать. */
-export function Meter({ percent }: { percent: number | null }) {
-  if (percent === null) return null
-  return (
-    <div className="meter" aria-hidden>
-      <span style={{ width: `${percent}%` }} />
-    </div>
-  )
-}

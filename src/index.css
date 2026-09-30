@@ -150,9 +150,12 @@ button {
   align-items: center;
   gap: 7px;
 }
+/* Лимон виден только на тёмном: на бумаге иконка такого цвета пропадает.
+   Поэтому иконка идёт цветом своего текста, а жёлтой становится там, где под
+   ней графит. */
 .icon {
   flex: none;
-  color: var(--brand);
+  color: currentColor;
 }
 .label .icon {
   width: 15px;
@@ -359,6 +362,14 @@ button {
 .link-btn:hover {
   color: var(--ink);
   border-color: var(--ink);
+}
+/* Недоступная тихая кнопка гаснет и не отвечает на наведение: у края списка
+   стрелка должна сказать, что края достигли, а не притворяться живой. */
+.link-btn:disabled,
+.link-btn:disabled:hover {
+  color: var(--line-2);
+  border-color: transparent;
+  cursor: not-allowed;
 }
 .link-btn.danger:hover {
   color: var(--danger);
@@ -1590,6 +1601,11 @@ button.chip:active {
   gap: 18px;
   min-height: 180px;
 }
+/* Зазор внутри вкладки задаёт сама вкладка: собственный отступ шапки панели
+   складывался бы с ним и отрывал содержимое от своего заголовка. */
+.tab-body > .panel-head {
+  margin-bottom: 0;
+}
 
 .review {
   display: flex;
@@ -1882,6 +1898,40 @@ button.chip:active {
 
 .meter.big { height: 6px; margin: 14px 0 0; max-width: 420px; }
 
+/* Полоса и плюс — одна строка. Прибавить занятие значит сдвинуть именно эту
+   полосу, и жест стоит там же, где результат, а не отдельной громкой кнопкой
+   внизу: тогда на экране два одинаково главных действия вместо одного.
+   Один ряд на три экрана — фокус потока, материал, книга. */
+.prog-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  max-width: 420px;
+  margin: 14px 0 0;
+}
+.prog-row .meter {
+  flex: 1 1 auto;
+  margin: 0;
+}
+
+/* Тихая кнопка: обводка, а не заливка. Лимон появляется только под курсором. */
+.log-dot {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  color: var(--ink-3);
+  transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+}
+.log-dot:hover {
+  border-color: var(--brand);
+  background: var(--brand);
+  color: var(--ink);
+}
+
 /* ---------- book page ---------- */
 
 .book-head {
@@ -1920,10 +1970,13 @@ button.chip:active {
 
 /* ---------- sheet ---------- */
 
+/* Цвет задаётся здесь, а не наследуется: лист открывается и с тёмной подложки
+   потока, где текст белый. Панель — своя плоскость и начинает с чернил. */
 .sheet-scrim {
   position: fixed;
   inset: 0;
   z-index: 40;
+  color: var(--ink);
   display: flex;
   align-items: flex-start;
   justify-content: center;
@@ -2013,6 +2066,14 @@ button.chip:active {
 .book-cover-tilt {
   transform: rotate(-1.5deg);
   transform-origin: bottom left;
+}
+/* Обложка материала стоит справа от текста: кадр у неё лежачий, и это первое,
+   чем страница материала отличается от страницы книги. Наклон зеркальный —
+   уводить он должен от текста, а не в него. */
+.book-cover-tilt.mirror {
+  transform: rotate(1.5deg);
+  transform-origin: bottom right;
+  margin-left: auto;
 }
 
 /* ---------- dashboard ---------- */

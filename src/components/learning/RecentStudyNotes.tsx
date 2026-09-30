@@ -1,33 +1,42 @@
 import { Link } from 'react-router-dom'
-import { plainText } from '../../lib/learning/markdown'
-import type { Material, Stream, StudyNote } from '../../lib/learning/types'
+import { fmtDate } from '../../lib/format'
+import { excerptOf } from '../../lib/learning/highlights'
+import { noteHeading } from '../../lib/learning/notes'
+import { partLabel, partWord } from '../../lib/learning/parts'
+import type { Material, MaterialPart, Stream, StudyNote } from '../../lib/learning/types'
 import { useLocale } from '../../state/LocaleContext'
 
-/** Три заполняют ряд карточек на широком экране; остальное живёт в «Заметках». */
+/** Три последних конспекта. Дальше — вкладка, ссылка на неё стоит в шапке зоны. */
 const SHOWN = 3
 
 /**
- * Конспект — карточка, а не строка в рамке: ряд карточек сам выравнивается по
- * высоте, и это единственная причина, по которой они карточки. Форма та же,
- * что у мыслей на дашборде чтения.
+ * Последние конспекты — лентой отрывков, а не карточками.
  *
- * Собственной шапки у блока больше нет: он стоит внутри зоны «Что осталось»,
- * и её имя со ссылкой на все заметки было ровно тем же самым, написанным
- * дважды подряд.
+ * Карточка пришла сюда от мысли о книге, где она и права: мысль коротка и
+ * помещается в карточку целиком. Конспект — лист со структурой, и та же
+ * карточка показывала его схлопнутым в сплошняк: «Main takeaway ... My
+ * correction ... Question / disagreement ...» — три одинаковые серые стены,
+ * по которым нельзя было сказать, о чём хоть одна из них.
  *
- * У конспекта тегов может быть несколько, а цвет карточки один — берётся
- * первый: он и выбран первым.
+ * Теперь строка — это отрывок и подпись под ним. Отрывок берётся маркером
+ * (см. `excerptOf`), и отмеченный маркером стоит на лимоне: крупно на экран
+ * попадает ровно то, что было отчёркнуто рукой. Верхний отрывок — самый
+ * свежий и потому набран крупнее: ленту читают сверху.
+ *
+ * Строка целиком ведёт на лист: за отрывком всегда идут за остальным.
  */
 export function RecentStudyNotes({
   stream,
   materials,
+  parts,
   notes,
 }: {
   stream: Stream
   materials: Material[]
+  parts: MaterialPart[]
   notes: StudyNote[]
 }) {
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const from = { to: `/learning/${stream.slug}`, label: t('nav.dashboard') }
 
   const recent = [...notes]
@@ -37,30 +46,40 @@ export function RecentStudyNotes({
   if (recent.length === 0) return <div className="queue-empty">{t('stream.notesNone')}</div>
 
   return (
-    <div className="thought-cards">
-      {recent.map((n) => {
-        const m = materials.find((x) => x.id === n.material_id)
+    <ul className="recap">
+      {recent.map((note, i) => {
+        const material = materials.find((m) => m.id === note.material_id)
+        const excerpt = excerptOf(note)
+        // Глава зовётся тем же именем, что на листе и в навигации по листам, —
+        // одно правило на все экраны, иначе здесь «Глава 4», а там пусто.
+        const word = partWord(material?.kind ?? 'book')
+        const heading = noteHeading(note, parts, (part, idx) =>
+          partLabel(part, idx, (n) =>
+            t(word === 'lecture' ? 'part.lecture' : 'part.chapter', { n }),
+          ),
+        )
+        const source = [material?.title, heading, fmtDate(note.date, locale)]
+          .filter(Boolean)
+          .join(' · ')
+
         return (
-          <article key={n.id} className="thought-card" data-tag={n.tags[0]}>
-            {n.tags[0] && <span className="label thought-tag">{t(`tag.${n.tags[0]}`)}</span>}
-            {/* В теле — сам конспект без разметки. Название главы стоит
-                ниже, у материала, и повторять его здесь незачем. */}
-            <p className="thought-body">{plainText(n.body)}</p>
-            {m && (
-              <Link
-                to={`/learning/${stream.slug}/n/${n.id}`}
-                state={{ from }}
-                className="thought-book"
-              >
-                <span className="thought-book-text">
-                  <span className="thought-book-title">{m.title}</span>
-                  {n.part && <span className="thought-book-author">{n.part}</span>}
-                </span>
-              </Link>
-            )}
-          </article>
+          <li key={note.id}>
+            <Link
+              className="recap-row"
+              to={`/learning/${stream.slug}/n/${note.id}`}
+              state={{ from }}
+              data-lead={i === 0 || undefined}
+            >
+              {excerpt && (
+                <p className="recap-text" data-marked={excerpt.marked || undefined}>
+                  <span className="recap-mark">{excerpt.text}</span>
+                </p>
+              )}
+              <span className="recap-source">{source}</span>
+            </Link>
+          </li>
         )
       })}
-    </div>
+    </ul>
   )
 }

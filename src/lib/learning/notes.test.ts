@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { notesOfStream } from './notes'
-import type { Material, StudyNote } from './types'
+import { noteHeading, notesOfStream } from './notes'
+import type { Material, MaterialPart, StudyNote } from './types'
 
 const material = (id: string, streamId: string): Material => ({
   id,
@@ -22,6 +22,7 @@ const material = (id: string, streamId: string): Material => ({
 const note = (id: string, materialId: string): StudyNote => ({
   id,
   material_id: materialId,
+  part_id: null,
   part: null,
   title: null,
   body: '',
@@ -47,5 +48,47 @@ describe('notesOfStream', () => {
 
   it('пустой поток даёт пустой список', () => {
     expect(notesOfStream([], [], 's1')).toEqual([])
+  })
+})
+
+const part = (id: string, title: string, sort: number): MaterialPart => ({
+  id,
+  material_id: 'm1',
+  title,
+  done: false,
+  sort,
+})
+
+describe('noteHeading', () => {
+  const label = (p: MaterialPart, i: number) => p.title.trim() || `Глава ${i + 1}`
+  const parts = [part('p1', 'Про имена', 0), part('p2', '', 1)]
+
+  it('зовёт лист именем главы, на которую он указывает', () => {
+    const n = { ...note('n1', 'm1'), part_id: 'p1' }
+    expect(noteHeading(n, parts, label)).toBe('Про имена')
+  })
+
+  it('безымянная глава зовётся своим номером', () => {
+    const n = { ...note('n1', 'm1'), part_id: 'p2' }
+    expect(noteHeading(n, parts, label)).toBe('Глава 2')
+  })
+
+  it('старый конспект держится за набранное руками имя', () => {
+    const n = { ...note('n1', 'm1'), part: 'Глава 1. Nobody Thinks Like You' }
+    expect(noteHeading(n, parts, label)).toBe('Глава 1. Nobody Thinks Like You')
+  })
+
+  it('без главы берёт собственный заголовок', () => {
+    const n = { ...note('n1', 'm1'), title: 'Мысли на полях' }
+    expect(noteHeading(n, parts, label)).toBe('Мысли на полях')
+  })
+
+  it('указатель на главу, которой больше нет, именем не считается', () => {
+    const n = { ...note('n1', 'm1'), part_id: 'ушла', part: 'Глава 9' }
+    expect(noteHeading(n, parts, label)).toBe('Глава 9')
+  })
+
+  it('безымянный лист остаётся безымянным', () => {
+    expect(noteHeading(note('n1', 'm1'), parts, label)).toBe(null)
   })
 })

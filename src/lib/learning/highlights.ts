@@ -1,4 +1,4 @@
-import { fromISO, todayISO } from '../format'
+import { plainText } from './markdown'
 import type { StudyNote } from './types'
 
 /**
@@ -29,28 +29,43 @@ export function extractHighlights(notes: StudyNote[]): Highlight[] {
   return out
 }
 
-/**
- * Номер недели как счётчик, не как дата.
- *
- * Считается от понедельника и в UTC. От эпохи напрямую считать нельзя: 1 января
- * 1970 — четверг, и граница недели уехала бы на четверг. Локальная полночь тоже
- * не годится — переход на летнее время даёт дробные сутки.
- */
-function weekIndex(today: string): number {
-  const d = fromISO(today)
-  const sinceMonday = (d.getDay() + 6) % 7
-  return Math.round(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate() - sinceMonday) / 86_400_000)
+/** Строка, которой конспект показывается снаружи. */
+export interface Excerpt {
+  text: string
+  /**
+   * Отчёркнута маркером, а не взята с начала. Дашборд рисует такую лимоном:
+   * заливка тогда не украшение, а ответ — крупно стоит ровно то, что было
+   * отмечено рукой, и ничего больше.
+   */
+  marked: boolean
 }
 
 /**
- * Одно выделение на неделю.
- *
- * Выбор считается из номера недели, а не случайно и не из хранилища: внутри
- * недели он не прыгает при каждой перерисовке, а в понедельник меняется сам.
+ * Контур, а не мысль: заголовки любого уровня, горизонтальные линии и пустая
+ * цитата. Контур конспекта у потока один на все занятия — «Main takeaway» в
+ * каждом третьем конспекте не говорит ни о котором из них.
  */
-export function thoughtOfWeek(list: Highlight[], today: string = todayISO()): Highlight | null {
-  if (list.length === 0) return null
-  // Остаток может быть отрицательным для дат до эпохи — приводим в диапазон.
-  const i = ((weekIndex(today) % list.length) + list.length) % list.length
-  return list[i]
+const OUTLINE = /^\s*(#{1,6}\s|[-*_]{3,}\s*$|>\s*$)/
+
+/**
+ * Чем конспект показывается на дашборде.
+ *
+ * Сначала маркер: `==...==` — это уже сделанный выбор, и спрашивать второй
+ * раз нечего. Маркера нет — берётся первая содержательная строка тела: она
+ * стоит первой не случайно, с неё конспект и начали писать. Разметка с неё
+ * снимается, потому что показывается она строкой, а не листом.
+ *
+ * Конспект из одного контура ничего не отдаёт вовсе: строка «My correction»
+ * на дашборде хуже, чем её отсутствие.
+ */
+export function excerptOf(note: StudyNote): Excerpt | null {
+  const mark = extractHighlights([note])[0]
+  if (mark) return { text: mark.text, marked: true }
+
+  for (const line of note.body.split('\n')) {
+    if (OUTLINE.test(line)) continue
+    const text = plainText(line)
+    if (text) return { text, marked: false }
+  }
+  return null
 }

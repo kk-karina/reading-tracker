@@ -43,12 +43,71 @@ export function materialProgress(material: Material, parts: MaterialPart[]): Mat
   return { done, total, percent: ratio(done, total), unit: 'page' }
 }
 
+/**
+ * Сколько станет пройдено, если сохранить занятие с такой галочкой.
+ *
+ * Считается до записи, а не после: «станет 4 из 12» должно стоять перед
+ * глазами в момент решения. Раньше лист показывал просто `done + 1` — число,
+ * которое ни с чем не сверялось и потому оказывалось неверным всякий раз,
+ * когда глава уже была отмечена или галочку снимали.
+ *
+ * `was` — как глава отмечена сейчас, `will` — как будет.
+ */
+export function doneAfterPart(p: MaterialProgress, was: boolean, will: boolean): number {
+  const next = p.done + (will ? 1 : 0) - (was ? 1 : 0)
+  return Math.max(0, p.total === null ? next : Math.min(next, p.total))
+}
+
+/**
+ * Насколько узкой полоса перестаёт быть полосой.
+ *
+ * Три процента — не про точность, а про то, что ниже этого хайрлайн в три
+ * пикселя читается как пустой трек. «1 из 41» — это два процента: число под
+ * полосой говорит, что работа начата, а сама полоса в это же время говорит,
+ * что не начата, и глаз верит полосе.
+ */
+const MIN_BAR = 3
+
+/**
+ * Какой ширины рисовать заливку — в процентах, как её отдаёт `percent`.
+ *
+ * Отдельной функцией, потому что мест с полосой три — герой потока, карточка
+ * материала в списке и страница материала, — а поправка на глаз жила ровно в
+ * одном из них. Ноль остаётся нулём: у нетронутого пустая полоса и есть
+ * правда.
+ */
+export function barWidth(percent: number | null): number | null {
+  if (percent === null) return null
+  return percent === 0 ? 0 : Math.max(percent, MIN_BAR)
+}
+
 const ratio = (done: number, total: number | null): number | null =>
   total === null || total <= 0 ? null : Math.max(0, Math.min(100, Math.round((done / total) * 100)))
 
-/** Сколько по материалу написано конспектов. Величина своя, не прогресс. */
-export const noteCount = (materialId: string, notes: StudyNote[]): number =>
-  notes.filter((n) => n.material_id === materialId).length
+/**
+ * Сколько осталось до конца — в тех же единицах, что и прогресс.
+ *
+ * Величина производная, но своя строка на странице материала: «4 из 12»
+ * отвечает, сколько сделано, и заставляет вычитать в уме, чтобы понять,
+ * сколько ещё сидеть. У чтения на это отведена отдельная ячейка, и здесь тоже.
+ *
+ * `null` там же, где нет и полосы: мерить нечем, или меряется отметкой —
+ * у статьи «осталось 1» не значит ничего.
+ */
+export function remainingOf(p: MaterialProgress): number | null {
+  if (p.unit === 'flag' || p.total === null) return null
+  return Math.max(0, p.total - p.done)
+}
+
+/** Когда по материалу писали в последний раз. Пустое значит «ещё не открывали». */
+export function lastNoteDate(materialId: string, notes: StudyNote[]): string | null {
+  let last: string | null = null
+  for (const n of notes) {
+    if (n.material_id !== materialId) continue
+    if (last === null || n.date > last) last = n.date
+  }
+  return last
+}
 
 export interface WeekNotes {
   count: number

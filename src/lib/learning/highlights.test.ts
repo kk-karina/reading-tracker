@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { extractHighlights, thoughtOfWeek } from './highlights'
+import { excerptOf, extractHighlights } from './highlights'
 import type { StudyNote } from './types'
 
 const note = (over: Partial<StudyNote> = {}): StudyNote => ({
   id: 'n1',
   material_id: 'm1',
+  part_id: null,
   part: null,
   title: null,
   body: '',
@@ -46,28 +47,39 @@ describe('extractHighlights', () => {
   })
 })
 
-describe('thoughtOfWeek', () => {
-  const list = extractHighlights([note({ body: '==раз== ==два== ==три==' })])
-
-  it('возвращает null, когда выделять нечего', () => {
-    expect(thoughtOfWeek([], '2026-09-21')).toBeNull()
+describe('excerptOf', () => {
+  it('берёт первое выделение и помечает его отмеченным', () => {
+    const got = excerptOf(note({ body: 'вступление\n\n==главная мысль== и ==вторая==' }))
+    expect(got).toEqual({ text: 'главная мысль', marked: true })
   })
 
-  it('не меняет выбор внутри одной недели', () => {
-    const mon = thoughtOfWeek(list, '2026-09-21')
-    const sun = thoughtOfWeek(list, '2026-09-27')
-    expect(mon).toEqual(sun)
+  it('берёт выделение, даже если оно стоит в заголовке', () => {
+    expect(excerptOf(note({ body: '## ==главное==\n\nтело' }))).toEqual({
+      text: 'главное',
+      marked: true,
+    })
   })
 
-  it('меняет выбор на следующей неделе', () => {
-    const thisWeek = thoughtOfWeek(list, '2026-09-21')
-    const nextWeek = thoughtOfWeek(list, '2026-09-28')
-    expect(thisWeek).not.toEqual(nextWeek)
+  it('без выделения берёт первую содержательную строку и отмеченной её не зовёт', () => {
+    const got = excerptOf(note({ body: '## Main takeaway\n\nДизайнер путает себя с пользователем.' }))
+    expect(got).toEqual({ text: 'Дизайнер путает себя с пользователем.', marked: false })
   })
 
-  it('выбирает единственное выделение, сколько бы недель ни прошло', () => {
-    const one = extractHighlights([note({ body: '==одно==' })])
-    expect(thoughtOfWeek(one, '2026-09-21')).toEqual(one[0])
-    expect(thoughtOfWeek(one, '2027-03-02')).toEqual(one[0])
+  it('пропускает заголовки любого уровня, пустые строки и горизонтальные линии', () => {
+    const got = excerptOf(note({ body: '# Раз\n\n### Два\n\n---\n\nПервая мысль.' }))
+    expect(got?.text).toBe('Первая мысль.')
+  })
+
+  it('снимает разметку со строки, которую взял', () => {
+    const got = excerptOf(note({ body: '- **пункт** с [ссылкой](https://a.b) и `кодом`' }))
+    expect(got?.text).toBe('пункт с ссылкой и кодом')
+  })
+
+  it('возвращает null, когда кроме контура в конспекте ничего нет', () => {
+    expect(excerptOf(note({ body: '## Main takeaway\n\n## My correction\n' }))).toBeNull()
+  })
+
+  it('возвращает null у пустого конспекта', () => {
+    expect(excerptOf(note({ body: '   \n\n  ' }))).toBeNull()
   })
 })

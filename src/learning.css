@@ -15,19 +15,27 @@
 [data-accent='sand'] { --cat: #e8dcc0; }
 [data-accent='rose'] { --cat: #eccdd3; }
 
+/* ---------- карточка материала ----------
+   Одна на все списки: очередь на дашборде, бэклог, пройденное и «изучаю».
+   Обложка стоит справа и уходит за край карточки — слева её ширина двигала бы
+   начало текста у каждого вида по-своему. Правое поле держит место под неё
+   целиком, чтобы по наведению она выезжала в пустоту, а не на название. */
 .mat-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: 8px;
+  gap: 10px;
 }
-.mat-row {
+.mat-card {
+  position: relative;
+  overflow: hidden;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 18px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-height: 128px;
+  padding: 18px 168px 18px 18px;
   border-radius: var(--r-md);
   background: var(--paper);
   border: 1px solid var(--line);
@@ -35,24 +43,121 @@
     border-color 0.2s,
     transform 0.2s var(--ease-out);
 }
-.mat-row:hover {
+.mat-card:hover {
   border-color: var(--line-2);
   transform: translateY(-1px);
 }
-.mat-main {
+/* Фокус потока — бейдж у названия и мягкая заливка. Рамка была третьим
+   маркером того же состояния и при этом самым тихим: чтобы её заметить, надо
+   было сравнить две карточки между собой. */
+.mat-card.focus {
+  background: var(--brand-soft);
+}
+.mat-card-main {
   display: flex;
   flex-direction: column;
   gap: 3px;
   min-width: 0;
+  text-decoration: none;
+  color: inherit;
 }
-.mat-title {
-  font-weight: 500;
+/* Нажимается вся карточка. Ссылка при этом остаётся одна — название, — и
+   диктору с клавиатурой достаётся ровно она; область просто растянута.
+   Обложка лежит ниже по z и кликом уходит сюда же, контролы стоят выше. */
+.mat-card-main::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
 }
-.mat-meta {
+.mat-card-titlerow {
   display: flex;
   align-items: center;
-  gap: 12px;
-  flex: none;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.mat-card-title {
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+}
+/* Подчёркивание от наведения на карточку, а не на название: нажимается теперь
+   всё, и подсказка должна отвечать тому же. */
+.mat-card:hover .mat-card-title {
+  text-decoration: underline;
+}
+/* Полоса и плюс в карточке: ряд тот же, что на герое, но во всю ширину —
+   четырёхсот двадцати пикселей герою хватает, потому что рядом стоит обложка,
+   а здесь полоса и есть строка. */
+.mat-card .prog-row {
+  max-width: none;
+  margin: 0;
+  gap: 10px;
+}
+/* Контролы поверх растянутой ссылки. Без этого по ним попадает она. */
+.mat-card .log-dot,
+.mat-card .study-card-acts {
+  position: relative;
+  z-index: 1;
+}
+/* Единственное действие карточки приходит по наведению. Оно там одно именно
+   потому, что прячется: держать четыре кнопки в скрытом слое значит прятать
+   половину экрана.
+
+   Прозрачность плюс `pointer-events`, а не `visibility` и не `display`: два
+   последних выносят кнопку из порядка обхода, и до неё становится нельзя
+   дойти табом — а дойти надо, иначе записать занятие с клавиатуры нечем.
+   Невидимая, но достижимая кнопка проявляется по своему же фокусу. */
+.mat-card .log-dot,
+.hover-acts {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s var(--ease-out);
+}
+.mat-card:hover .log-dot,
+.mat-card:hover .hover-acts,
+.mat-card .log-dot:focus-visible,
+.hover-acts:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+/* Без курсора наведения не бывает: на телефоне действие стоит открыто. */
+@media (hover: none) {
+  .mat-card .log-dot,
+  .hover-acts {
+    opacity: 1;
+    pointer-events: auto;
+  }
+}
+.mat-card-sub {
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+/* Селектор двойной не для красоты: `.mcover` объявлена ниже по файлу и при
+   равной специфичности перебивает `position`. Обложка тогда перестаёт быть
+   позиционированной, растягивается на ширину карточки, а `height` убивает
+   `aspect-ratio` — получается баннер во всю карточку.
+
+   Срез долей от своей ширины, а не в пикселях: книга вдвое с лишним уже
+   статьи, и общие сорок пикселей съели бы её почти целиком, а долю она
+   теряет ту же. */
+.mat-card .mat-card-cover {
+  --cut: 26%;
+  /* Обложка лежит поверх растянутой ссылки и без этого перехватывала бы клик
+     по правой трети карточки — как раз по тому месту, куда ведёт глаз. */
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%) translateX(var(--cut));
+  transition: transform 0.3s var(--ease-spring);
+}
+/* По наведению выезжает целиком и ложится набок — тот же наклон, которым
+   книжная обложка встречает на своей странице (.book-cover-tilt). Шесть
+   пикселей внутрь, чтобы краем карточки не поймало угол повёрнутой. */
+.mat-card:hover .mat-card-cover {
+  transform: translateY(-50%) translateX(-6px) rotate(-3deg);
 }
 
 .icon-pick,
@@ -96,13 +201,6 @@
 
 /* ---------- material ---------- */
 
-.mat-facts {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px;
-  margin-bottom: 14px;
-}
 .note-stack {
   list-style: none;
   margin: 0;
@@ -181,6 +279,15 @@
   gap: 16px;
   margin-bottom: 18px;
 }
+/* Листание листов стоит в той же строке, где на странице листа стоят правка и
+   удаление: верхняя строка листа — его служебная полка. Стрелки знаком, а не
+   словом: подпись читают один раз, а жмут их постоянно. */
+.sheet-flip button {
+  font-size: 17px;
+  line-height: 1;
+  padding: 0 2px;
+}
+
 .sheet-title-big {
   margin: 0 0 10px;
   font-weight: 400;
@@ -278,13 +385,168 @@
   padding: 0;
   border: 0;
   background: transparent;
-  resize: vertical;
   font-family: var(--mono);
   font-size: 14.5px;
   line-height: 1.75;
+  /* Поле правит строки, а не документ: перенос виден как перенос, а лишние
+     пробелы не схлопываются. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
 .note-input:focus { outline: none; }
-.note-input::placeholder { color: var(--ink-3); }
+/* У contentEditable своего плейсхолдера нет — рисуем сами по флагу от React.
+   :empty здесь не годится: браузер держит в пустом поле служебный <br>. */
+.note-input[data-empty]::before {
+  content: attr(data-placeholder);
+  color: var(--ink-3);
+  pointer-events: none;
+}
+
+/* Оформление внутри поля — то же, что увидишь в готовом конспекте.
+   Волна лимоном: это акцент послабее маркера, и цвет у них общий. */
+.note-input u,
+.sheet-body u,
+.note-body u {
+  text-decoration: underline wavy var(--brand-2);
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+}
+.note-input mark {
+  background: var(--brand);
+  color: var(--ink);
+  padding: 0 2px;
+  border-radius: 2px;
+}
+
+/* ---------- оформление по выделению ---------- */
+/* Постоянной кнопки нет: и панелька, и меню появляются на выделении и
+   исчезают вместе с ним. Оба живут в портале — лист скроллится, а они нет. */
+
+.note-fmt {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.note-fmt:hover { background: var(--line); }
+/* Нажатое — чернилами, а не лимоном: у маркера лимон уже занят под образец
+   цвета, и две лимонные плашки рядом не дают понять, что из них включено. */
+.note-fmt.on {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* Буква на кнопке набрана своим же форматом — она и есть подпись. */
+.note-fmt-bold span:first-child,
+.note-fmt-glyph.note-fmt-bold { font-weight: 700; }
+.note-fmt-italic span:first-child,
+.note-fmt-glyph.note-fmt-italic { font-style: italic; }
+.note-fmt-wave span:first-child,
+.note-fmt-glyph.note-fmt-wave {
+  text-decoration: underline wavy var(--brand-2);
+  text-underline-offset: 2px;
+}
+.note-fmt-glyph.note-fmt-mark {
+  background: var(--brand);
+  border-radius: 2px;
+  padding: 0 3px;
+}
+.note-fmt-mark span:first-child {
+  background: var(--brand);
+  border-radius: 2px;
+  padding: 0 3px;
+}
+.note-bar {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.4);
+  /* Встаёт над выделением и по его середине — отсюда сдвиг на свою высоту. */
+  transform: translate(-50%, calc(-100% - 8px));
+}
+
+.note-menu {
+  position: fixed;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  min-width: 190px;
+  padding: 5px;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  box-shadow: 0 16px 40px -16px rgba(0, 0, 0, 0.4);
+}
+.note-menu-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.note-menu-row:hover { background: var(--line); }
+.note-menu-row.on { background: var(--brand-soft); }
+.note-fmt-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  font-size: 14px;
+}
+/* Клавиши прижаты к правому краю: их читают, когда ищут, а не когда выбирают. */
+.note-menu-hot {
+  margin-left: auto;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+
+/* ---------- шапка листа с предметом ---------- */
+/* Обложка вместо служебного заголовка: лист открыт про конкретную книгу, и
+   имя действия на экране ничего не добавляет — оно осталось в aria-label. */
+.sheet-subject {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+.sheet-subject-text {
+  min-width: 0;
+}
+/* Название стоит вплотную справа — внутри обложки оно было бы вторым разом.
+   То же правило, что у мелкой обложки, и по той же причине. */
+.sheet-subject .mcover-title,
+.sheet-subject .mcover-foot {
+  display: none;
+}
+.sheet-subject .mcover-art {
+  place-content: center;
+}
+.sheet-subject .sheet-title {
+  font-size: 21px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.sheet-subject p {
+  margin: 3px 0 0;
+}
 
 @media (max-width: 720px) {
   .sheet-page {
@@ -319,8 +581,14 @@
   text-decoration: none;
   transition: font-size 0.28s var(--ease-out), color 0.2s ease;
 }
+/* Иконка меряется кеглем таба, а не пикселями: активный поток вырастает
+   вдвое, и значок обязан вырасти с ним — иначе у крупной строки сбоку
+   остаётся значок от мелкой. */
 .stream-tab .icon {
+  width: 0.92em;
+  height: 0.92em;
   color: var(--ink-3);
+  transition: width 0.28s var(--ease-out), height 0.28s var(--ease-out), color 0.2s ease;
 }
 .stream-tab:hover,
 .stream-tab:hover .icon {
@@ -338,7 +606,7 @@
   color: var(--ink);
 }
 .stream-tab[data-on] .icon {
-  color: var(--brand);
+  color: var(--ink);
 }
 .stream-tab-name {
   font: inherit;
@@ -430,14 +698,37 @@
   margin: 0 0 56px;
   border-radius: 22px;
   color: var(--hero-ink);
+  /* Один источник света в верхнем углу и ровный графит под ним. Раньше пятен
+     было два, и нижнее — лимон 10% поперёк всей нижней половины — давало на
+     тёплом графите не свечение, а оливковую муть ровно под фокусом. Акцент
+     виден, когда он локален: разлитый по плоскости, он читается грязью. */
   background:
-    radial-gradient(118% 128% at 100% 0%, color-mix(in oklab, var(--cat) 30%, transparent), transparent 60%),
-    radial-gradient(86% 120% at 2% 104%, color-mix(in oklab, var(--cat) 10%, transparent), transparent 66%),
-    linear-gradient(154deg, #1c2027 0%, #111419 56%, #0c0e12 100%);
+    radial-gradient(64% 58% at 92% -16%, color-mix(in oklab, var(--cat) 22%, transparent), transparent 72%),
+    linear-gradient(170deg, #1a1e25 0%, #12151a 62%, #0e1115 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.08),
     0 1px 2px rgba(14, 16, 18, 0.08),
     0 30px 52px -34px rgba(14, 16, 18, 0.75);
+}
+
+/* Верхний ярус: причина слева, действие справа, одна строка. Кнопка выровнена
+   по верхнему краю, а не по центру, — цель бывает в две-три строки, и центр
+   уводил бы кнопку вниз тем дальше, чем длиннее причина. */
+.hero-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  padding-right: 44px;
+}
+.hero-top > :first-child {
+  min-width: 0;
+}
+/* 37, а не 40: верхний отступ цели — это край её текстового блока, а видимая
+   верхушка букв лежит на несколько пикселей ниже. Кнопка встаёт по буквам. */
+.hero-top .hero-btn {
+  margin-top: 37px;
+  flex: none;
 }
 
 /* Цель — заголовок экрана. Подписи над ней нет: строка такого кегля не
@@ -447,9 +738,8 @@
 .hero-goal-input {
   display: block;
   width: 100%;
-  max-width: 26ch;
   margin: 0;
-  padding: 40px 44px 32px;
+  padding: 40px 0 32px 44px;
   font-family: inherit;
   font-weight: 300;
   font-size: clamp(26px, 3.1vw, 38px);
@@ -462,7 +752,6 @@
   cursor: text;
 }
 .hero-goal-input {
-  max-width: none;
   outline: none;
 }
 .hero-goal-input:focus {
@@ -486,11 +775,12 @@
    отделён линией и тончайшим осветлением, но это одна плоскость. */
 .hero-focus {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-columns: auto minmax(0, 1.05fr) minmax(190px, 0.95fr);
   grid-template-areas:
-    'cover main'
-    'also  also';
-  gap: 24px 26px;
+    'cover main prog'
+    'also  also also';
+  align-items: center;
+  gap: 24px 34px;
   padding: 28px 44px 32px;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
   background: rgba(255, 255, 255, 0.028);
@@ -505,8 +795,15 @@
 }
 .hero-focus-main {
   grid-area: main;
-  align-self: center;
   min-width: 0;
+}
+/* Колонка прогресса отделена волоском, а не пустотой: три блока подряд без
+   границы на широком экране читаются одной длинной строкой. */
+.hero-focus-prog {
+  grid-area: prog;
+  min-width: 0;
+  padding-left: 34px;
+  border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
 .hero-focus-title {
   margin: 0;
@@ -531,14 +828,31 @@
   font-size: 13.5px;
   color: var(--hero-ink-2);
 }
+/* Ряд прогресса тот же, что на странице материала и на странице книги, — см.
+   .prog-row в index.css. В подложке он занимает всю колонку и стоит вплотную
+   к своей подписи, поэтому ширина и верхний отступ снимаются. */
+.hero-focus .prog-row {
+  max-width: none;
+  margin: 0;
+}
 .hero-meter {
+  flex: 1 1 auto;
   height: 5px;
-  max-width: 320px;
-  margin: 16px 0 0;
+  margin: 0;
   border-radius: var(--r-pill);
   overflow: hidden;
   background: rgba(255, 255, 255, 0.13);
 }
+/* На тёмной подложке та же точка рисуется её же чернилами: обводка серым по
+   графиту не видна. Форма, размер и лимон под курсором — общие. */
+.hero-focus .log-dot {
+  border-color: rgba(255, 255, 255, 0.3);
+  color: var(--hero-ink-2);
+}
+.hero-focus .log-dot:hover {
+  color: #0e1012;
+}
+
 .hero-meter span {
   display: block;
   height: 100%;
@@ -547,23 +861,27 @@
   transition: width 0.5s var(--ease-out);
 }
 .hero-focus-meta {
-  margin: 8px 0 0;
+  margin: 10px 0 0;
   font-size: 13px;
   color: var(--hero-ink-2);
   font-variant-numeric: tabular-nums;
 }
 
-/* Единственное действие экрана. Лимон целиком, без чернильной обводки: на
+/* Единственное действие экрана, и теперь оно стоит в его верхней строке —
+   поэтому крупнее рядовой кнопки. Лимон целиком, без чернильной обводки: на
    графите она только глушит цвет. Свечение под кнопкой со смещением и
    размытием — тень, а не нимб. */
 .btn.hero-btn {
-  margin-top: 20px;
+  height: 50px;
+  padding: 0 26px;
+  border-radius: 8px;
+  font-size: 16px;
   border-color: var(--brand);
   background: var(--brand);
   color: #0e1012;
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 10px 22px -14px rgba(233, 248, 107, 0.95);
+    0 12px 26px -14px rgba(233, 248, 107, 0.95);
 }
 .btn.hero-btn:hover {
   border-color: var(--brand-2);
@@ -625,15 +943,16 @@
 }
 
 /* ---------- обложка материала ----------
-   Один прямоугольник 3:4 на все виды: ряд из книги, ролика и подкаста с
-   тремя пропорциями читается как сбой вёрстки. Под картинкой всегда лежит
-   нарисованная обложка — она же остаётся, когда чужой файл исчез. */
+   Пропорция по виду: книга стоит, статья, курс и ролик лежат. Ряду нужен не
+   общий кадр, а общий левый край и общая высота — их держит колонка строки.
+   Под картинкой всегда лежит нарисованная обложка: она же остаётся, когда
+   чужой файл исчез. */
 .mcover {
   position: relative;
   isolation: isolate;
   overflow: hidden;
   flex: none;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: var(--cover-ar, 3 / 4);
   border-radius: 4px;
   background: var(--cover-bg, #2b3a44);
   color: var(--cover-ink, #eceff1);
@@ -642,16 +961,35 @@
     0 1px 2px rgba(14, 16, 18, 0.16),
     0 12px 22px -14px rgba(14, 16, 18, 0.6);
 }
+/* В списке задана высота, а не ширина: строку выстраивает высота, а ширина у
+   каждого вида своя и никого не двигает — обложка стоит у правого края. */
 .mcover-sm {
-  width: 38px;
-  border-radius: 3px;
+  height: 56px;
+  border-radius: 4px;
 }
+/* Размер карточки в списках. Тоже высотой: обложка стоит справа от текста, и
+   ширина у каждого вида своя. */
 .mcover-md {
-  width: 64px;
+  height: 84px;
 }
+/* Одиночные размеры заданы шириной: там обложка стоит в своей колонке, и
+   бюджет у неё по горизонтали, а не по вертикали. Ландшафт шире книги ровно
+   настолько, чтобы площади совпадали — вес в кадре у обеих одинаковый. */
 .mcover-lg {
   width: 116px;
   border-radius: 6px;
+}
+.mcover-lg:not([data-kind='book']) {
+  width: 178px;
+}
+/* Ровно ширина книжной обложки в чтении: страница материала и страница книги
+   открываются одинаково, и предмет на них одного размера. */
+.mcover-xl {
+  width: 260px;
+  border-radius: 6px;
+}
+.mcover-xl:not([data-kind='book']) {
+  width: 400px;
 }
 .mcover img {
   position: absolute;
@@ -693,14 +1031,20 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-/* Миниатюра рядом со строкой текста нужна, чтобы её узнали, а не прочли. */
-.mcover-sm .mcover-title,
-.mcover-sm .mcover-foot {
+/* Миниатюра рядом со строкой текста нужна, чтобы её узнали, а не прочли:
+   название стоит рядом и внутри обложки было бы вторым разом. Источник
+   остаётся: он виден, только когда картинки нет, и тогда узнают по нему. */
+.mcover-sm .mcover-title {
   display: none;
 }
 .mcover-sm .mcover-art {
-  place-content: center;
-  padding: 0;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 5px;
+}
+.mcover-sm .mcover-foot {
+  max-width: 100%;
 }
 .mcover-lg .mcover-title {
   font-size: 13px;
@@ -708,6 +1052,26 @@
 }
 .mcover-lg .mcover-foot {
   font-size: 9px;
+}
+.mcover-xl .mcover-art {
+  padding: 16px;
+}
+.mcover-xl .mcover-title {
+  font-size: 20px;
+  -webkit-line-clamp: 8;
+}
+.mcover-xl .mcover-foot {
+  font-size: 11px;
+}
+/* В ландшафте восьми строк названия нет — высота кадра меньше вдвое. */
+.mcover-md:not([data-kind='book']) .mcover-title {
+  -webkit-line-clamp: 3;
+}
+.mcover-lg:not([data-kind='book']) .mcover-title {
+  -webkit-line-clamp: 2;
+}
+.mcover-xl:not([data-kind='book']) .mcover-title {
+  -webkit-line-clamp: 4;
 }
 .mcover-sheen {
   position: absolute;
@@ -800,37 +1164,80 @@
 }
 
 /* ---------- что осталось ----------
-   Мысль недели стоит на лимонной заливке, и это не украшение: строка попала
-   сюда ровно потому, что была отчёркнута маркером в конспекте, а маркер
-   системы и есть лимон. Заливка обнимает строки по их длине — как `mark`
-   внутри листа, только крупно. */
-.thought-week {
-  margin: 0 0 28px;
-}
-.thought-week-text {
+   Лента последних конспектов: отрывок и подпись под ним. Карточки ушли —
+   конспект в них схлопывался в сплошняк и все три выглядели одинаково.
+
+   Лимон лежит только под тем, что отчёркнуто маркером в самом конспекте:
+   заливка здесь не украшение, а ответ — крупно на экране стоит ровно то, что
+   было отмечено рукой. Обнимает строки по их длине, как `mark` внутри листа,
+   только крупно. Заодно это единственное место экрана, где фирменный цвет
+   занимает площадь, а не пиксель: на белом он иначе не виден вовсе. */
+.recap {
+  list-style: none;
   margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+}
+.recap-row {
+  display: block;
+  margin: 0 -14px;
+  padding: 14px;
+  border-radius: 12px;
+  color: inherit;
+  transition: background 0.18s ease;
+}
+.recap-row:hover {
+  background: var(--paper);
+}
+.recap-text {
+  margin: 0;
+  max-width: 52ch;
+  font-size: 17px;
+  font-weight: 400;
+  line-height: 1.55;
+  letter-spacing: -0.005em;
+}
+/* Ведущий отрывок — самый свежий: ленту читают сверху, и вес убывает вниз. */
+.recap-row[data-lead] .recap-text {
   max-width: 44ch;
   font-size: clamp(21px, 2.3vw, 27px);
-  font-weight: 400;
   line-height: 1.62;
   letter-spacing: -0.015em;
 }
-.thought-week-mark {
-  padding: 4px 9px;
+/* Обрезается только взятое с начала конспекта: его длину никто не выбирал.
+   Отчёркнутое маркером стоит целиком — это выбранная фраза, а не абзац. */
+.recap-text:not([data-marked]) {
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.recap-text[data-marked] .recap-mark {
+  padding: 2px 7px;
   border-radius: 3px;
   background: var(--brand);
   box-shadow: 0 0 0 1px rgba(14, 16, 18, 0.07);
   box-decoration-break: clone;
   -webkit-box-decoration-break: clone;
 }
-.thought-week-source {
+.recap-row[data-lead] .recap-text[data-marked] .recap-mark {
+  padding: 4px 9px;
+}
+.recap-source {
   display: inline-block;
-  margin-top: 18px;
   font-size: 13px;
   color: var(--ink-3);
-  border-bottom: 1px solid var(--line-2);
+  border-bottom: 1px solid transparent;
+  transition: color 0.2s ease;
 }
-.thought-week-source:hover {
+.recap-text + .recap-source {
+  margin-top: 14px;
+}
+.recap-row[data-lead] .recap-text + .recap-source {
+  margin-top: 18px;
+}
+.recap-row:hover .recap-source {
   color: var(--ink);
   border-bottom-color: var(--ink);
 }
@@ -843,40 +1250,6 @@
 .queue {
   display: grid;
   gap: 20px;
-}
-.queue-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 2px;
-}
-.queue-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  margin: 0 -12px;
-  padding: 10px 12px;
-  border-radius: 10px;
-  color: inherit;
-  transition: background 0.18s ease;
-}
-.queue-row:hover {
-  background: var(--paper);
-}
-.queue-text {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  min-width: 0;
-}
-.queue-title {
-  font-weight: 500;
-  letter-spacing: -0.005em;
-}
-.queue-sub {
-  font-size: 12.5px;
-  color: var(--ink-3);
 }
 .queue-counts {
   display: flex;
@@ -914,25 +1287,69 @@
   margin: -4px 0 0;
   font-variant-numeric: tabular-nums;
 }
-.study-sheet-part {
-  flex: 2 1 240px;
+/* Дата шире своего содержимого не бывает, а название главы бывает в половину
+   строки. Равные колонки `.field-row` режут здесь ровно то, ради чего список
+   глав и заводился. */
+.study-sheet-row {
+  grid-template-columns: 170px minmax(0, 1fr);
+}
+@media (max-width: 560px) {
+  .study-sheet-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 .sheet .note-input {
   min-height: 170px;
 }
 
+/* Четыре колонки живут ровно до тех пор, пока под них есть ширина. Дальше
+   прогресс и кнопка возвращаются под текст — стопкой, но в прежнем порядке. */
+@media (max-width: 1040px) {
+  .hero-focus {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'cover main'
+      'cover prog'
+      'also  also';
+    align-items: start;
+    row-gap: 16px;
+  }
+  .hero-focus-prog {
+    padding-left: 0;
+    border-left: 0;
+  }
+}
+
 @media (max-width: 860px) {
+  /* Узко — причина и действие встают друг под другом: кнопка в строке с
+     целью отъедает у неё ровно ту ширину, на которой цель и читается. */
+  .hero-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0;
+    padding: 0 26px 24px;
+  }
+  .hero-top .hero-btn {
+    margin-top: 0;
+  }
   .hero-goal,
   .hero-goal-input {
-    padding: 30px 26px 24px;
+    padding: 30px 0 20px;
   }
   .hero-focus {
-    gap: 20px;
+    gap: 16px 20px;
     padding: 24px 26px 28px;
     grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'cover main'
+      'cover prog'
+      'also  also';
   }
   .mcover-lg {
     width: 88px;
+  }
+  .mcover-lg:not([data-kind='book']) {
+    width: 136px;
   }
   .hero-focus-title {
     font-size: 21px;
@@ -947,11 +1364,21 @@
 }
 
 @media (max-width: 560px) {
+  /* Ста семидесяти пикселей правого поля на телефоне не остаётся: обложка и
+     место под неё ужимаются вместе, доля среза та же. */
+  .mcover-md {
+    height: 60px;
+  }
+  .mat-card {
+    min-height: 102px;
+    padding: 14px 122px 14px 14px;
+  }
   .hero-focus {
     grid-template-columns: minmax(0, 1fr);
     grid-template-areas:
       'cover'
       'main'
+      'prog'
       'also';
   }
   .reading-num {
@@ -959,84 +1386,21 @@
   }
 }
 
-/* Своя полоса вместо `.filter-bar`: тот класс живёт в чужой незакоммиченной
-   работе, и опираться на него значит зависеть от чужого черновика. */
-.hub-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  flex-wrap: wrap;
-  margin: 0 0 20px;
-}
+/* ---------- материалы ----------
 
-/* ---------- бэклог ---------- */
-.backlog-tabs {
-  display: flex;
-  gap: 4px;
-  flex-wrap: wrap;
-}
-.backlog-tab {
-  padding: 6px 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-pill);
-  background: none;
-  color: var(--ink-2);
-  font-size: 14px;
-  cursor: pointer;
-}
-.backlog-tab:hover {
-  color: var(--ink);
-}
-.backlog-tab.on {
-  color: var(--ink);
-  border-color: var(--ink-3);
-  background: var(--bg);
-}
-/* Строка бэклога — ссылка плюс действие, поэтому сама строка ссылкой не является. */
-.mat-row.static {
-  cursor: default;
-}
-.mat-row.static .mat-main {
-  text-decoration: none;
-  color: inherit;
-}
-
-/* ---------- изучаю ---------- */
-.study-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 12px;
-}
-.study-card {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 16px;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-}
-.study-card.focus {
-  border-color: var(--ink-3);
-}
-.study-card-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.study-card-title {
-  font-size: 17px;
-  font-weight: 600;
-}
+   Срезы стоят в `.filter-bar` — той же полосе, что на Полке и в Дневнике,
+   и собственных стилей раздел под них не просит. Строка материала — ссылка
+   плюс действие, поэтому сама строка ссылкой не является. */
+/* ---------- изучаю ----------
+   Карточка та же, что в бэклоге; «изучаю» добавляет к ней полосу прогресса и
+   свои действия. Раньше это была отдельная карточка без обложки, и один
+   материал выглядел в двух срезах двумя разными предметами. */
 .study-card-acts {
   display: flex;
   align-items: center;
   gap: 14px;
   flex-wrap: wrap;
-  margin-top: 4px;
+  margin-top: 2px;
 }
 
 /* ---------- материал: прогресс, части, обложка ---------- */
@@ -1065,24 +1429,9 @@
   flex: 0 0 auto;
 }
 
-.mat-progress {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 16px;
-  margin-top: 14px;
-}
-.mat-progress .meter {
-  flex: 1 1 220px;
-  margin: 0;
-}
-.mat-page {
-  flex: 0 0 auto;
-  flex-direction: row;
-  align-items: center;
-  gap: 8px;
-}
-.mat-page .input {
+/* Номер страницы стоит в ряду контролов, рядом со статусом: это такое же
+   состояние материала, как и он, а не отдельная полоса под шапкой. */
+.mat-page-input {
   width: 84px;
 }
 
@@ -1125,6 +1474,15 @@
    понять, что осталось, а зачёркнутое читается плохо. */
 .part-row.done .part-name {
   color: var(--ink-3);
+}
+/* Начатая часть: конспект по ней есть, отметки нет. Знак тот же, что стоит
+   перед главой в листе занятия, — состояние одно, и читается одинаково. */
+.part-row.started .part-check::after {
+  content: '◐';
+  margin-left: 2px;
+  color: var(--ink-3);
+  font-size: 12px;
+  line-height: 1;
 }
 .part-name {
   flex: 1 1 auto;

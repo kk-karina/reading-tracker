@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'motion/react'
 import { useEffect, useRef, type ReactNode } from 'react'
+import { createPortal } from 'react-dom'
 import { useT } from '../state/LocaleContext'
 
 /** Что внутри листа умеет принимать фокус. Порядок — как в разметке. */
@@ -9,6 +10,11 @@ const FOCUSABLE =
 /**
  * Панель поверх страницы.
  *
+ * Живёт в `document.body`, а не там, где её открыли. Лист с дашборда потока
+ * рендерился внутри тёмной подложки: оттуда он наследовал белый текст, а его
+ * `z-index` запирался в стакающем контексте подложки — и панель уезжала под
+ * липкую верхнюю полосу. Портал снимает оба следствия разом.
+ *
  * Модальность здесь не декларация, а поведение. Раньше стояли `role="dialog"`
  * и `aria-modal`, но ни фокуса, ни скролла лист не держал: Tab уводил на
  * ссылки под шимой, страница за ней продолжала ехать, а после закрытия фокус
@@ -17,10 +23,19 @@ const FOCUSABLE =
  */
 export function Sheet({
   title,
+  head,
   onClose,
   children,
 }: {
   title: string
+  /**
+   * Чем заменить заголовок, когда лист открыт про конкретный предмет.
+   *
+   * `title` при этом не исчезает, а уходит в `aria-label`: слово «Записать
+   * занятие» на экране не нужно — ты и так знаешь, что нажала, — но без него
+   * панель становится для экранного диктора безымянной.
+   */
+  head?: ReactNode
   onClose: () => void
   children: ReactNode
 }) {
@@ -67,7 +82,7 @@ export function Sheet({
     }
   }, [onClose])
 
-  return (
+  return createPortal(
     <AnimatePresence>
       <motion.div
         className="sheet-scrim"
@@ -89,7 +104,7 @@ export function Sheet({
           onClick={(e) => e.stopPropagation()}
         >
           <div className="sheet-head">
-            <h2 className="display sheet-title">{title}</h2>
+            {head ?? <h2 className="display sheet-title">{title}</h2>}
             <button className="btn ghost sm" onClick={onClose}>
               {t('form.cancel')}
             </button>
@@ -97,6 +112,7 @@ export function Sheet({
           {children}
         </motion.div>
       </motion.div>
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body,
   )
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { hasParts, partLabel, partWord, partsOf, planParts } from './parts'
-import type { MaterialPart } from './types'
+import { hasParts, partLabel, partWord, partsOf, pickDefaultPart, planParts } from './parts'
+import type { MaterialPart, StudyNote } from './types'
 
 const part = (over: Partial<MaterialPart> = {}): MaterialPart => ({
   id: crypto.randomUUID(),
@@ -122,5 +122,73 @@ describe('partLabel', () => {
 
   it('номер идёт от места в списке, а не от поля sort', () => {
     expect(partLabel(part({ title: '', sort: 99 }), 1, fallback)).toBe('Глава 2')
+  })
+})
+
+const note = (over: Partial<StudyNote> = {}): StudyNote => ({
+  id: crypto.randomUUID(),
+  material_id: 'm1',
+  part: null,
+  part_id: null,
+  title: null,
+  body: '',
+  tags: [],
+  date: '2026-09-23',
+  sort: 0,
+  created_at: '',
+  updated_at: '',
+  ...over,
+})
+
+describe('pickDefaultPart', () => {
+  it('на пустом списке частей выбирать нечего', () => {
+    expect(pickDefaultPart([], [])).toBe(null)
+  })
+
+  it('берёт начатую — ту, по которой есть конспект, но отметки нет', () => {
+    const one = part({ id: 'p1', done: true, sort: 0 })
+    const two = part({ id: 'p2', sort: 1 })
+    const three = part({ id: 'p3', sort: 2 })
+    const notes = [note({ part_id: 'p2' })]
+
+    expect(pickDefaultPart([one, two, three], notes)).toBe(two)
+  })
+
+  it('начатая важнее непройденной, даже если стоит позже', () => {
+    const one = part({ id: 'p1', sort: 0 })
+    const two = part({ id: 'p2', sort: 1 })
+    const notes = [note({ part_id: 'p2' })]
+
+    expect(pickDefaultPart([one, two], notes)).toBe(two)
+  })
+
+  it('без начатых берёт первую непройденную', () => {
+    const one = part({ id: 'p1', done: true, sort: 0 })
+    const two = part({ id: 'p2', sort: 1 })
+    const three = part({ id: 'p3', sort: 2 })
+
+    expect(pickDefaultPart([one, two, three], [])).toBe(two)
+  })
+
+  it('когда всё пройдено, открывается последняя', () => {
+    const one = part({ id: 'p1', done: true, sort: 0 })
+    const two = part({ id: 'p2', done: true, sort: 1 })
+
+    expect(pickDefaultPart([one, two], [])).toBe(two)
+  })
+
+  it('конспект чужой части начатой её не делает', () => {
+    const one = part({ id: 'p1', sort: 0 })
+    const two = part({ id: 'p2', sort: 1 })
+    const notes = [note({ part_id: 'other' })]
+
+    expect(pickDefaultPart([one, two], notes)).toBe(one)
+  })
+
+  it('порядок берётся из sort, а не из того, как список пришёл', () => {
+    const one = part({ id: 'p1', sort: 0 })
+    const two = part({ id: 'p2', sort: 1 })
+
+    expect(pickDefaultPart([two, one], [])).toBe(one)
   })
 })

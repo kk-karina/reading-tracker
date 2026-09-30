@@ -36,6 +36,26 @@ export function sourceOf(raw: string): string | null {
   return url ? url.hostname.replace(/^www\./, '') : null
 }
 
+/** У «bbc.co.uk» предпоследняя метка — «co», а имя источника всё-таки «bbc». */
+const COMPOUND_ZONE = /\.(co|com|org|net|ac|gov|edu)\.[a-z]{2,3}$/i
+
+/**
+ * Имя источника без зоны.
+ *
+ * На плитке материала в списке под текст остаётся около сорока пикселей:
+ * «medium.com» в них не влезает, «medium» влезает и узнаётся не хуже — зона к
+ * узнаванию ничего не добавляет. Поддомены тоже уходят, поэтому
+ * «podcasts.apple.com» становится «apple»: в списке важно, чей это материал, а
+ * не какой раздел сайта его отдал.
+ */
+export function sourceName(raw: string): string | null {
+  const host = sourceOf(raw)
+  if (!host) return null
+  const parts = host.split('.')
+  const zone = COMPOUND_ZONE.test(host) ? 2 : 1
+  return parts[parts.length - 1 - zone] ?? host
+}
+
 /**
  * Вид материала по домену.
  *

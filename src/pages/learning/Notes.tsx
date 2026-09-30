@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Segmented } from '../../components/ui'
+import { StudySheet } from '../../components/learning/StudySheet'
+import { Jelly, Segmented } from '../../components/ui'
 import { fmtDate } from '../../lib/format'
 import { notesOfStream } from '../../lib/learning/notes'
 import type { NoteTag } from '../../lib/types'
@@ -17,6 +18,7 @@ export function Notes() {
   const stream = useStream()
   const { materials, notes } = useLearning()
   const [filter, setFilter] = useState<Filter>('all')
+  const [adding, setAdding] = useState(false)
 
   const mine = materials.filter((m) => m.stream_id === stream.id)
   const byId = new Map(mine.map((m) => [m.id, m]))
@@ -31,24 +33,34 @@ export function Notes() {
   const shown = active === 'all' ? all : all.filter((n) => n.tags.includes(active))
   const from = { to: `/learning/${stream.slug}/notes`, label: t('nav.notes') }
 
-  if (all.length === 0) return <div className="empty small">{t('notes.empty')}</div>
-
   return (
     <>
-      {present.length > 1 && (
-        <div className="hub-bar">
-          <Segmented
-            name={t('nav.notes')}
-            value={active}
-            options={[
-              { value: 'all' as Filter, label: t('notes.allTags') },
-              ...present.map((g) => ({ value: g as Filter, label: t(`tag.${g}`) })),
-            ]}
-            onChange={setFilter}
-            className="sm"
-          />
+      {/* Та же полоса, что на Полке и в Дневнике: срез слева, действие справа.
+          Конспект заводят и отсюда — раздел, который показывает написанное,
+          обязан уметь и дописать; к чему относится запись, спрашивает лист. */}
+      <div className="filter-bar">
+        <div className="row-tight">
+          {present.length > 1 && (
+            <Segmented
+              name={t('nav.notes')}
+              value={active}
+              options={[
+                { value: 'all' as Filter, label: t('notes.allTags') },
+                ...present.map((g) => ({ value: g as Filter, label: t(`tag.${g}`) })),
+              ]}
+              onChange={setFilter}
+              className="sm"
+            />
+          )}
         </div>
-      )}
+        <div className="row-tight">
+          <Jelly className="btn" onClick={() => setAdding(true)}>
+            {t('note.add')}
+          </Jelly>
+        </div>
+      </div>
+
+      {all.length === 0 && <div className="empty small">{t('notes.empty')}</div>}
 
       <ul className="note-stack">
         {shown.map((n) => {
@@ -61,7 +73,9 @@ export function Notes() {
                 state={{ from }}
               >
                 <span className="note-row-main">
-                  <span className="note-row-title">{n.part ?? n.title ?? t('note.new')}</span>
+                  <span className="note-row-title">
+                    {n.part ?? n.title ?? t('note.untitled')}
+                  </span>
                   <span className="small faint">
                     {fmtDate(n.date, locale)}
                     {material ? ` · ${material.title}` : ''}
@@ -73,6 +87,8 @@ export function Notes() {
           )
         })}
       </ul>
+
+      {adding && <StudySheet stream={stream} notes={notes} onClose={() => setAdding(false)} />}
     </>
   )
 }

@@ -1,27 +1,27 @@
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fmtDate } from '../../lib/format'
-import { studying } from '../../lib/learning/buckets'
-import { materialProgress } from '../../lib/learning/metrics'
+import { focusOf, studying } from '../../lib/learning/buckets'
+import { barWidth, materialProgress } from '../../lib/learning/metrics'
 import { lastActivity } from '../../lib/learning/rhythm'
 import type { Material, Stream, StudyNote } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
+import { Icon } from '../Icon'
 import { Jelly } from '../ui'
 import { MaterialCover } from './MaterialCover'
-import { StudySheet } from './StudySheet'
 
 /** Сколько соседей показать корешками; остальные уходят в число. */
 const SPINES = 4
 
 /**
- * Нижний ярус подложки: за что сесть прямо сейчас и одно действие к этому.
+ * Нижний ярус подложки: за что сесть прямо сейчас.
  *
- * Действие ровно одно, и это «Записать». Кнопка «Продолжить» вела на страницу
- * материала — то есть повторяла ссылку, на которой стоит само название, — и
- * занимала место главного действия, ничего не делая. Главное действие здесь
- * одно: отметить, что занималась, и оставить конспект. Прогресс в этой модели
- * и есть конспекты, поэтому одна кнопка закрывает и то и другое.
+ * Громкого действия здесь нет. Кнопка «Продолжить» вела на страницу материала —
+ * то есть повторяла ссылку, на которой стоит само название, — а кнопка занятия
+ * уехала наверх, к цели: записывают не карточку, а день, и повод для этого
+ * написан там. Осталась точка с плюсом у самого прогресса: тот же лист, но
+ * вызванный оттуда, где на прогресс смотрят. Громкости у неё нет и не должно
+ * быть — иначе на экране два одинаково главных действия вместо одного.
  *
  * «Ещё изучаю» — обложками: ряд корешков узнаётся боковым зрением, а список
  * названий приходится читать. Они только открывают материал и ничего не
@@ -32,20 +32,19 @@ export function StreamFocus({
   stream,
   materials,
   notes,
+  onLog,
 }: {
   stream: Stream
   materials: Material[]
   notes: StudyNote[]
+  onLog: () => void
 }) {
   const { t, locale } = useLocale()
   // Части берутся из контекста, а не пропом: они нужны здесь ровно на одну
   // строку прогресса и не стоят того, чтобы менять сигнатуру для трёх экранов.
   const { parts } = useLearning()
-  const [logging, setLogging] = useState(false)
 
-  const focus = stream.focus_material_id
-    ? materials.find((m) => m.id === stream.focus_material_id)
-    : undefined
+  const focus = focusOf(materials, stream.focus_material_id)
   const others = studying(materials, stream.id).filter((m) => m.id !== focus?.id)
   const from = { to: `/learning/${stream.slug}`, label: t('nav.dashboard') }
 
@@ -53,14 +52,15 @@ export function StreamFocus({
     return (
       <div className="hero-focus hero-focus-empty">
         <p className="hero-focus-emptytext">{t('stream.focusEmpty')}</p>
-        <Link className="btn hero-btn" to={`/learning/${stream.slug}/active`}>
-          {t('nav.studying')}
+        <Link className="btn hero-btn" to={`/learning/${stream.slug}/materials?view=active`}>
+          {t('nav.materials')}
         </Link>
       </div>
     )
   }
 
   const p = materialProgress(focus, parts)
+  const width = barWidth(p.percent)
   // Только собственные записи фокуса: иначе только что выбранный материал
   // показывает чужую последнюю запись и выглядит начатым.
   const last = lastActivity(notes.filter((n) => n.material_id === focus.id).map((n) => n.date))
@@ -88,12 +88,29 @@ export function StreamFocus({
         <p className="hero-focus-by">
           {[focus.author, t(`kind.${focus.kind}`)].filter(Boolean).join(' · ')}
         </p>
+      </div>
 
-        {p.percent !== null && (
-          <div className="hero-meter" aria-hidden>
-            <span style={{ width: `${Math.max(p.percent, 2)}%` }} />
-          </div>
-        )}
+      {/* Прогресс отдельной колонкой, а не четвёртой строкой под автором.
+          Это разные вопросы — «что это» и «сколько пройдено», — и места по
+          горизонтали хватает, чтобы задать их рядом, а не столбиком. */}
+      <div className="hero-focus-prog">
+        <div className="prog-row">
+          {width !== null && (
+            <div className="hero-meter" aria-hidden>
+              <span style={{ width: `${width}%` }} />
+            </div>
+          )}
+          {/* Плюс стоит вплотную к полосе: прибавить занятие — это сдвинуть
+              именно её, и жест должен быть в том же месте, что и результат. */}
+          <Jelly
+            className="log-dot"
+            onClick={onLog}
+            title={t('study.log')}
+            aria-label={t('study.log')}
+          >
+            <Icon name="plus" size={15} />
+          </Jelly>
+        </div>
         <p className="hero-focus-meta">
           {[
             p.total ? t('material.progress', { done: p.done, total: p.total }) : null,
@@ -102,10 +119,6 @@ export function StreamFocus({
             .filter(Boolean)
             .join(' · ')}
         </p>
-
-        <Jelly className="btn hero-btn" onClick={() => setLogging(true)}>
-          {t('study.logShort')}
-        </Jelly>
       </div>
 
       {shown.length > 0 && (
@@ -125,7 +138,7 @@ export function StreamFocus({
             ))}
             {rest > 0 && (
               <Link
-                to={`/learning/${stream.slug}/active`}
+                to={`/learning/${stream.slug}/materials?view=active`}
                 className="hero-also-more"
                 state={{ from }}
               >
@@ -134,15 +147,6 @@ export function StreamFocus({
             )}
           </div>
         </div>
-      )}
-
-      {logging && (
-        <StudySheet
-          stream={stream}
-          material={focus}
-          notes={notes}
-          onClose={() => setLogging(false)}
-        />
       )}
     </div>
   )

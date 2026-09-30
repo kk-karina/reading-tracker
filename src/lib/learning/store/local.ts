@@ -7,6 +7,7 @@ import {
   type Material,
   type MaterialKind,
   type MaterialPart,
+  type MaterialStatus,
   type Stream,
   type StudyNote,
 } from '../types'
@@ -125,10 +126,37 @@ function migrateV2(old: SnapshotV2): LearningSnapshot {
   return { streams, materials, parts, notes }
 }
 
+/**
+ * Бэклог был разделён на входящее, «когда-нибудь» и справку. Все трое значили
+ * одно: материал заведён и ждёт. Старые снимки несут эти слова и читаются как
+ * «в очереди» — различие ушло из интерфейса, а не из данных, и придумывать
+ * ему замену при чтении нечем.
+ */
+const KEPT_STATUSES = ['active', 'done', 'dropped'] as const
+const backlogStatus = (status: string): MaterialStatus =>
+  (KEPT_STATUSES as readonly string[]).includes(status) ? (status as MaterialStatus) : 'backlog'
+
+/**
+ * Поля, которых в снимке могло не быть, и значения, которых в нём больше нет.
+ *
+ * Не миграция и не новая версия ключа: `part_id` появился позже конспектов и
+ * допускает пустоту, а три бывшие корзины бэклога складываются в одну без
+ * потерь, так что старый снимок остаётся валидным. Поднимать из-за этого
+ * версию значило бы переписывать всё хранилище ради одного `null` и одного
+ * переименованного слова.
+ */
+const fill = (snap: LearningSnapshot): LearningSnapshot => ({
+  ...snap,
+  materials: snap.materials.map((m) => ({ ...m, status: backlogStatus(m.status) })),
+  notes: snap.notes.map((n) => ({ ...n, part_id: n.part_id ?? null })),
+})
+
 function read(): LearningSnapshot {
   try {
     const raw = localStorage.getItem(KEY)
-    if (raw) return { ...emptyLearning(), ...(JSON.parse(raw) as Partial<LearningSnapshot>) }
+    if (raw) {
+      return fill({ ...emptyLearning(), ...(JSON.parse(raw) as Partial<LearningSnapshot>) })
+    }
 
     // Записи прежних версий не удаляются: пара килобайт против единственной
     // копии конспектов.
@@ -154,7 +182,7 @@ function read(): LearningSnapshot {
     } catch {
       /* хранилище недоступно на запись: сеанс проживёт без сохранения */
     }
-    return moved
+    return fill(moved)
   } catch {
     /* испорченное или закрытое хранилище: начинаем с пустого */
   }

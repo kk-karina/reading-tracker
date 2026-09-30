@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
 import { BookForm } from '../components/BookForm'
 import { Crumbs } from '../components/Crumbs'
+import { Icon } from '../components/Icon'
 import { Review } from '../components/Review'
 import { SessionSheet } from '../components/SessionSheet'
 import { Jelly, Segmented } from '../components/ui'
@@ -95,8 +96,20 @@ export function Book() {
           <h1 className="display book-title">{book.title}</h1>
           {book.author && <p className="muted book-author">{book.author}</p>}
 
-          <div className="meter big" aria-hidden>
-            <span style={{ width: `${percent ?? (page > 0 ? 8 : 0)}%` }} />
+          {/* Плюс вплотную к полосе, а не громкая кнопка под фактами: записать
+              сессию значит сдвинуть именно её. Тот же жест в обучении. */}
+          <div className="prog-row">
+            <div className="meter big" aria-hidden>
+              <span style={{ width: `${percent ?? (page > 0 ? 8 : 0)}%` }} />
+            </div>
+            <Jelly
+              className="log-dot"
+              onClick={() => setLogging(true)}
+              title={t('session.log')}
+              aria-label={t('session.log')}
+            >
+              <Icon name="plus" size={15} />
+            </Jelly>
           </div>
 
           {/* Always four cells, zeros included: an empty slot is information too. */}
@@ -147,10 +160,6 @@ export function Book() {
             {last ? t('book.lastRead', { date: fmtDate(last, locale) }) : t('book.notOpened')}
           </p>
           {pace === null && <p className="small faint hint-line">{t('book.noTimeHint')}</p>}
-
-          <Jelly className="btn" onClick={() => setLogging(true)} style={{ marginTop: 22 }}>
-            {t('session.log')}
-          </Jelly>
         </div>
       </div>
 

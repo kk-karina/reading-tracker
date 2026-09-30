@@ -1,10 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Crumbs } from '../../components/Crumbs'
+import { NoteSheet } from '../../components/learning/NoteSheet'
 import { NoteEditor } from '../../components/NoteEditor'
 import { Jelly } from '../../components/ui'
-import { fmtDate } from '../../lib/format'
-import { renderMarkdown } from '../../lib/learning/markdown'
 import type { NoteTag } from '../../lib/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -13,7 +12,7 @@ import { useStream } from './StreamLayout'
 export function StudyNote() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { t, locale } = useLocale()
+  const { t } = useLocale()
   const stream = useStream()
   const { notes, materials, loading, updateNote, deleteNote } = useLearning()
 
@@ -54,6 +53,23 @@ export function StudyNote() {
     navigate(`/learning/${stream.slug}/m/${material.id}`)
   }
 
+  const actions = (
+    <div className="row-tight">
+      {editing ? (
+        <Jelly className="btn sm" onClick={() => void save()} disabled={!dirty}>
+          {t('form.save')}
+        </Jelly>
+      ) : (
+        <button className="link-btn" type="button" onClick={() => setEditing(true)}>
+          {t('note.edit')}
+        </button>
+      )}
+      <button className="link-btn danger" type="button" onClick={() => void remove()}>
+        {t('note.delete')}
+      </button>
+    </div>
+  )
+
   return (
     <>
       <Crumbs
@@ -63,64 +79,21 @@ export function StudyNote() {
         }}
       />
 
-      <article className="sheet-page" data-accent={stream.accent ?? undefined}>
-        <div className="sheet-head-line">
-          <span className="label">
-            {stream.accent && <i className="sheet-dot" data-accent={stream.accent} />}
-            {stream.name} · {fmtDate(note.date, locale)}
-          </span>
-          <div className="row-tight">
-            {editing ? (
-              <Jelly className="btn sm" onClick={() => void save()} disabled={!dirty}>
-                {t('form.save')}
-              </Jelly>
-            ) : (
-              <button className="link-btn" type="button" onClick={() => setEditing(true)}>
-                {t('note.edit')}
-              </button>
-            )}
-            <button className="link-btn danger" type="button" onClick={() => void remove()}>
-              {t('note.delete')}
-            </button>
-          </div>
-        </div>
-
+      <NoteSheet note={note} stream={stream} actions={actions}>
+        {/* Пока лист правят, под верхней строкой стоят поля — рамка та же. */}
         {editing ? (
-          <input
-            className="input sheet-part"
-            value={part}
-            placeholder={t('note.partPlaceholder')}
-            onChange={(e) => setPart(e.target.value)}
-          />
-        ) : (
-          (note.part ?? note.title) && <h1 className="sheet-title-big">{note.part ?? note.title}</h1>
-        )}
-
-        {!editing && note.tags.length > 0 && (
-          <div className="chips sheet-tags">
-            {note.tags.map((g) => (
-              <span key={g} className="chip sm">
-                {t(`tag.${g}`)}
-              </span>
-            ))}
-          </div>
-        )}
-
-        <div className="sheet-rule" aria-hidden />
-
-        {editing ? (
-          <NoteEditor body={body} tags={tags} onBody={setBody} onTags={setTags} />
-        ) : note.body.trim() ? (
-          <div
-            className="sheet-body"
-            // Безопасно: renderMarkdown экранирует весь ввод до того, как
-            // появится первый наш тег, и наружу идут только известные теги.
-            dangerouslySetInnerHTML={{ __html: renderMarkdown(note.body) }}
-          />
-        ) : (
-          <p className="muted">{t('note.empty')}</p>
-        )}
-      </article>
+          <>
+            <input
+              className="input sheet-part"
+              value={part}
+              placeholder={t('note.partPlaceholder')}
+              onChange={(e) => setPart(e.target.value)}
+            />
+            <div className="sheet-rule" aria-hidden />
+            <NoteEditor body={body} tags={tags} onBody={setBody} onTags={setTags} />
+          </>
+        ) : undefined}
+      </NoteSheet>
     </>
   )
 }

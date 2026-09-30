@@ -140,3 +140,29 @@ describe('plainText', () => {
     expect(plainText('a & b < c')).toBe('a & b < c')
   })
 })
+
+describe('волна', () => {
+  it('подчёркивает волной то, что обёрнуто в двойное подчёркивание', () => {
+    expect(renderMarkdown('__важное__')).toBe('<p><u>важное</u></p>')
+  })
+
+  it('не путает волну с жирным', () => {
+    expect(renderMarkdown('**жирное** и __волна__')).toBe(
+      '<p><strong>жирное</strong> и <u>волна</u></p>',
+    )
+  })
+
+  it('одиночное подчёркивание внутри слова разметкой не считает', () => {
+    expect(renderMarkdown('snake_case_name')).toBe('<p>snake_case_name</p>')
+  })
+
+  it('волна живёт внутри маркера', () => {
+    expect(renderMarkdown('==тут __важное__ слово==')).toBe(
+      '<p><mark>тут <u>важное</u> слово</mark></p>',
+    )
+  })
+
+  it('plainText снимает знаки волны', () => {
+    expect(plainText('тут __важное__ слово')).toBe('тут важное слово')
+  })
+})

@@ -13,6 +13,11 @@ import { Link } from 'react-router-dom'
  *
  * Ссылка справа ведёт в раздел, который эта зона показывает куском. Рядом с
  * ней может стоять действие — то, ради чего в этот раздел и идут.
+ *
+ * Имя необязательно. Панель, которая и так говорит, что она такое — ритм
+ * занятий читается с графика, — заголовка над собой не просит: он только
+ * повторяет её содержимое словами. Без имени, ссылки и действия шапка не
+ * рисуется вовсе, и зона остаётся просто отбивкой.
  */
 export function Zone({
   title,
@@ -20,24 +25,27 @@ export function Zone({
   action,
   children,
 }: {
-  title: string
+  title?: string
   link?: { to: string; label: string }
   action?: ReactNode
   children: ReactNode
 }) {
+  const head = title || link || action
   return (
     <section className="zone">
-      <div className="zone-head">
-        <h2 className="zone-title">{title}</h2>
-        <span className="zone-acts">
-          {action}
-          {link && (
-            <Link className="zone-link" to={link.to}>
-              {link.label}
-            </Link>
-          )}
-        </span>
-      </div>
+      {head && (
+        <div className="zone-head">
+          {title && <h2 className="zone-title">{title}</h2>}
+          <span className="zone-acts">
+            {action}
+            {link && (
+              <Link className="zone-link" to={link.to}>
+                {link.label}
+              </Link>
+            )}
+          </span>
+        </div>
+      )}
       {children}
     </section>
   )

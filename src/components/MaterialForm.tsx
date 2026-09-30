@@ -17,8 +17,8 @@ import { Icon } from './Icon'
 import { Sheet } from './Sheet'
 import { Field, FormStack, Jelly, Segmented } from './ui'
 
-/** Корзины бэклога. «Пройдено» и «брошено» при заведении смысла не имеют. */
-const OPEN_STATUSES: MaterialStatus[] = ['inbox', 'active', 'someday', 'reference']
+/** «Пройдено» и «брошено» при заведении смысла не имеют. */
+const OPEN_STATUSES: MaterialStatus[] = ['backlog', 'active']
 const ALL_STATUSES: MaterialStatus[] = [...OPEN_STATUSES, 'done', 'dropped']
 
 const digits = (v: string) => v.replace(/\D/g, '')
@@ -56,7 +56,7 @@ export function MaterialForm({
   const [scale, setScale] = useState<BookScale>(material?.scale ?? 'pages')
   const [pages, setPages] = useState(material?.pages_total ? String(material.pages_total) : '')
   const [count, setCount] = useState(mine.length ? String(mine.length) : '')
-  const [status, setStatus] = useState<MaterialStatus>(material?.status ?? 'inbox')
+  const [status, setStatus] = useState<MaterialStatus>(material?.status ?? 'backlog')
 
   const [busy, setBusy] = useState(false)
   const [reading, setReading] = useState(false)
@@ -121,7 +121,7 @@ export function MaterialForm({
     if (!file) return
     setError(null)
     try {
-      setCover(await fileToCover(file))
+      setCover(await fileToCover(file, kind))
     } catch (e) {
       const reason = e instanceof CoverRejected ? e.reason : 'broken'
       setError(

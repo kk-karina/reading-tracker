@@ -1,4 +1,4 @@
-import type { Material, MaterialPart } from './types'
+import type { Material, MaterialPart, StudyNote } from './types'
 
 /** Есть ли у этого материала главы или лекции вообще. */
 export function hasParts(material: Pick<Material, 'kind' | 'scale'>): boolean {
@@ -59,3 +59,27 @@ export function planParts(existing: MaterialPart[], count: number): PartsPlan {
  */
 export const partLabel = (part: MaterialPart, index: number, fallback: (n: number) => string) =>
   part.title.trim() || fallback(index + 1)
+
+/**
+ * На какой части лист занятия открывается.
+ *
+ * Начатая важнее непройденной: часть, по которой конспект уже есть, а отметки
+ * нет — это ровно то место, где чтение остановилось, и открывать лист надо
+ * там, а не на следующей чистой. Когда начатых нет, берётся первая
+ * непройденная; когда пройдено всё — последняя, чтобы было куда дописать.
+ *
+ * Возвращает саму часть, а не её `id`: звать `partLabel` всё равно придётся по
+ * части, и лишний поиск по списку тут ни к чему.
+ */
+export function pickDefaultPart(parts: MaterialPart[], notes: StudyNote[]): MaterialPart | null {
+  const order = [...parts].sort((a, b) => a.sort - b.sort)
+  if (order.length === 0) return null
+
+  const written = new Set(notes.map((n) => n.part_id).filter((id): id is string => id !== null))
+
+  return (
+    order.find((p) => !p.done && written.has(p.id)) ??
+    order.find((p) => !p.done) ??
+    order[order.length - 1]
+  )
+}

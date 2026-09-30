@@ -19,7 +19,7 @@ export type NewMaterial = Pick<
 export type NewMaterialPart = Pick<MaterialPart, 'material_id' | 'title' | 'done' | 'sort'>
 export type NewStudyNote = Pick<
   StudyNote,
-  'material_id' | 'part' | 'title' | 'body' | 'tags' | 'date' | 'sort'
+  'material_id' | 'part_id' | 'part' | 'title' | 'body' | 'tags' | 'date' | 'sort'
 >
 
 export interface LearningStore {
