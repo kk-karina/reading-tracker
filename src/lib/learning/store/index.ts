@@ -1,8 +1,17 @@
+import { supabase } from '../../supabase'
 import { localLearning } from './local'
+import { createSupabaseLearningStore } from './supabase'
 import type { LearningStore } from './types'
 
-/** Одна реализация сегодня. Точка, где появится supabaseLearning, не трогая экраны. */
-export const learningStore: LearningStore = localLearning
+/**
+ * Настроен Supabase — обучение живёт в нём, нет — в браузере. Тот же выбор и
+ * по тому же признаку, что у чтения в `src/lib/store/index.ts`: локальный
+ * режим не аварийный, а нормальный способ пользоваться приложением с одного
+ * устройства.
+ */
+export const learningStore: LearningStore = supabase
+  ? createSupabaseLearningStore(supabase)
+  : localLearning
 export type {
   LearningStore,
   NewMaterial,

@@ -85,6 +85,25 @@ const BASE = {
     en: 'Delete all local data? This cannot be undone.',
   },
 
+  // Перенос обучения в облако. Обычно случается сам при первом входе; строка
+  // в настройках нужна для случая, когда сам он не взялся: в облаке уже что-то
+  // есть, а в браузере осталось написанное до аккаунта.
+  'settings.carry': { ru: 'Перенести', en: 'Move' },
+  'settings.carryHint': {
+    ru: 'Перенести обучение из этого браузера в облако',
+    en: 'Move this browser’s learning to the cloud',
+  },
+  'settings.carryDone': {
+    ru: 'Перенесено: {n}. Локальная копия осталась на месте.',
+    en: 'Moved {n} rows. The local copy stays where it was.',
+  },
+  'settings.carryNothing': { ru: 'Переносить нечего.', en: 'Nothing to move.' },
+  'settings.carryWorking': { ru: 'Переношу…', en: 'Moving…' },
+  'count.rows': {
+    ru: { one: '{n} строка', few: '{n} строки', many: '{n} строк' },
+    en: { one: '{n} row', other: '{n} rows' },
+  },
+
   'soon.title': { ru: 'Скоро', en: 'Coming soon' },
   'soon.shelf': {
     ru: 'Здесь встанут книги: обложки, полки и прогресс по каждой.',

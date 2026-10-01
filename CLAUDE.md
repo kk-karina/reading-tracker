@@ -50,7 +50,7 @@
 ```
 export PATH="$HOME/.nvm/versions/node/v24.15.0/bin:$PATH"
 ./node_modules/.bin/tsc -b        # типы
-./node_modules/.bin/oxlint        # 14 предупреждений — старые, ошибок быть не должно
+./node_modules/.bin/oxlint        # 13 предупреждений — старые, ошибок быть не должно
 ./node_modules/.bin/vitest run    # арифметика чтения и обучения
 ./node_modules/.bin/vite build
 ```

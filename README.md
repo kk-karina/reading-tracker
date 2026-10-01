@@ -33,12 +33,22 @@ npm run build
 Needed only if you want the data on more than one device.
 
 1. Create a project at [supabase.com](https://supabase.com) — the free tier is enough.
-2. SQL Editor → paste and run `supabase/schema.sql`. It creates three tables and
-   the row-level security policies that keep each account's rows to itself.
+2. SQL Editor → paste and run `supabase/schema.sql`. It creates seven tables —
+   three for reading, four for learning — and the row-level security policies
+   that keep each account's rows to itself.
 3. Authentication → Providers → Email stays on. For a single-user setup you can
    turn "Confirm email" off.
 4. Copy `.env.example` to `.env.local` and fill in the URL and the anon key from
    Project Settings → API.
+
+On a database created before the learning hub, run
+`supabase/migrations/003_learning.sql` as well: `schema.sql` skips a table that
+already exists, so the four learning tables never reach it otherwise.
+
+Learning written before you had an account moves itself up on the first sign-in,
+once, and only while the cloud holds no streams at all — that is the one case
+where nothing can collide. The browser copy is left where it is. If the move did
+not happen by itself, Settings → Data has a row that does it by hand.
 
 The anon key is meant to be public — it ends up in the built JavaScript either
 way. What protects the data is row-level security, which is why every table has a

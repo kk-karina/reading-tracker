@@ -5,6 +5,7 @@ import { addSampleShelf } from '../lib/seed'
 import { emptySnapshot, type Snapshot } from '../lib/types'
 import { useAuth } from '../state/AuthContext'
 import { useData } from '../state/DataContext'
+import { useLearning } from '../state/LearningContext'
 import { useLocale } from '../state/LocaleContext'
 
 const LOCALES: { value: Locale; label: string }[] = [
@@ -16,9 +17,24 @@ export function Settings() {
   const { user, mode, signOut } = useAuth()
   const { books, sessions, notes, addBook, addSession, importSnapshot } = useData()
   const { locale, setLocale, t } = useLocale()
+  const { pending, carry, error: learningError } = useLearning()
   const [msg, setMsg] = useState<string | null>(null)
   const [seeding, setSeeding] = useState(false)
+  const [carrying, setCarrying] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  /**
+   * Обычно обучение уезжает в облако само при первом входе. Эта кнопка — для
+   * случая, когда само не взялось: в облаке уже что-то есть, а в браузере
+   * осталось написанное до аккаунта.
+   */
+  async function carryLearning() {
+    setCarrying(true)
+    const moved = await carry()
+    setCarrying(false)
+    if (moved === null) setMsg(learningError ?? t('settings.importFailed'))
+    else setMsg(moved > 0 ? t('settings.carryDone', { n: moved }) : t('settings.carryNothing'))
+  }
 
   async function loadSample() {
     setSeeding(true)
@@ -108,6 +124,18 @@ export function Settings() {
               {t(seeding ? 'settings.sampleLoading' : 'settings.sample')}
             </button>
           </div>
+
+          {pending !== null && (
+            <div className="row">
+              <span>
+                {t('settings.carryHint')}
+                <div className="small muted">{t('count.rows', { n: pending })}</div>
+              </span>
+              <button className="btn ghost sm" onClick={carryLearning} disabled={carrying}>
+                {t(carrying ? 'settings.carryWorking' : 'settings.carry')}
+              </button>
+            </div>
+          )}
 
           {mode === 'local' && (
             <>

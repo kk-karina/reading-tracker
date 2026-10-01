@@ -1,64 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { Book, Note, Session } from '../types'
+import { ok, retrying, throwIf } from './retry'
 import type { DataStore, NewBook, NewNote, NewSession } from './types'
-
-/**
- * PostgREST refuses a token whose `iat` sits ahead of its own clock and answers
- * PGRST303, "JWT issued at future". Both clocks in that comparison are
- * Supabase's own — the auth service stamps the token, the API reads it — so no
- * change on this side prevents it, and refreshing the session makes it worse: a
- * newer token carries a newer `iat`. The cure is to wait and send the same
- * token again, which is what these delays are for.
- *
- * Only the auth codes count as transient. They are decided before the query
- * runs, so nothing reached the database and even an insert is safe to repeat; a
- * dropped connection carries no such promise and is left alone.
- */
-const TRANSIENT_CODES = new Set(['PGRST301', 'PGRST303'])
-const BACKOFF_MS = [400, 1200, 3000]
-
-interface Failure {
-  code?: string
-  message: string
-}
-interface Result<T> {
-  data: T
-  error: Failure | null
-}
-
-function isTransient(error: Failure | null): boolean {
-  if (!error) return false
-  if (error.code && TRANSIENT_CODES.has(error.code)) return true
-  return error.message.includes('JWT issued at future')
-}
-
-const sleep = (ms: number) => new Promise((done) => setTimeout(done, ms))
-
-/** Runs the query, and runs it again — same token, later — while it fails transiently. */
-async function retrying<T>(query: () => PromiseLike<Result<T>>): Promise<Result<T>> {
-  let result = await query()
-  for (const wait of BACKOFF_MS) {
-    if (!isTransient(result.error)) return result
-    await sleep(wait)
-    result = await query()
-  }
-  return result
-}
 
 // Tables: books, sessions, notes. See supabase/schema.sql.
 // user_id is filled by a column default (auth.uid()) and scoped by RLS.
 export function createSupabaseStore(sb: SupabaseClient): DataStore {
-  const fail = (e: Failure | null) => {
-    if (e) throw new Error(e.message)
-  }
-
-  /** Awaits a query with the retry above, then throws if it still failed. */
-  const ok = async <T,>(query: () => PromiseLike<Result<T>>): Promise<T> => {
-    const { data, error } = await retrying(query)
-    fail(error)
-    return data
-  }
-
   return {
     async load() {
       // All three answers are collected before any of them is allowed to throw:
@@ -75,9 +22,9 @@ export function createSupabaseStore(sb: SupabaseClient): DataStore {
         ),
         retrying(() => sb.from('notes').select('*').order('created_at', { ascending: false })),
       ])
-      fail(b.error)
-      fail(s.error)
-      fail(n.error)
+      throwIf(b.error)
+      throwIf(s.error)
+      throwIf(n.error)
       return {
         books: (b.data ?? []) as Book[],
         sessions: (s.data ?? []) as Session[],

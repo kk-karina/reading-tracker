@@ -1,4 +1,3 @@
-import { hasParts } from '../parts'
 import { streamSlug } from '../slug'
 import {
   emptyLearning,
@@ -11,6 +10,7 @@ import {
   type Stream,
   type StudyNote,
 } from '../types'
+import * as rules from './rules'
 import type {
   LearningStore,
   NewMaterial,
@@ -196,6 +196,15 @@ function write(snap: LearningSnapshot) {
 const now = () => new Date().toISOString()
 const uid = () => crypto.randomUUID()
 
+/**
+ * Запись в localStorage поверх общих правил: прочитать снимок, применить
+ * правило, записать результат. Что именно означает мутация, здесь больше не
+ * решается — см. `rules.ts`.
+ */
+const change = (fn: (snap: LearningSnapshot) => LearningSnapshot) => {
+  write(fn(read()))
+}
+
 export const localLearning: LearningStore = {
   async load() {
     return read()
@@ -206,123 +215,56 @@ export const localLearning: LearningStore = {
     const made: Stream = {
       ...item,
       id: uid(),
-      slug: streamSlug(item.name, snap.streams.map((s) => s.slug)),
+      slug: rules.nextSlug(snap, item.name),
       goal: null,
       focus_material_id: null,
       archived: false,
       created_at: now(),
       updated_at: now(),
     }
-    snap.streams.push(made)
-    write(snap)
+    write(rules.insert(snap, 'streams', made))
     return made
   },
   async updateStream(id, patch) {
-    const snap = read()
-    // Адрес не меняется никогда, даже если его прислали: ссылка должна пережить переименование.
-    const { slug: _keep, ...safe } = patch
-    snap.streams = snap.streams.map((s) =>
-      s.id === id ? { ...s, ...safe, updated_at: now() } : s,
-    )
-    write(snap)
+    change((snap) => rules.updateStream(snap, id, patch, now()))
   },
   async deleteStream(id) {
-    const snap = read()
-    const gone = new Set(snap.materials.filter((m) => m.stream_id === id).map((m) => m.id))
-    snap.streams = snap.streams
-      .filter((s) => s.id !== id)
-      // Указатель на удалённый материал не переживает чистку, чей бы поток он ни держал.
-      .map((s) =>
-        s.focus_material_id && gone.has(s.focus_material_id)
-          ? { ...s, focus_material_id: null, updated_at: now() }
-          : s,
-      )
-    snap.materials = snap.materials.filter((m) => m.stream_id !== id)
-    snap.parts = snap.parts.filter((p) => !gone.has(p.material_id))
-    snap.notes = snap.notes.filter((n) => !gone.has(n.material_id))
-    write(snap)
+    change((snap) => rules.removeStream(snap, id))
   },
 
   async addMaterial(item: NewMaterial) {
-    const snap = read()
     const made: Material = { ...item, id: uid(), created_at: now(), updated_at: now() }
-    snap.materials.push(made)
-    write(snap)
+    change((snap) => rules.insert(snap, 'materials', made))
     return made
   },
   async updateMaterial(id, patch) {
-    const snap = read()
-    const before = snap.materials.find((m) => m.id === id)
-    snap.materials = snap.materials.map((m) =>
-      m.id === id ? { ...m, ...patch, updated_at: now() } : m,
-    )
-    // Материал, уехавший в другой поток, не может оставаться фокусом прежнего.
-    if (before && patch.stream_id && patch.stream_id !== before.stream_id) {
-      snap.streams = snap.streams.map((s) =>
-        s.id === before.stream_id && s.focus_material_id === id
-          ? { ...s, focus_material_id: null, updated_at: now() }
-          : s,
-      )
-    }
-    // Вид или шкала, при которых частей не бывает, уносят и сами части.
-    // Иначе они остаются невидимым грузом и возвращаются на экран, стоит
-    // переключить вид обратно, — с отметками, которых человек уже не помнит.
-    const after = snap.materials.find((m) => m.id === id)
-    if (after && !hasParts(after)) snap.parts = snap.parts.filter((p) => p.material_id !== id)
-
-    // Фокус — это «за что сесть». Материал, ушедший из работы, перестаёт им быть,
-    // иначе дашборд продолжает звать к тому, что уже отложено или пройдено.
-    if (patch.status && patch.status !== 'active') {
-      snap.streams = snap.streams.map((s) =>
-        s.focus_material_id === id ? { ...s, focus_material_id: null, updated_at: now() } : s,
-      )
-    }
-    write(snap)
+    change((snap) => rules.updateMaterial(snap, id, patch, now()))
   },
   async deleteMaterial(id) {
-    const snap = read()
-    snap.materials = snap.materials.filter((m) => m.id !== id)
-    snap.parts = snap.parts.filter((p) => p.material_id !== id)
-    snap.notes = snap.notes.filter((n) => n.material_id !== id)
-    snap.streams = snap.streams.map((s) =>
-      s.focus_material_id === id ? { ...s, focus_material_id: null, updated_at: now() } : s,
-    )
-    write(snap)
+    change((snap) => rules.removeMaterial(snap, id))
   },
 
   async addPart(item: NewMaterialPart) {
-    const snap = read()
     const made: MaterialPart = { ...item, id: uid() }
-    snap.parts.push(made)
-    write(snap)
+    change((snap) => rules.insert(snap, 'parts', made))
     return made
   },
   async updatePart(id, patch) {
-    const snap = read()
-    snap.parts = snap.parts.map((p) => (p.id === id ? { ...p, ...patch } : p))
-    write(snap)
+    change((snap) => rules.updatePart(snap, id, patch))
   },
   async deletePart(id) {
-    const snap = read()
-    snap.parts = snap.parts.filter((p) => p.id !== id)
-    write(snap)
+    change((snap) => rules.removePart(snap, id))
   },
 
   async addNote(item: NewStudyNote) {
-    const snap = read()
     const made: StudyNote = { ...item, id: uid(), created_at: now(), updated_at: now() }
-    snap.notes.push(made)
-    write(snap)
+    change((snap) => rules.insert(snap, 'notes', made))
     return made
   },
   async updateNote(id, patch) {
-    const snap = read()
-    snap.notes = snap.notes.map((n) => (n.id === id ? { ...n, ...patch, updated_at: now() } : n))
-    write(snap)
+    change((snap) => rules.updateNote(snap, id, patch, now()))
   },
   async deleteNote(id) {
-    const snap = read()
-    snap.notes = snap.notes.filter((n) => n.id !== id)
-    write(snap)
+    change((snap) => rules.removeNote(snap, id))
   },
 }
