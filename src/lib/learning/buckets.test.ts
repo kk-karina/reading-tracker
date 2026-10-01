@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { materialCounts, materialsOf, sourceOrder, studying } from './buckets'
+import { focusOf, materialCounts, materialsOf, sourceOrder, studying } from './buckets'
 import type { Material, MaterialStatus } from './types'
 
 const make = (id: string, stream_id: string, status: MaterialStatus): Material => ({
@@ -14,7 +14,7 @@ const ALL = [
   make('c', 's1', 'backlog'),
   make('d', 's1', 'backlog'),
   make('e', 's1', 'done'),
-  make('f', 's1', 'dropped'),
+  make('f', 's1', 'done'),
   make('g', 's2', 'active'),
 ]
 
@@ -89,5 +89,25 @@ describe('sourceOrder', () => {
 
   it('переживает протухший фокус', () => {
     expect(sourceOrder(ALL, 's1', 'gone').map((m) => m.id)).toEqual(['a', 'b', 'c', 'd', 'e', 'f'])
+  })
+})
+
+describe('focusOf', () => {
+  it('находит материал по указателю потока', () => {
+    expect(focusOf(ALL, 'a')?.id).toBe('a')
+  })
+
+  it('протухший указатель не находит ничего', () => {
+    expect(focusOf(ALL, 'нет такого')).toBeUndefined()
+  })
+
+  it('пустой указатель не находит ничего', () => {
+    expect(focusOf(ALL, null)).toBeUndefined()
+  })
+
+  // Статус больше не ставят руками, и момента «ушёл из работы — слетел фокус»
+  // не существует. Пройденный перестаёт быть фокусом при чтении.
+  it('пройденный материал фокусом не считается', () => {
+    expect(focusOf(ALL, 'e')).toBeUndefined()
   })
 })

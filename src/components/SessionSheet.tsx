@@ -101,13 +101,25 @@ export function SessionSheet({
       }
     }
 
-    // Logging against a book you meant to read means you have started it.
-    if (book.status === 'want') {
-      await updateBook(book.id, { status: 'reading', started_at: book.started_at ?? date })
+    /*
+     * Статус книги сессия больше не переключает — он считается из прочитанного
+     * (см. `statusOf`). Но даты подсчётом не получить: «начата» и «дочитана» —
+     * это дни, а не страницы, и записать их может только та запись, которая
+     * через эти пороги книгу и перевела.
+     *
+     * Вопроса «дочитана?» тут тоже больше нет. Он спрашивал о том, что уже
+     * сказано страницей: дошла до последней — значит дочитала. А ответ «нет»
+     * расходился бы с подсчётом, то есть возвращал бы ровно то двоевластие,
+     * ради устранения которого переключатель и убрали. Нашлось послесловие —
+     * поправь число страниц у книги, там этому и место.
+     */
+    const dates: Partial<Book> = {}
+    if (!book.started_at) dates.started_at = date
+    if (book.pages && toNum >= book.pages && !book.finished_at) {
+      dates.status = 'finished'
+      dates.finished_at = date
     }
-    if (book.pages && toNum >= book.pages && book.status !== 'finished' && confirm(t('session.finishedAsk'))) {
-      await updateBook(book.id, { status: 'finished', finished_at: date })
-    }
+    if (Object.keys(dates).length > 0) await updateBook(book.id, dates)
 
     setBusy(false)
     onClose()

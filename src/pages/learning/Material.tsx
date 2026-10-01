@@ -5,21 +5,22 @@ import { Crumbs } from '../../components/Crumbs'
 import { Icon } from '../../components/Icon'
 import { MaterialCover } from '../../components/learning/MaterialCover'
 import { NoteSheet } from '../../components/learning/NoteSheet'
+import { PartDots } from '../../components/learning/PartDots'
+import { PartNames } from '../../components/learning/PartNames'
 import { useProgressText } from '../../components/learning/Progress'
 import { StudySheet } from '../../components/learning/StudySheet'
 import { MaterialForm } from '../../components/MaterialForm'
-import { Jelly, Segmented } from '../../components/ui'
+import { Jelly, Tip } from '../../components/ui'
 import { fmtDate } from '../../lib/format'
+import { focusOf } from '../../lib/learning/buckets'
 import { sourceOf } from '../../lib/learning/cover'
 import { barWidth, lastNoteDate, materialProgress, remainingOf } from '../../lib/learning/metrics'
 import { noteHeading } from '../../lib/learning/notes'
 import { hasParts, partLabel, partWord, partsOf } from '../../lib/learning/parts'
-import type { MaterialPart, MaterialStatus } from '../../lib/learning/types'
+import type { MaterialPart } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 import { useStream } from './StreamLayout'
-
-const STATUSES: MaterialStatus[] = ['backlog', 'active', 'done', 'dropped']
 
 /* Те же две вкладки, что у книги в чтении: что написано и по чему пройдено.
    Написанное идёт первым — страницы и лекции средство, конспект результат. */
@@ -50,6 +51,13 @@ export function Material() {
      Состояние помнит, какая открыла, — лист представляется её словами. */
   const [logging, setLogging] = useState<'log' | 'note' | null>(null)
   const [tab, setTab] = useState<Tab>('notes')
+  /* Лист имён списком — вторая дверь к переименованию, для тех случаев, когда
+     частей тридцать и наводить на каждую мышь не работа, а отказ от неё. */
+  const [naming, setNaming] = useState(false)
+  /* Только что заведённая часть: её поле имени получает курсор само. Иначе
+     «Добавить» даёт ещё одну «Лекцию 12», и то, что её можно назвать, не
+     сказано ничем — а это ровно то, чего от списка и ждут. */
+  const [fresh, setFresh] = useState<string | null>(null)
   /* Открытый лист помнится по id, а не по номеру: номера сдвигаются, когда
      лист удаляют или дописывают новый, и запомненный номер показал бы соседа. */
   const [openNote, setOpenNote] = useState<string | null>(null)
@@ -79,7 +87,9 @@ export function Material() {
   const word = partWord(material.kind)
   const withParts = hasParts(material)
   const done = material.status === 'done'
-  const isFocus = material.id === stream.focus_material_id
+  // Через `focusOf`, а не сравнением с указателем: пройденный материал фокусом
+  // быть перестаёт, и флажок на странице должен говорить то же, что подложка.
+  const isFocus = focusOf(materials, stream.focus_material_id)?.id === material.id
   const host = material.url ? sourceOf(material.url) : null
 
   // Вкладка глав у статьи и книги по страницам заперта — как рецензия у
@@ -120,8 +130,15 @@ export function Material() {
     void updateMaterial(material.id, { page_current: capped > 0 ? capped : null })
   }
 
-  const addChapter = () =>
-    void addPart({ material_id: material.id, title: '', done: false, sort: chapters.length })
+  const addChapter = async () => {
+    const made = await addPart({
+      material_id: material.id,
+      title: '',
+      done: false,
+      sort: chapters.length,
+    })
+    if (made) setFresh(made.id)
+  }
 
   const dash = <span className="faint">{t('book.unknown')}</span>
 
@@ -138,7 +155,44 @@ export function Material() {
 
   return (
     <>
-      <Crumbs fallback={{ to: `/learning/${stream.slug}`, label: stream.name }} />
+      {/* Действия над материалом целиком — в строке крошки, а не у названия:
+          у длинного заголовка они переносились на вторую строку и вставали
+          между названием и автором. Здесь строка всегда одной высоты. */}
+      <Crumbs
+        fallback={{ to: `/learning/${stream.slug}`, label: stream.name }}
+        actions={
+              <div className="head-actions">
+                <Tip text={isFocus ? t('material.isFocus') : t('material.makeFocus')}>
+                  <Jelly
+                    className={`icon-act${isFocus ? ' on' : ''}`}
+                    onClick={() => void toggleFocus()}
+                    aria-pressed={isFocus}
+                    aria-label={isFocus ? t('material.isFocus') : t('material.makeFocus')}
+                  >
+                    <Icon name="flag" size={17} />
+                  </Jelly>
+                </Tip>
+                <Tip text={t('material.edit')}>
+                  <Jelly
+                    className="icon-act"
+                    onClick={() => setEditing(true)}
+                    aria-label={t('material.edit')}
+                  >
+                    <Icon name="pen" size={17} />
+                  </Jelly>
+                </Tip>
+                <Tip text={t('material.delete')}>
+                  <Jelly
+                    className="icon-act danger"
+                    onClick={() => void remove()}
+                    aria-label={t('material.delete')}
+                  >
+                    <Icon name="trash" size={17} />
+                  </Jelly>
+                </Tip>
+              </div>
+        }
+      />
 
       {/* Обложка после текста и в разметке, и на экране: у материала лежачий
           кадр, и он справа — этим страница материала с первого взгляда
@@ -146,22 +200,63 @@ export function Material() {
       <div className="book-head">
         <div className="book-info">
           <h1 className="display book-title">{material.title}</h1>
-          {material.author && <p className="muted book-author">{material.author}</p>}
+
+          {/* Статус стоит здесь строкой, а не переключателем ниже: он больше не
+              вопрос к человеку, а вывод из сделанного — см. `statusOf`. */}
+          <p className="muted book-author">
+            {[material.author, t(`kind.${material.kind}`), t(`mstatus.${material.status}`)]
+              .filter(Boolean)
+              .join(' · ')}
+          </p>
 
           {/* Плюс стоит вплотную к полосе: тот же жест, что у фокуса на
-              дашборде, и в том же месте относительно своего результата. */}
-          <div className="prog-row">
-            <div className="meter big" aria-hidden>
-              <span style={{ width: `${barWidth(p.percent) ?? 0}%` }} />
-            </div>
-            <Jelly
-              className="log-dot"
-              onClick={() => setLogging('log')}
-              title={t('study.log')}
-              aria-label={t('study.log')}
-            >
-              <Icon name="plus" size={15} />
-            </Jelly>
+              дашборде, и в том же месте относительно своего результата.
+
+              Там, где части есть, полосу заменяет ряд точек. Полоса отвечает
+              «примерно сколько», а здесь, на странице самого материала, вопрос
+              другой — сколько из скольких и каких именно, — и на него полоса
+              ответить не умеет: двадцать лекций и двадцать страниц она рисует
+              одинаково. Точка при этом не картинка: по ней ставят отметку, и
+              это самый короткий путь к тому, ради чего в список и заходят. */}
+          <div className={`prog-row${withParts && chapters.length > 0 ? ' prog-dots' : ''}`}>
+            {withParts && chapters.length > 0 ? (
+              <PartDots
+                parts={chapters}
+                started={started}
+                label={label}
+                word={word}
+                onToggle={(part) => void updatePart(part.id, { done: !part.done })}
+              />
+            ) : (
+              <div className="meter big" aria-hidden>
+                <span style={{ width: `${barWidth(p.percent) ?? 0}%` }} />
+              </div>
+            )}
+            {/* Номер страницы стоит у самой полосы, а не отдельной строкой
+                контролов под шапкой: он и есть эта полоса, выраженная числом,
+                и меняется он чаще всего на странице. */}
+            {material.kind === 'book' && material.scale === 'pages' && (
+              <input
+                className="input mat-page-input"
+                inputMode="numeric"
+                aria-label={t('material.page')}
+                title={t('material.page')}
+                defaultValue={material.page_current ?? ''}
+                onBlur={(e) => setPage(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur()
+                }}
+              />
+            )}
+            <Tip text={t('study.log')}>
+              <Jelly
+                className="log-dot"
+                onClick={() => setLogging('log')}
+                aria-label={t('study.log')}
+              >
+                <Icon name="plus" size={15} />
+              </Jelly>
+            </Tip>
           </div>
 
           {/* Всегда четыре ячейки, нули и прочерки включительно: пустая ячейка
@@ -202,53 +297,6 @@ export function Material() {
 
         <div className="book-cover-tilt mirror">
           <MaterialCover material={material} size="xl" />
-        </div>
-      </div>
-
-      {/* Два ряда: чем материал сейчас является, и что с ним можно сделать. */}
-      <div className="control-rows">
-        <div className="control-row">
-          <span className="label">{t('material.status')}</span>
-          <Segmented
-            name={t('material.status')}
-            value={material.status}
-            options={STATUSES.map((s) => ({ value: s, label: t(`mstatus.${s}`) }))}
-            onChange={(status) => void updateMaterial(material.id, { status })}
-          />
-        </div>
-
-        {material.kind === 'book' && material.scale === 'pages' && (
-          <div className="control-row">
-            <span className="label">{t('material.page')}</span>
-            <input
-              className="input mat-page-input"
-              inputMode="numeric"
-              aria-label={t('material.page')}
-              defaultValue={material.page_current ?? ''}
-              onBlur={(e) => setPage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') e.currentTarget.blur()
-              }}
-            />
-          </div>
-        )}
-
-        <div className="control-row">
-          <span className="label">{t('book.actions')}</span>
-          <div className="row-tight">
-            <button
-              className={`btn ghost sm${isFocus ? ' on' : ''}`}
-              onClick={() => void toggleFocus()}
-            >
-              {isFocus ? t('material.isFocus') : t('material.makeFocus')}
-            </button>
-            <button className="btn ghost sm" onClick={() => setEditing(true)}>
-              {t('material.edit')}
-            </button>
-            <button className="btn ghost sm" onClick={() => void remove()}>
-              {t('material.delete')}
-            </button>
-          </div>
         </div>
       </div>
 
@@ -360,13 +408,18 @@ export function Material() {
             <span className="label">
               {t(word === 'lecture' ? 'part.lectures' : 'part.chapters')}
             </span>
-            <button className="link-btn" type="button" onClick={addChapter}>
-              {t('part.add')}
-            </button>
+            <div className="row-tight">
+              <button className="link-btn" type="button" onClick={() => setNaming(true)}>
+                {t('part.names')}
+              </button>
+              <button className="link-btn" type="button" onClick={() => void addChapter()}>
+                {t('part.add')}
+              </button>
+            </div>
           </div>
 
           {chapters.length === 0 ? (
-            <div className="empty small">{t('material.partsHint')}</div>
+            <div className="empty small">{t('material.partsEmpty')}</div>
           ) : (
             <ul className="part-list">
               {chapters.map((part, i) => (
@@ -388,18 +441,38 @@ export function Material() {
                     </span>
                   </label>
                   {/* Имя правится на месте. Пустое остаётся пустым — тогда часть
-                      зовётся своим номером и перенумеровывается сама. */}
-                  <input
-                    className="part-name"
-                    defaultValue={part.title}
-                    placeholder={label(part, i)}
-                    aria-label={t('part.rename')}
-                    onBlur={(e) => {
-                      if (e.target.value !== part.title) {
-                        void updatePart(part.id, { title: e.target.value })
-                      }
-                    }}
-                  />
+                      зовётся своим номером и перенумеровывается сама.
+
+                      Поле выглядит полем: до сих пор оно было неотличимо от
+                      строки текста, пока на него не наведёшь, и «Лекцию 12»
+                      принимали за имя, выданное навсегда. Теперь номер написан
+                      в полную силу — он имя, а не подсказка, — а перо под
+                      курсором говорит, что его правят.
+
+                      Enter — то же, что уход из поля; Esc возвращает прежнее
+                      имя, потому что набранное сюда ещё никуда не записано. */}
+                  <span className="part-edit">
+                    <input
+                      className="part-name"
+                      defaultValue={part.title}
+                      placeholder={label(part, i)}
+                      aria-label={t('part.rename')}
+                      autoFocus={part.id === fresh}
+                      onBlur={(e) => {
+                        if (e.target.value !== part.title) {
+                          void updatePart(part.id, { title: e.target.value })
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') e.currentTarget.blur()
+                        if (e.key === 'Escape') {
+                          e.currentTarget.value = part.title
+                          e.currentTarget.blur()
+                        }
+                      }}
+                    />
+                    <Icon className="part-pen" name="pen" size={14} aria-hidden />
+                  </span>
                   <button
                     className="link-btn"
                     type="button"
@@ -424,6 +497,15 @@ export function Material() {
             if (!materials.some((m) => m.id === material.id))
               navigate(`/learning/${stream.slug}/materials?view=backlog`)
           }}
+        />
+      )}
+
+      {naming && (
+        <PartNames
+          material={material}
+          parts={chapters}
+          word={word}
+          onClose={() => setNaming(false)}
         />
       )}
 

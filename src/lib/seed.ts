@@ -186,7 +186,7 @@ export const SEED_BOOKS: SeedBook[] = [
     external_id: '/works/OL59863W',
     genre: 'Fiction',
     language: 'en',
-    status: 'abandoned',
+    status: 'want',
     started_at: null,
     finished_at: null,
     sort: 12,

@@ -131,8 +131,13 @@ function migrateV2(old: SnapshotV2): LearningSnapshot {
  * одно: материал заведён и ждёт. Старые снимки несут эти слова и читаются как
  * «в очереди» — различие ушло из интерфейса, а не из данных, и придумывать
  * ему замену при чтении нечем.
+ *
+ * Тем же путём сюда же складывается «брошено»: статуса такого больше нет, а
+ * брошенное — это не пройденное, это переставшее двигаться, то есть очередь.
+ * Терять на этом нечего: статус теперь всё равно считается из сделанного, и
+ * материал с отмеченными главами тут же вернётся в работу.
  */
-const KEPT_STATUSES = ['active', 'done', 'dropped'] as const
+const KEPT_STATUSES = ['active', 'done'] as const
 const backlogStatus = (status: string): MaterialStatus =>
   (KEPT_STATUSES as readonly string[]).includes(status) ? (status as MaterialStatus) : 'backlog'
 

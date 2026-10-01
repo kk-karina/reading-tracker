@@ -12,7 +12,7 @@ import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
 
 // Reading first: the shelf should answer "where am I now" before anything else.
-const ORDER: BookStatus[] = ['reading', 'want', 'finished', 'abandoned']
+const ORDER: BookStatus[] = ['reading', 'want', 'finished']
 
 /**
  * Two ways to stand in front of the same shelf. The grid is the working view —

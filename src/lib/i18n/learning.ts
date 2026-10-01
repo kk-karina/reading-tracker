@@ -127,7 +127,6 @@ export const LEARNING = {
   'material.author': { ru: 'Автор', en: 'Author' },
   'material.url': { ru: 'Ссылка', en: 'Link' },
   'material.kind': { ru: 'Вид', en: 'Kind' },
-  'material.status': { ru: 'Статус', en: 'Status' },
   'material.scale': { ru: 'Считать по', en: 'Count by' },
   'scale.pages': { ru: 'Страницам', en: 'Pages' },
   'scale.parts': { ru: 'Главам', en: 'Chapters' },
@@ -160,6 +159,37 @@ export const LEARNING = {
   'part.add': { ru: 'Добавить', en: 'Add' },
   'part.remove': { ru: 'Убрать', en: 'Remove' },
   'part.rename': { ru: 'Название части', en: 'Part name' },
+  // Имя главы правится в двух местах — в списке частей и в листе занятия.
+  // Подпись при этом разная: в списке правят «часть», а на листе сидят с
+  // конкретной главой, и звать её «частью» там было бы казённо.
+  'part.nameChapter': { ru: 'Название главы', en: 'Chapter name' },
+  'part.nameLecture': { ru: 'Название лекции', en: 'Lecture name' },
+  'part.nameHint': {
+    ru: 'Пустое — останется номером.',
+    en: 'Leave it empty to keep the number.',
+  },
+  // Состояние части словом — так её читает экранный диктор в ряду точек, где
+  // всё остальное сказано заливкой. Род женский у обоих слов, главы и лекции.
+  'part.state.done': { ru: 'пройдена', en: 'done' },
+  'part.state.started': { ru: 'начата', en: 'started' },
+  'part.state.fresh': { ru: 'не пройдена', en: 'not done' },
+  'part.names': { ru: 'Назвать списком', en: 'Name from a list' },
+  'part.namesChapters': {
+    ru: 'По строке на главу, сверху вниз. Вставляй программу прямо как есть: номер в начале строки снимется сам. Пустая строка оставляет главу при её номере.',
+    en: 'One line per chapter, top to bottom. Paste the contents as they are — a leading number is stripped. A blank line leaves that chapter at its number.',
+  },
+  'part.namesLectures': {
+    ru: 'По строке на лекцию, сверху вниз. Вставляй программу прямо как есть: номер в начале строки снимется сам. Пустая строка оставляет лекцию при её номере.',
+    en: 'One line per lecture, top to bottom. Paste the syllabus as it is — a leading number is stripped. A blank line leaves that lecture at its number.',
+  },
+  'part.namesCount': {
+    ru: 'Строк в списке: {n}. Частей сейчас: {have}.',
+    en: '{n} lines in the list, {have} parts right now.',
+  },
+  'part.namesGrow': {
+    ru: 'Строк больше, чем частей: добавится {n}, станет {total}.',
+    en: 'More lines than parts: {n} will be added, {total} in all.',
+  },
   'part.confirmDrop': {
     ru: 'Среди убираемых частей есть пройденные. Отметки пропадут. Убрать?',
     en: 'Some of the parts being removed are marked done. Those marks will be lost. Remove?',
@@ -192,6 +222,10 @@ export const LEARNING = {
   'material.factLeft': { ru: 'Осталось', en: 'Left' },
   'material.factNotes': { ru: 'Конспекты', en: 'Notes' },
   'material.factLast': { ru: 'Последнее занятие', en: 'Last session' },
+  'material.partsEmpty': {
+    ru: 'Частей пока нет. Заведи их по одной или вставь программу списком — тогда прогресс пойдёт по ним.',
+    en: 'No parts yet. Add them one by one, or paste the syllabus as a list — progress then counts by them.',
+  },
   'material.partsLocked': {
     ru: 'У этого материала нет глав: статья и ролик меряются отметкой, книга — страницами.',
     en: 'This material has no chapters: an article or a video is a single mark, a book counts pages.',
@@ -228,9 +262,9 @@ export const LEARNING = {
   'kind.video': { ru: 'Видео', en: 'Video' },
 
   'mstatus.backlog': { ru: 'В очереди', en: 'Queued' },
+  'material.alreadyDone': { ru: 'Уже пройдено', en: 'Already done' },
   'mstatus.active': { ru: 'В работе', en: 'Active' },
   'mstatus.done': { ru: 'Пройдено', en: 'Done' },
-  'mstatus.dropped': { ru: 'Брошено', en: 'Dropped' },
 
   'studying.empty': {
     ru: 'Ничего не изучается. Возьми что-нибудь из бэклога.',

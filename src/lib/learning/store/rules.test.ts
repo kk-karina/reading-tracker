@@ -191,7 +191,7 @@ describe('следствия правки материала для сетево
   })
 
   it('уход из работы снимает фокус у того, кто на него указывал', () => {
-    expect(materialEffects(filled(), 'm1', { status: 'dropped' })).toEqual({
+    expect(materialEffects(filled(), 'm1', { status: 'backlog' })).toEqual({
       unfocus: ['s1'],
       dropParts: [],
     })

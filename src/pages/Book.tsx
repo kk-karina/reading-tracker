@@ -7,8 +7,8 @@ import { Crumbs } from '../components/Crumbs'
 import { Icon } from '../components/Icon'
 import { Review } from '../components/Review'
 import { SessionSheet } from '../components/SessionSheet'
-import { Jelly, Segmented } from '../components/ui'
-import { fmtDate, fmtMinutes, todayISO } from '../lib/format'
+import { Jelly, Tip } from '../components/ui'
+import { fmtDate, fmtMinutes } from '../lib/format'
 import { face } from '../lib/rating'
 import {
   lastSessionDate,
@@ -17,13 +17,11 @@ import {
   progressOf,
   remainingMinutes,
   spentOn,
-  statusPatch,
 } from '../lib/reading'
-import type { BookStatus, NoteTag, Session } from '../lib/types'
+import type { NoteTag, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
 
-const STATUSES: BookStatus[] = ['want', 'reading', 'finished', 'abandoned']
 const TAGS: NoteTag[] = ['quote', 'idea', 'question', 'disagree', 'feeling']
 
 /* Sessions and thoughts are one record kept from two sides, so they are two
@@ -41,7 +39,7 @@ export function Book() {
   const { id } = useParams()
   const nav = useNavigate()
   const { t, locale } = useLocale()
-  const { books, sessions, notes, loading, updateBook, deleteBook, setFocus } = useData()
+  const { books, sessions, notes, loading, deleteBook, setFocus } = useData()
   const [editing, setEditing] = useState(false)
   const [logging, setLogging] = useState(false)
   const [editingSession, setEditingSession] = useState<Session | null>(null)
@@ -85,7 +83,43 @@ export function Book() {
 
   return (
     <>
-      <Crumbs fallback={{ to: '/reading/shelf', label: t('nav.shelf') }} />
+      {/* Действия над книгой целиком — в строке крошки, а не у названия: у
+          длинного заголовка они переносились на вторую строку. */}
+      <Crumbs
+        fallback={{ to: '/reading/shelf', label: t('nav.shelf') }}
+        actions={
+              <div className="head-actions">
+                <Tip text={book.is_focus ? t('book.isFocus') : t('book.makeFocus')}>
+                  <Jelly
+                    className={`icon-act${book.is_focus ? ' on' : ''}`}
+                    onClick={() => setFocus(book.is_focus ? null : book.id)}
+                    aria-pressed={book.is_focus}
+                    aria-label={book.is_focus ? t('book.isFocus') : t('book.makeFocus')}
+                  >
+                    <Icon name="flag" size={17} />
+                  </Jelly>
+                </Tip>
+                <Tip text={t('book.edit')}>
+                  <Jelly
+                    className="icon-act"
+                    onClick={() => setEditing(true)}
+                    aria-label={t('book.edit')}
+                  >
+                    <Icon name="pen" size={17} />
+                  </Jelly>
+                </Tip>
+                <Tip text={t('book.delete')}>
+                  <Jelly
+                    className="icon-act danger"
+                    onClick={() => void remove()}
+                    aria-label={t('book.delete')}
+                  >
+                    <Icon name="trash" size={17} />
+                  </Jelly>
+                </Tip>
+              </div>
+        }
+      />
 
       <div className="book-head">
         <div className="book-cover-tilt">
@@ -94,7 +128,12 @@ export function Book() {
 
         <div className="book-info">
           <h1 className="display book-title">{book.title}</h1>
-          {book.author && <p className="muted book-author">{book.author}</p>}
+
+          {/* Статус строкой, а не переключателем ниже: он больше не вопрос к
+              человеку, а вывод из прочитанного — см. `statusOf`. */}
+          <p className="muted book-author">
+            {[book.author, t(`status.${book.status}`)].filter(Boolean).join(' · ')}
+          </p>
 
           {/* Плюс вплотную к полосе, а не громкая кнопка под фактами: записать
               сессию значит сдвинуть именно её. Тот же жест в обучении. */}
@@ -102,14 +141,15 @@ export function Book() {
             <div className="meter big" aria-hidden>
               <span style={{ width: `${percent ?? (page > 0 ? 8 : 0)}%` }} />
             </div>
-            <Jelly
-              className="log-dot"
-              onClick={() => setLogging(true)}
-              title={t('session.log')}
-              aria-label={t('session.log')}
-            >
-              <Icon name="plus" size={15} />
-            </Jelly>
+            <Tip text={t('session.log')}>
+              <Jelly
+                className="log-dot"
+                onClick={() => setLogging(true)}
+                aria-label={t('session.log')}
+              >
+                <Icon name="plus" size={15} />
+              </Jelly>
+            </Tip>
           </div>
 
           {/* Always four cells, zeros included: an empty slot is information too. */}
@@ -160,36 +200,6 @@ export function Book() {
             {last ? t('book.lastRead', { date: fmtDate(last, locale) }) : t('book.notOpened')}
           </p>
           {pace === null && <p className="small faint hint-line">{t('book.noTimeHint')}</p>}
-        </div>
-      </div>
-
-      {/* Two separate rows: what the book *is*, then what you can *do* to it. */}
-      <div className="control-rows">
-        <div className="control-row">
-          <span className="label">{t('book.statusLabel')}</span>
-          <Segmented
-            name={t('book.statusLabel')}
-            value={book.status}
-            options={STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))}
-            onChange={(status) => updateBook(book.id, statusPatch(book, status, todayISO()))}
-          />
-        </div>
-        <div className="control-row">
-          <span className="label">{t('book.actions')}</span>
-          <div className="row-tight">
-            <button
-              className={`btn ghost sm${book.is_focus ? ' on' : ''}`}
-              onClick={() => setFocus(book.is_focus ? null : book.id)}
-            >
-              {book.is_focus ? t('book.isFocus') : t('book.makeFocus')}
-            </button>
-            <button className="btn ghost sm" onClick={() => setEditing(true)}>
-              {t('book.edit')}
-            </button>
-            <button className="btn ghost sm" onClick={remove}>
-              {t('book.delete')}
-            </button>
-          </div>
         </div>
       </div>
 

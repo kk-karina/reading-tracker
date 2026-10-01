@@ -44,8 +44,12 @@ create table if not exists public.materials (
   kind text not null check (kind in ('book','article','course','video')),
   author text,
   url text,
+  -- Три состояния. Статус считается приложением из сделанного (см. `statusOf`
+  -- в src/lib/learning/status.ts); здесь хранится только отметка «пройдено»,
+  -- которую подсчётом не получить: у статьи и ролика считать нечего.
+  -- Было четвёртым «dropped» — см. 004_three_statuses.sql.
   status text not null default 'backlog'
-    check (status in ('backlog','active','done','dropped')),
+    check (status in ('backlog','active','done')),
   -- Kept as an address, not a picture: someone else's file lives on someone
   -- else's server anyway, and a drawn cover hides a dead link. A cover chosen
   -- from a file arrives here as a data: URL, downscaled by the app first.

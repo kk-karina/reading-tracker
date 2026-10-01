@@ -2,13 +2,11 @@ import { useRef, useState } from 'react'
 import { searchBooks, type BookCandidate } from '../lib/books'
 import { todayISO } from '../lib/format'
 import { statusPatch } from '../lib/reading'
-import type { Book, BookStatus } from '../lib/types'
+import type { Book } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
 import { Sheet } from './Sheet'
-import { FormStack, Jelly, Segmented } from './ui'
-
-const STATUSES: BookStatus[] = ['want', 'reading', 'finished', 'abandoned']
+import { FormStack, Jelly } from './ui'
 
 /**
  * Adding and editing share one form. Search sits on top as an accelerator, not as
@@ -25,7 +23,12 @@ export function BookForm({ book, onClose }: { book?: Book; onClose: () => void }
   const [cover, setCover] = useState(book?.cover_url ?? '')
   const [genre, setGenre] = useState(book?.genre ?? '')
   const [language, setLanguage] = useState(book?.language ?? '')
-  const [status, setStatus] = useState<BookStatus>(book?.status ?? 'want')
+  /**
+   * Единственный вопрос про статус, на который прочитанное не отвечает само:
+   * книгу могли прочитать до того, как она сюда попала. «Хочу» и «читаю»
+   * выводятся из сессий (см. `statusOf`), и спрашивать о них нечего.
+   */
+  const [read, setRead] = useState(book?.status === 'finished')
   const externalId = useRef<string | null>(book?.external_id ?? null)
 
   const [query, setQuery] = useState('')
@@ -72,10 +75,12 @@ export function BookForm({ book, onClose }: { book?: Book; onClose: () => void }
       external_id: externalId.current,
       genre: genre.trim() || null,
       language: language.trim() || null,
-      // A book added straight onto the finished shelf still needs its date.
+      // Книга, заведённая сразу на прочитанную полку, всё ещё нуждается в дате;
+      // снятая отметка уносит дату с собой. «Хочу» здесь — не утверждение, а
+      // отсутствие отметки: что это на самом деле, решит подсчёт сессий.
       ...statusPatch(
         { started_at: book?.started_at ?? null, finished_at: book?.finished_at ?? null },
-        status,
+        read ? 'finished' : 'want',
         todayISO(),
       ),
     }
@@ -169,15 +174,10 @@ export function BookForm({ book, onClose }: { book?: Book; onClose: () => void }
           <span className="small faint">{t('form.coverHint')}</span>
         </label>
 
-        <div className="field">
-          <span className="label">{t('form.status')}</span>
-          <Segmented
-            name={t('form.status')}
-            value={status}
-            options={STATUSES.map((s) => ({ value: s, label: t(`status.${s}`) }))}
-            onChange={setStatus}
-          />
-        </div>
+        <label className="toggle">
+          <input type="checkbox" checked={read} onChange={() => setRead(!read)} />
+          <span>{t('form.alreadyRead')}</span>
+        </label>
 
         {error && <div className="error">{error}</div>}
         <Jelly className="btn" onClick={save} style={{ alignSelf: 'flex-start' }}>

@@ -74,8 +74,8 @@ describe('materialProgress: статья и видео', () => {
     expect(materialProgress(m, []).percent).toBe(100)
   })
 
-  it('брошенная статья прочитанной не считается', () => {
-    const m = material({ kind: 'article', scale: null, status: 'dropped' })
+  it('непрочитанная статья прочитанной не считается', () => {
+    const m = material({ kind: 'article', scale: null, status: 'backlog' })
     expect(materialProgress(m, []).done).toBe(0)
   })
 })

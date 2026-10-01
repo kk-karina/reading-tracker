@@ -7,7 +7,7 @@ import type { Material, Stream, StudyNote } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 import { Icon } from '../Icon'
-import { Jelly } from '../ui'
+import { Jelly, Tip } from '../ui'
 import { MaterialCover } from './MaterialCover'
 
 /** Сколько соседей показать корешками; остальные уходят в число. */
@@ -102,14 +102,15 @@ export function StreamFocus({
           )}
           {/* Плюс стоит вплотную к полосе: прибавить занятие — это сдвинуть
               именно её, и жест должен быть в том же месте, что и результат. */}
-          <Jelly
-            className="log-dot"
-            onClick={onLog}
-            title={t('study.log')}
-            aria-label={t('study.log')}
-          >
-            <Icon name="plus" size={15} />
-          </Jelly>
+          <Tip text={t('study.log')}>
+            <Jelly
+              className="log-dot"
+              onClick={onLog}
+              aria-label={t('study.log')}
+            >
+              <Icon name="plus" size={15} />
+            </Jelly>
+          </Tip>
         </div>
         <p className="hero-focus-meta">
           {[

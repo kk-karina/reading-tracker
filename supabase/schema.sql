@@ -17,8 +17,12 @@ create table if not exists public.books (
   external_id text,
   genre text,
   language text,
+  -- Три состояния, и ни одного лишнего. Статус не ставят руками — его считает
+  -- приложение из прочитанного (см. `statusOf` в src/lib/reading.ts); здесь
+  -- хранится только отметка «прочитано», которую подсчётом не получить:
+  -- у книги может быть неизвестно число страниц.
   status text not null default 'want'
-    check (status in ('want','reading','finished','abandoned')),
+    check (status in ('want','reading','finished')),
   is_focus boolean not null default false,
   rating smallint check (rating between 1 and 5),
   -- The review is one per book and written once, so it lives on the book

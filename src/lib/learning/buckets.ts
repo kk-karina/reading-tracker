@@ -1,7 +1,5 @@
 import type { Material, MaterialStatus } from './types'
 
-const ARCHIVE: MaterialStatus[] = ['done', 'dropped']
-
 /**
  * Три состояния материала, как их называет человек, а не база.
  *
@@ -17,7 +15,7 @@ export type MaterialView = (typeof MATERIAL_VIEWS)[number]
 const VIEW_STATUS: Record<MaterialView, MaterialStatus[]> = {
   active: ['active'],
   backlog: ['backlog'],
-  done: ARCHIVE,
+  done: ['done'],
 }
 
 const ofStream = (materials: Material[], streamId: string) =>
@@ -26,12 +24,23 @@ const ofStream = (materials: Material[], streamId: string) =>
 /**
  * Материал в фокусе — тот, за который села. Ссылка может протухнуть: фокус
  * хранится id и переживает удаление материала, поэтому результат необязателен.
+ *
+ * Пройденный фокусом быть перестаёт, хотя указатель на него и остаётся.
+ * Раньше это снимал сам переключатель статуса: ушёл из работы — слетел фокус.
+ * Статус теперь считается из сделанного и руками не ставится, то есть момента,
+ * в который можно было бы стереть указатель, больше нет — а подложка потока
+ * продолжала бы звать сесть за то, что закрыто.
+ *
+ * Указатель при этом не трогается: сняла отметку с последней лекции — курс
+ * снова фокус, и возвращать его руками не нужно.
  */
 export function focusOf(
   materials: Material[],
   focusId: string | null,
 ): Material | undefined {
-  return focusId ? materials.find((m) => m.id === focusId) : undefined
+  if (!focusId) return undefined
+  const found = materials.find((m) => m.id === focusId)
+  return found && found.status !== 'done' ? found : undefined
 }
 
 /** Что изучается прямо сейчас. */
@@ -68,7 +77,6 @@ const HEAT: Record<MaterialStatus, number> = {
   active: 0,
   backlog: 1,
   done: 2,
-  dropped: 2,
 }
 
 /**

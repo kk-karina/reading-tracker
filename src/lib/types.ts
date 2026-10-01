@@ -1,4 +1,9 @@
-export type BookStatus = 'want' | 'reading' | 'finished' | 'abandoned'
+/**
+ * Три состояния книги: хочу, читаю, прочитано. Руками не ставятся — выводятся
+ * из прочитанного (см. `statusOf` в `reading.ts`). «Заброшено» ушло: это был
+ * единственный статус, который нельзя вывести ни из чего, кроме настроения.
+ */
+export type BookStatus = 'want' | 'reading' | 'finished'
 
 /** What a thought was: the tag is picked first and shapes the prompt in the field. */
 export type NoteTag = 'quote' | 'idea' | 'question' | 'disagree' | 'feeling'

@@ -120,7 +120,6 @@ const BASE = {
   'status.want': { ru: 'Хочу прочитать', en: 'Want to read' },
   'status.reading': { ru: 'Читаю', en: 'Reading' },
   'status.finished': { ru: 'Прочитано', en: 'Finished' },
-  'status.abandoned': { ru: 'Заброшено', en: 'Set aside' },
 
   'shelf.add': { ru: 'Добавить книгу', en: 'Add a book' },
   'shelf.empty': { ru: 'Полка пока пустая.', en: 'The shelf is empty.' },
@@ -181,7 +180,6 @@ const BASE = {
   },
   'form.genre': { ru: 'Жанр', en: 'Genre' },
   'form.language': { ru: 'Язык книги', en: 'Book language' },
-  'form.status': { ru: 'Статус', en: 'Status' },
   'form.save': { ru: 'Сохранить', en: 'Save' },
   'form.cancel': { ru: 'Отмена', en: 'Cancel' },
   'form.titleRequired': { ru: 'Без названия не сохранить.', en: 'A title is required.' },
@@ -280,8 +278,8 @@ const BASE = {
   },
   'book.approx': { ru: 'часть времени оценена по твоему темпу', en: 'part of this is estimated from your pace' },
   'book.perPage': { ru: '{n} мин/стр', en: '{n} min/page' },
-  'book.statusLabel': { ru: 'Статус', en: 'Status' },
-  'book.actions': { ru: 'Действия', en: 'Actions' },
+  // Единственный вопрос про статус, на который прочитанное не отвечает само.
+  'form.alreadyRead': { ru: 'Уже прочитана', en: 'Already read' },
   'book.sessions': { ru: 'Сессии', en: 'Sessions' },
   'book.sessionsEmpty': { ru: 'Пока ни одной сессии.', en: 'No sessions yet.' },
   'book.notes': { ru: 'Мысли', en: 'Thoughts' },
@@ -331,10 +329,6 @@ const BASE = {
   'session.toMustGrow': {
     ru: 'Страница «до» не может быть меньше страницы «от».',
     en: 'The page you stopped at cannot be before the page you started from.',
-  },
-  'session.finishedAsk': {
-    ru: 'Похоже, книга дочитана. Отметить как прочитанную?',
-    en: 'Looks like the book is finished. Mark it as read?',
   },
   'session.editTitle': { ru: 'Правка сессии', en: 'Edit the session' },
   'session.delete': { ru: 'Удалить сессию', en: 'Delete session' },

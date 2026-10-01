@@ -9,17 +9,12 @@ import {
   type BookScale,
   type Material,
   type MaterialKind,
-  type MaterialStatus,
 } from '../lib/learning/types'
 import { useLearning } from '../state/LearningContext'
 import { useLocale } from '../state/LocaleContext'
 import { Icon } from './Icon'
 import { Sheet } from './Sheet'
 import { Field, FormStack, Jelly, Segmented } from './ui'
-
-/** «Пройдено» и «брошено» при заведении смысла не имеют. */
-const OPEN_STATUSES: MaterialStatus[] = ['backlog', 'active']
-const ALL_STATUSES: MaterialStatus[] = [...OPEN_STATUSES, 'done', 'dropped']
 
 const digits = (v: string) => v.replace(/\D/g, '')
 const num = (v: string) => (v.trim() ? Number(v) : null)
@@ -56,7 +51,12 @@ export function MaterialForm({
   const [scale, setScale] = useState<BookScale>(material?.scale ?? 'pages')
   const [pages, setPages] = useState(material?.pages_total ? String(material.pages_total) : '')
   const [count, setCount] = useState(mine.length ? String(mine.length) : '')
-  const [status, setStatus] = useState<MaterialStatus>(material?.status ?? 'backlog')
+  /**
+   * Единственный вопрос про статус, на который сделанное не отвечает само:
+   * материал могли пройти до того, как он сюда попал. «В очереди» и «в работе»
+   * выводятся из отмеченных частей, страницы и конспектов — см. `statusOf`.
+   */
+  const [done, setDone] = useState(material?.status === 'done')
 
   const [busy, setBusy] = useState(false)
   const [reading, setReading] = useState(false)
@@ -154,7 +154,9 @@ export function MaterialForm({
       author: author.trim() || null,
       url: url.trim() || null,
       cover_url: cover.trim() || null,
-      status,
+      // Не утверждение, а отсутствие отметки: что это на самом деле — очередь
+      // или работа, — решит подсчёт сделанного.
+      status: done ? ('done' as const) : ('backlog' as const),
       scale: kind === 'book' ? scale : null,
       pages_total: kind === 'book' && scale === 'pages' ? num(pages) : null,
       // Текущая страница живёт на странице материала: она меняется каждый раз,
@@ -183,7 +185,6 @@ export function MaterialForm({
   }
 
   const host = url.trim() ? sourceOf(url) : null
-  const statuses = material ? ALL_STATUSES : OPEN_STATUSES
 
   return (
     <Sheet title={material ? t('material.edit') : t('learning.newMaterial')} onClose={onClose}>
@@ -288,15 +289,10 @@ export function MaterialForm({
           </div>
         </Field>
 
-        <Field label={t('material.status')} group>
-          <Segmented
-            name={t('material.status')}
-            value={status}
-            options={statuses.map((s) => ({ value: s, label: t(`mstatus.${s}`) }))}
-            onChange={setStatus}
-            className={material ? 'sm wrap' : 'sm'}
-          />
-        </Field>
+        <label className="toggle">
+          <input type="checkbox" checked={done} onChange={() => setDone(!done)} />
+          <span>{t('material.alreadyDone')}</span>
+        </label>
 
         {error && <div className="error">{error}</div>}
 

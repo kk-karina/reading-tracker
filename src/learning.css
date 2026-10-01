@@ -852,6 +852,13 @@
 .hero-focus .log-dot:hover {
   color: #0e1012;
 }
+/* Подсказка на подложке переворачивается: чёрный пузырь по графиту не виден.
+   Бумага по чернилам — то же правило, что и у всего остального в приложении,
+   просто здесь фон тёмный, и сторонам приходится поменяться местами. */
+.hero-focus .tip::after {
+  background: var(--paper);
+  color: var(--ink);
+}
 
 .hero-meter span {
   display: block;
@@ -953,6 +960,13 @@
   overflow: hidden;
   flex: none;
   aspect-ratio: var(--cover-ar, 3 / 4);
+  /* Ширина у каждого размера своя и задана числом; потолок — общий. Числом же
+     его не задать: на телефоне лежачая обложка в 400 пикселей шире колонки, и
+     страница начинает ездить вбок. И это именно `max-width`, а не `width:
+     min(...)`: процент в `width` считается от родителя, ширина которого сама
+     берётся от этой обложки, — круг замыкается, и обложка схлопывается в ноль.
+     `max-width` круга не создаёт: число есть, его только ограничивают сверху. */
+  max-width: 100%;
   border-radius: 4px;
   background: var(--cover-bg, #2b3a44);
   color: var(--cover-ink, #eceff1);
@@ -1429,10 +1443,16 @@
   flex: 0 0 auto;
 }
 
-/* Номер страницы стоит в ряду контролов, рядом со статусом: это такое же
-   состояние материала, как и он, а не отдельная полоса под шапкой. */
+/* Номер страницы стоит у самой полосы, а не отдельным рядом контролов под
+   шапкой: он и есть эта полоса, выраженная числом. Высота — как у плюса
+   рядом, иначе ряд получает две разные высоты на три предмета. */
 .mat-page-input {
-  width: 84px;
+  flex: none;
+  width: 74px;
+  height: 28px;
+  padding: 0 8px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
 }
 
 .toggle {
@@ -1445,6 +1465,127 @@
   width: 18px;
   height: 18px;
   accent-color: var(--ink);
+}
+
+/* ---------- ряд точек: прогресс по частям ---------- */
+
+/* Там, где у материала есть части, полосу на странице материала заменяет ряд
+   точек — по точке на главу. Полоса отвечает «примерно сколько»; здесь вопрос
+   другой — сколько из скольких и каких именно, — и двадцать лекций она рисует
+   ровно так же, как двадцать страниц. Ряд встаёт на место `.meter` внутри
+   `.prog-row`, поэтому плюс справа и ширина колонки остаются теми же;
+   добавлено только немного ширины, чтобы длинный курс ложился в меньшее число
+   строк. */
+.prog-row.prog-dots {
+  max-width: 460px;
+}
+
+.dots {
+  /* Основание приходит из разметки — оно зависит от числа точек. Здесь оно
+     становится итоговым размером, и только здесь его может поднять палец. */
+  --dot: var(--dot-base, 12px);
+  /* Не растягивается: плюс должен стоять вплотную к последней точке, как он
+     стоит вплотную к полосе. Сжиматься — сжимается, и тогда длинный курс
+     переносится на вторую строку, не выталкивая плюс за край колонки. */
+  flex: 0 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  /* Просвет держит нижний порог: на мелкой точке доля от размера схлопывается,
+     и ряд перестаёт быть рядом точек — становится пунктиром. */
+  gap: max(5px, calc(var(--dot) * 0.55));
+  padding: 3px 0;
+}
+
+/* Сенсорный экран: точка размером с букву под пальцем не нажимается, и промах
+   здесь не «ничего не случилось», а отметка на чужой лекции. Запас приходит
+   готовым, уже с поправкой на длину курса: см. `PartDots`. */
+@media (pointer: coarse) {
+  .dots {
+    --dot: var(--dot-touch, 16px);
+  }
+}
+
+.dot {
+  position: relative;
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: var(--dot);
+  height: var(--dot);
+  padding: 0;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    border-color 0.18s var(--ease-out),
+    transform 0.14s var(--ease-out);
+}
+/* Область нажатия шире самой точки ровно на половину просвета — так она
+   вырастает вдвое и всё ещё не залезает на соседнюю. */
+.dot::before {
+  content: '';
+  position: absolute;
+  inset: calc(var(--dot) * -0.27);
+  border-radius: 50%;
+}
+
+/* Заливка отдельным телом, а не фоном самой точки: расти она должна из центра,
+   а фон может только появиться целиком. Из нуля ничего не растёт — поэтому
+   непройденная уже стоит на месте, просто маленькая и прозрачная. */
+.dot-fill {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: var(--ink);
+  opacity: 0;
+  transform: scale(0.2);
+  transition:
+    transform 0.18s var(--ease-spring),
+    opacity 0.18s var(--ease-out),
+    background-color 0.18s var(--ease-out);
+}
+
+/* Три состояния — те же, что знаком стоят в списке частей и в выборе главы
+   на листе занятия: пройдена, начата, не тронута. */
+.dot.started {
+  border-color: var(--ink-3);
+}
+/* Ядро начатой заметно больше половины: на семипиксельной точке меньшее уже
+   не видно, а начатая — это ровно та часть, на которой человек сейчас сидит. */
+.dot.started .dot-fill {
+  opacity: 1;
+  transform: scale(0.56);
+  background: var(--ink-3);
+}
+.dot.done {
+  border-color: var(--ink);
+}
+.dot.done .dot-fill {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Наведение показывает, чем точка станет: непройденная набирает бледное ядро.
+   Под пальцем hover ложный, поэтому жест заперт за настоящим курсором. */
+@media (hover: hover) and (pointer: fine) {
+  .dot:hover {
+    border-color: var(--ink);
+    transform: scale(1.22);
+  }
+  .dot.fresh:hover .dot-fill {
+    opacity: 1;
+    transform: scale(0.3);
+    background: var(--line-2);
+  }
+}
+.dot:active {
+  transform: scale(0.86);
+}
+.dot:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
 }
 
 .part-list {
@@ -1476,19 +1617,38 @@
   color: var(--ink-3);
 }
 /* Начатая часть: конспект по ней есть, отметки нет. Знак тот же, что стоит
-   перед главой в листе занятия, — состояние одно, и читается одинаково. */
-.part-row.started .part-check::after {
+   перед главой в листе занятия, — состояние одно, и читается одинаково.
+
+   Место под знак занято всегда, даже когда знака нет: иначе начатая строка
+   шире соседних, и левый край имён в списке гуляет от строки к строке. */
+.part-check::after {
   content: '◐';
+  width: 12px;
   margin-left: 2px;
   color: var(--ink-3);
   font-size: 12px;
   line-height: 1;
+  opacity: 0;
+}
+.part-row.started .part-check::after {
+  opacity: 1;
+}
+/* Поле имени и перо — один предмет. Перо стоит внутри поля, а не отдельной
+   кнопкой рядом: нажимать его незачем, оно только говорит, что строку правят,
+   — а строка до сих пор была неотличима от текста, пока на неё не наведёшь, и
+   «Лекцию 12» принимали за имя, которое выдано навсегда. */
+.part-edit {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
 }
 .part-name {
   flex: 1 1 auto;
   min-width: 0;
   height: 30px;
-  padding: 0 8px;
+  padding: 0 26px 0 8px;
   border: 1px solid transparent;
   border-radius: var(--r-sm);
   background: transparent;
@@ -1501,6 +1661,36 @@
   outline: none;
   border-color: var(--ink);
   background: var(--paper);
+}
+/* Безымянная часть зовётся номером, и номер — это её имя, а не подсказка:
+   бледным он читался бы как пустая строка. */
+.part-name::placeholder {
+  color: var(--ink);
+  opacity: 1;
+}
+.part-row.done .part-name::placeholder {
+  color: var(--ink-3);
+}
+.part-pen {
+  position: absolute;
+  right: 8px;
+  color: var(--ink-3);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.18s var(--ease-out);
+}
+.part-row:hover .part-pen {
+  opacity: 1;
+}
+/* В поле уже стоит курсор — подсказывать больше нечего. */
+.part-name:focus ~ .part-pen {
+  opacity: 0;
+}
+/* Где курсора нет, наведения не бывает, и перо остаётся на виду. */
+@media (hover: none) {
+  .part-pen {
+    opacity: 1;
+  }
 }
 
 .cover-pick {

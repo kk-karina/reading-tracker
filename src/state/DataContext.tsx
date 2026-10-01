@@ -8,6 +8,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
+import { withStatus } from '../lib/reading'
 import { store, type NewBook, type NewNote, type NewSession } from '../lib/store'
 import { emptySnapshot, type Book, type Note, type Session, type Snapshot } from '../lib/types'
 import { useAuth } from './AuthContext'
@@ -95,6 +96,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const value = useMemo<DataValue>(
     () => ({
       ...snap,
+      // Статус книги не хранится, а считается из прочитанного — и считается
+      // здесь, один раз на весь экран. См. `withStatus`.
+      books: withStatus(snap.books, snap.sessions),
       loading,
       error,
       loaded,

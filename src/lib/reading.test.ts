@@ -292,3 +292,54 @@ describe('finishedInYear with an undated book', () => {
     expect(finishedInYear([undated], 2026)).toHaveLength(0)
   })
 })
+
+import { statusOf, withStatus } from './reading'
+
+describe('statusOf: статус книги выводится из прочитанного', () => {
+  test('книга без сессий ждёт на полке «хочу»', () => {
+    expect(statusOf(b({ status: 'want' }), [])).toBe('want')
+  })
+
+  test('первая сессия делает книгу читаемой', () => {
+    expect(statusOf(b({ id: 'b1', status: 'want' }), [s({ page_to: 20 })])).toBe('reading')
+  })
+
+  test('последняя страница закрывает книгу сама', () => {
+    expect(statusOf(b({ id: 'b1', status: 'reading', pages: 300 }), [s({ page_to: 300 })])).toBe(
+      'finished',
+    )
+  })
+
+  // Отметка нужна там, где считать нечем: без числа страниц подсчёт книгу не
+  // закроет никогда.
+  test('без числа страниц подсчёт книгу не закрывает', () => {
+    expect(statusOf(b({ id: 'b1', status: 'reading', pages: null }), [s({ page_to: 900 })])).toBe(
+      'reading',
+    )
+  })
+
+  test('отметка «прочитано» сильнее подсчёта', () => {
+    expect(statusOf(b({ status: 'finished', pages: 300 }), [])).toBe('finished')
+  })
+
+  // Старые снимки несут «читаю», выставленное руками. Пересчёт возвращает
+  // книгу на полку «хочу», если по ней так ничего и не записали.
+  test('выставленное руками «читаю» пересчитывается', () => {
+    expect(statusOf(b({ status: 'reading', started_at: null }), [])).toBe('want')
+  })
+
+  // Заброшенных больше нет: статус из данных не выводится, и старое значение
+  // просто пересчитывается в то, чем книга на самом деле является.
+  test('старое «заброшено» пересчитывается в «хочу»', () => {
+    const old = { ...b({}), status: 'abandoned' as unknown as Book['status'] }
+    expect(statusOf(old, [])).toBe('want')
+  })
+
+  test('withStatus считает каждой книге её собственные сессии', () => {
+    const one = b({ id: 'b1', status: 'want', pages: 300 })
+    const two = b({ id: 'b2', status: 'want', pages: 300 })
+    const got = withStatus([one, two], [s({ book_id: 'b1', page_to: 300 })])
+    expect(got.map((x) => x.status)).toEqual(['finished', 'want'])
+    expect(one.status).toBe('want')
+  })
+})

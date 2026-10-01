@@ -105,6 +105,42 @@ export function finishedInYear(books: Book[], year: number): Book[] {
 }
 
 /**
+ * Статус книги — из прочитанного.
+ *
+ * Переключатель «Хочу / Читаю / Прочитано» стоял под шапкой и спрашивал ровно
+ * то, на что страница уже отвечала полосой и числом страниц. Два ответа на
+ * один вопрос расходятся молча: книга дочитана до последней страницы, а на
+ * полке всё ещё «читаю», потому что сессию записать не забыли, а статус
+ * переключить забыли.
+ *
+ * Отметка «прочитано» всё же хранится и сильнее подсчёта: у книги может быть
+ * неизвестно число страниц, и закрыть её тогда нечем, кроме слова человека.
+ * Ставится она в листе сессии — там, где про это и спрашивают, — и приносит с
+ * собой дату, оценку и рецензию.
+ *
+ * «Заброшено» больше нет: это был единственный статус, который не выводится ни
+ * из чего, кроме настроения. Заброшенное просто перестают открывать, и оно
+ * само остывает обратно в «хочу».
+ */
+export function statusOf(book: Book, sessions: Session[]): BookStatus {
+  if (book.status === 'finished') return 'finished'
+  const { page } = progressOf(book.id, sessions, book.pages)
+  if (book.pages && book.pages > 0 && page >= book.pages) return 'finished'
+  return page > 0 || book.started_at ? 'reading' : 'want'
+}
+
+/**
+ * Полка, где у каждой книги статус уже посчитан.
+ *
+ * Считается один раз на весь экран: полка, фокус, «застрявшие» и стена года
+ * спрашивают `b.status`, и подменять его на месте в каждом из них значило бы
+ * завести ровно то расхождение, ради которого статус и перестали ставить
+ * руками.
+ */
+export const withStatus = (books: Book[], sessions: Session[]): Book[] =>
+  books.map((b) => ({ ...b, status: statusOf(b, sessions) }))
+
+/**
  * Status never travels alone: finishing a book dates it, starting one dates it,
  * and moving a book off the finished shelf takes its finish date with it.
  */

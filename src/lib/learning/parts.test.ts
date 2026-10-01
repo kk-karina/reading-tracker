@@ -1,5 +1,15 @@
 import { describe, expect, it } from 'vitest'
-import { hasParts, partLabel, partWord, partsOf, pickDefaultPart, planParts } from './parts'
+import {
+  hasParts,
+  parseTitles,
+  partLabel,
+  partState,
+  partWord,
+  partsOf,
+  pickDefaultPart,
+  planNames,
+  planParts,
+} from './parts'
 import type { MaterialPart, StudyNote } from './types'
 
 const part = (over: Partial<MaterialPart> = {}): MaterialPart => ({
@@ -190,5 +200,92 @@ describe('pickDefaultPart', () => {
     const two = part({ id: 'p2', sort: 1 })
 
     expect(pickDefaultPart([two, one], [])).toBe(one)
+  })
+})
+
+describe('parseTitles', () => {
+  it('строка — имя, края обрезаются', () => {
+    expect(parseTitles('\n Вступление \n  Поток  \n\n')).toEqual(['Вступление', 'Поток'])
+  })
+
+  it('пустая строка внутри списка — часть без имени', () => {
+    expect(parseTitles('Раз\n\nТри')).toEqual(['Раз', '', 'Три'])
+  })
+
+  it('снимает ведущую нумерацию в обеих записях', () => {
+    expect(parseTitles('1. Вступление\n2) Поток\n10.Третья')).toEqual([
+      'Вступление',
+      'Поток',
+      'Третья',
+    ])
+  })
+
+  it('не трогает число внутри имени и дату в начале', () => {
+    expect(parseTitles('Глава 3 про потоки\n2024 год')).toEqual([
+      'Глава 3 про потоки',
+      '2024 год',
+    ])
+  })
+
+  it('из пустого текста не делает ни одного имени', () => {
+    expect(parseTitles('\n  \n')).toEqual([])
+  })
+
+  it('пустое имя возвращает часть к номеру', () => {
+    const plan = planNames([part({ id: 'a', title: 'Своё', sort: 0 })], parseTitles('\n'))
+    expect(plan.rename).toEqual([])
+    expect(planNames([part({ id: 'a', title: 'Своё', sort: 0 })], ['']).rename).toEqual([
+      { id: 'a', title: '' },
+    ])
+  })
+})
+
+describe('planNames', () => {
+  const three = [
+    part({ id: 'a', title: '', sort: 0 }),
+    part({ id: 'b', title: '', sort: 1 }),
+    part({ id: 'c', title: 'Своё', sort: 2 }),
+  ]
+
+  it('кладёт имена по порядку и пропускает совпавшие', () => {
+    const plan = planNames(three, ['Раз', 'Два', 'Своё'])
+    expect(plan.rename).toEqual([
+      { id: 'a', title: 'Раз' },
+      { id: 'b', title: 'Два' },
+    ])
+    expect(plan.add).toEqual([])
+  })
+
+  it('имён больше — недостающие части заводятся в конец', () => {
+    const plan = planNames(three, ['Раз', 'Два', 'Три', 'Четыре', 'Пять'])
+    expect(plan.add).toEqual([
+      { title: 'Четыре', sort: 3 },
+      { title: 'Пять', sort: 4 },
+    ])
+  })
+
+  it('имён меньше — лишние части остаются как были', () => {
+    const plan = planNames(three, ['Раз'])
+    expect(plan.rename).toEqual([{ id: 'a', title: 'Раз' }])
+    expect(plan.add).toEqual([])
+  })
+
+  it('порядок берётся из sort, а не из порядка в массиве', () => {
+    const shuffled = [part({ id: 'b', title: '', sort: 1 }), part({ id: 'a', title: '', sort: 0 })]
+    expect(planNames(shuffled, ['Раз', 'Два']).rename).toEqual([
+      { id: 'a', title: 'Раз' },
+      { id: 'b', title: 'Два' },
+    ])
+  })
+})
+
+describe('partState', () => {
+  it('отмеченная пройдена, даже если по ней писали', () => {
+    expect(partState(part({ id: 'a', done: true }), new Set(['a']))).toBe('done')
+  })
+
+  it('написанная без отметки начата, остальные нетронуты', () => {
+    expect(partState(part({ id: 'a' }), new Set(['a']))).toBe('started')
+    expect(partState(part({ id: 'b' }), new Set(['a']))).toBe('fresh')
   })
 })

@@ -83,8 +83,20 @@ export function StudySheet({
   const [pickedId, setPickedId] = useState(() => material?.id ?? options[0]?.id ?? '')
   const subject = material ?? materials.find((m) => m.id === pickedId) ?? null
 
+  /** Имя части по её `id`. Пустое значит «зовётся номером» — см. `partLabel`. */
+  const titleOf = (id: string) => parts.find((p) => p.id === id)?.title ?? ''
+
   const [date, setDate] = useState(todayISO())
   const [partId, setPartId] = useState(() => draftFor(subject, parts, notes).partId)
+  /**
+   * Имя выбранной части, правимое прямо здесь.
+   *
+   * Лист занятия — тот самый момент, когда имя главы известно: её только что
+   * прочитали. Отправлять за этим на вкладку списка значит просить вспомнить
+   * название позже и не тем жестом, которым сейчас заняты. Пишется вместе со
+   * всем остальным, по «Сохранить»: до него лист — черновик целиком.
+   */
+  const [partTitle, setPartTitle] = useState(() => titleOf(draftFor(subject, parts, notes).partId))
   /**
    * Чем часть станет после сохранения, а не «поставить отметку».
    *
@@ -103,6 +115,7 @@ export function StudySheet({
     setPickedId(id)
     const next = draftFor(materials.find((m) => m.id === id) ?? null, parts, notes)
     setPartId(next.partId)
+    setPartTitle(titleOf(next.partId))
     setPage(next.page)
     setDone(true)
   }
@@ -133,6 +146,11 @@ export function StudySheet({
   const mark = (item: MaterialPart) =>
     item.done ? DONE_MARK : written.has(item.id) ? STARTED_MARK : FRESH_MARK
 
+  /** Имя в списке выбора. У правимой сейчас части — то, что набрано: иначе
+      поле говорит одно, а строка прямо над ним всё ещё зовёт её номером. */
+  const shown = (item: MaterialPart, i: number) =>
+    item.id === partId && partTitle.trim() ? partTitle.trim() : label(item, i)
+
   // Показывается до сохранения: число должно быть перед глазами в момент
   // решения, а не после него.
   const after =
@@ -156,7 +174,15 @@ export function StudySheet({
       sort: mine.length,
     })
 
-    if (part && part.done !== done) await updatePart(part.id, { done })
+    // Одна запись на часть, а не две: отметка и имя меняются здесь вместе, а
+    // два вызова подряд — это два круга перерисовки и две точки отказа.
+    if (part) {
+      const partPatch: Partial<MaterialPart> = {}
+      if (part.done !== done) partPatch.done = done
+      const named = partTitle.trim()
+      if (named !== part.title) partPatch.title = named
+      if (Object.keys(partPatch).length > 0) await updatePart(part.id, partPatch)
+    }
 
     const patch: Partial<Material> = {}
 
@@ -165,12 +191,12 @@ export function StudySheet({
       if (Number.isFinite(n) && n !== subject.page_current) patch.page_current = n
     }
 
-    // Статус пишется один раз и одним значением: у статьи галочка сама решает,
-    // закрыта она или нет, а у остальных занятие переводит материал из бэклога
-    // в работу — записать занятие значит сесть за него.
-    const status =
-      p.unit === 'flag' ? (done ? 'done' : 'active') : subject.status !== 'active' ? 'active' : null
-    if (status && status !== subject.status) patch.status = status
+    // Отметка нужна только там, где считать нечего: у статьи и ролика прогресса
+    // нет вовсе. Всё остальное статус выводит сам из отмеченных частей,
+    // страницы и написанного — см. `statusOf`, — и писать его сюда значило бы
+    // завести второй ответ на тот же вопрос.
+    const marked = subject.status === 'done'
+    if (p.unit === 'flag' && marked !== done) patch.status = done ? 'done' : 'backlog'
 
     if (Object.keys(patch).length > 0) await updateMaterial(subject.id, patch)
 
@@ -225,15 +251,16 @@ export function StudySheet({
                 value={partId}
                 onChange={(e) => {
                   setPartId(e.target.value)
-                  // Галочка про выбранную часть, а не про прошлую: со сменой
-                  // части она пересчитывается заново.
+                  // Галочка и имя — про выбранную часть, а не про прошлую: со
+                  // сменой части оба пересчитываются заново.
+                  setPartTitle(titleOf(e.target.value))
                   setDone(true)
                 }}
               >
                 {chapters.map((item, i) => (
                   <option key={item.id} value={item.id}>
                     {mark(item)}
-                    {label(item, i)}
+                    {shown(item, i)}
                   </option>
                 ))}
               </select>
@@ -251,6 +278,24 @@ export function StudySheet({
             </Field>
           )}
         </div>
+
+        {/* Имя главы правится здесь же, а не только в списке частей: читают
+            главу один раз, и называется она в тот же заход. Поле во всю
+            ширину, а не третьей колонкой в ряду выше, — там живут короткие
+            ответы (когда, какая), а это длинная строка. */}
+        {part && (
+          <Field
+            label={t(word === 'lecture' ? 'part.nameLecture' : 'part.nameChapter')}
+            hint={t('part.nameHint')}
+          >
+            <input
+              className="input"
+              value={partTitle}
+              placeholder={label(part, chapters.indexOf(part))}
+              onChange={(e) => setPartTitle(e.target.value)}
+            />
+          </Field>
+        )}
 
         {p.unit === 'part' && chapters.length === 0 && (
           <p className="small faint">{t('study.noParts')}</p>

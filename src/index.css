@@ -1556,18 +1556,36 @@ button.chip:active {
 
 /* ---------- book tabs ---------- */
 
+/* Вкладки — смена предмета разговора: выше шапка отвечает «что это и сколько
+   сделано», ниже начинается содержимое. Поэтому перед ними вдвое больше
+   воздуха, чем между группами внутри шапки (22px), и это единственное место на
+   странице с таким отступом — по нему иерархия и читается.
+
+   Раньше этот разрыв держала полоса контролов с двумя линейками; полоса ушла,
+   а разрыв остался нужен — и теперь он сделан воздухом, а не рамкой. */
 .tabs {
   display: flex;
   gap: 2px;
   flex-wrap: wrap;
   border-bottom: 1px solid var(--line-2);
-  margin: 0 0 24px;
+  margin: 44px 0 24px;
 }
 .tab {
   position: relative;
   padding: 11px 16px;
   color: var(--ink-3);
   transition: color 0.2s;
+}
+/* Первая вкладка начинается ровно там же, где всё остальное на странице:
+   название, подписи фактов, строки списков. Внутренний отступ у неё разводил
+   соседние вкладки друг от друга, а первую — уводил от левого края, и колонка
+   текста получала одну строку, выбитую из строя на шестнадцать пикселей.
+   Справа отступ остаётся: он разводит её со второй. */
+.tabs > .tab:first-child {
+  padding-left: 0;
+}
+.tabs > .tab:first-child .tab-line {
+  left: 0;
 }
 .tab:hover:not(:disabled) {
   color: var(--ink);
@@ -1726,6 +1744,12 @@ button.chip:active {
   position: relative;
   flex: none;
   aspect-ratio: 2 / 3;
+  /* Потолок общий, а ширина у каждого размера своя и задана числом. Иначе на
+     очень узком окне обложка книги шире колонки и страница едет вбок — то же
+     самое, что было у обложки материала. `max-width`, а не `width: min(...)`:
+     процент в `width` считался бы от родителя, ширина которого сама берётся от
+     обложки, и круг замкнулся бы в ноль. */
+  max-width: 100%;
   border-radius: 2px 5px 5px 2px;
   background: var(--cover-bg, #2b2b2e);
   color: var(--cover-ink, #f0efee);
@@ -1907,7 +1931,10 @@ button.chip:active {
   align-items: center;
   gap: 12px;
   max-width: 420px;
-  margin: 14px 0 0;
+  /* 20, а не 14: выше — название с автором, одна группа, у неё внутри 10.
+     Прогресс — вторая группа, и отличаться отступ должен заметно, иначе три
+     строки подряд читаются одним абзацем. */
+  margin: 20px 0 0;
 }
 .prog-row .meter {
   flex: 1 1 auto;
@@ -1933,6 +1960,137 @@ button.chip:active {
 }
 
 /* ---------- book page ---------- */
+
+.head-actions {
+  display: flex;
+  gap: 6px;
+  flex: none;
+}
+
+/* Тихая кнопка: обводка, а не заливка, — та же, что у плюса у полосы. Разница
+   только в форме подписи: у плюса она в `title`, здесь тоже, потому что
+   подписывать три значка словами значит вернуть ту самую полосу. */
+.icon-act {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line-2);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  /* Лимон под курсором — ровно то же, что делает плюс у полосы прогресса.
+     Жест один: тихий кружок с обводкой наливается цветом под рукой. */
+  .icon-act:hover {
+    border-color: var(--brand);
+    background: var(--brand);
+    color: var(--ink);
+  }
+  /* Уже включённый флажок и так лимонный — под курсором он темнеет, иначе
+     наведение на него единственное из трёх ничего не отвечает. */
+  .icon-act.on:hover {
+    border-color: var(--brand-2);
+    background: var(--brand-2);
+  }
+  /* Удаление краснеет только под курсором: красная кнопка на виду торопит, а
+     торопить здесь нечего — она стоит рядом с двумя безобидными. */
+  .icon-act.danger:hover {
+    border-color: var(--danger);
+    background: var(--danger);
+    color: var(--paper);
+  }
+}
+.icon-act:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+
+/* Подсказка у значка. Поведением — системный `title`, но своим шрифтом, своим
+   временем и внутри вёрстки: см. `Tip` в ui.tsx.
+
+   Задержка стоит только на появлении. Провёл курсором по ряду из трёх — ни
+   один пузырь не успел моргнуть; задержался на одном — он пришёл. На уход
+   задержки нет: убрала руку, и подсказки нет сразу. */
+.tip {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+.tip::after {
+  content: attr(data-tip);
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 50%;
+  z-index: 20;
+  padding: 5px 9px;
+  border-radius: var(--r-sm);
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  /* Из уменьшенного и чуть приподнятого — растёт от кнопки, под которой стоит,
+     а не возникает ниоткуда. */
+  transform: translate(-50%, -4px) scale(0.96);
+  transform-origin: top center;
+  transition:
+    opacity 0.14s var(--ease-out),
+    transform 0.14s var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .tip:hover::after {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+    transition-delay: 0.35s;
+  }
+}
+/* С клавиатуры — сразу: туда пришли намеренно, ждать нечего. */
+.tip:has(:focus-visible)::after {
+  opacity: 1;
+  transform: translate(-50%, 0) scale(1);
+}
+
+/* Кнопка в конце ряда — особый случай: подсказка под ней по центру вылезает
+   за правый край колонки, и не только визуально. Невидимый пузырь всё равно
+   занимает место, и страница начинает ездить вбок — на телефоне это заметно
+   сразу. Поэтому у концевых кнопок подсказка равняется по правому краю своей
+   кнопки и растёт влево, внутрь полосы, где место есть: влево ничего не
+   вылезает, туда страница не прокручивается.
+
+   Два места, и оба — конец ряда: значки действий у названия и плюс у полосы
+   прогресса. */
+.head-actions .tip::after,
+.prog-row .tip::after {
+  left: auto;
+  right: 0;
+  transform: translateY(-4px) scale(0.96);
+  transform-origin: top right;
+}
+.head-actions .tip:hover::after,
+.head-actions .tip:has(:focus-visible)::after,
+.prog-row .tip:hover::after,
+.prog-row .tip:has(:focus-visible)::after {
+  transform: translateY(0) scale(1);
+}
+
+/* Включённый фокус — заливка, а не обводка: это состояние книги, а не наведение
+   на кнопку, и читаться оно должно без курсора. */
+.icon-act.on {
+  border-color: var(--brand-2);
+  background: var(--brand);
+  color: var(--ink);
+}
+
 
 .book-head {
   display: flex;
@@ -2066,6 +2224,7 @@ button.chip:active {
 .book-cover-tilt {
   transform: rotate(-1.5deg);
   transform-origin: bottom left;
+  max-width: 100%;
 }
 /* Обложка материала стоит справа от текста: кадр у неё лежачий, и это первое,
    чем страница материала отличается от страницы книги. Наклон зеркальный —
@@ -2074,6 +2233,10 @@ button.chip:active {
   transform: rotate(1.5deg);
   transform-origin: bottom right;
   margin-left: auto;
+  /* Своей ширины у обёртки нет, и ужиматься вместе с обложкой ей нечем. На
+     узком экране она остаётся шириной в несжатую обложку и тянет страницу
+     вбок, хотя сама обложка уже влезла. */
+  max-width: 100%;
 }
 
 /* ---------- dashboard ---------- */
@@ -2152,7 +2315,10 @@ button.chip:active {
    thoughts sorts itself by colour before a word of it is read. */
 .thought-cards {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(290px, 1fr));
+  /* `min(290px, 100%)`, а не голые 290: в колонке уже 290 пикселей `minmax`
+     держит минимум и выносит карточки за край, а колонка такой бывает — узкое
+     окно, боковое окно рядом с другим. Минимум уступает ширине колонки. */
+  grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
   gap: 20px;
 }
 .thought-card {
@@ -2421,7 +2587,17 @@ button.chip:active {
 
 /* ---------- book page: breadcrumb, facts, control rows ---------- */
 
+/* Слева — откуда пришли, справа — что можно сделать со страницей целиком.
+   Высота у строки своя и от длины заголовка не зависит, поэтому действия в ней
+   никуда не переезжают. Переносится она только в совсем узком окне, и тогда
+   значки встают под крошкой — обе половины остаются наверху страницы, и ни
+   одна не вклинивается в текст. */
 .crumbs {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
   margin-bottom: 22px;
 }
 
@@ -2480,27 +2656,6 @@ button.chip:active {
 }
 
 /* What the book is, and what you can do to it, are different questions. */
-.control-rows {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  margin: 34px 0 30px;
-  padding: 22px 0;
-  border-top: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-}
-
-.control-row {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  flex-wrap: wrap;
-}
-
-.control-row > .label {
-  min-width: 90px;
-}
-
 /* ---------- session sheet ---------- */
 
 .faces {

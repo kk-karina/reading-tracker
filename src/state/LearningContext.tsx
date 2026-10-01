@@ -18,6 +18,7 @@ import {
 import { carried, carryOver, markCarried, worthCarrying } from '../lib/learning/store/carry'
 import { localLearning } from '../lib/learning/store/local'
 import * as rules from '../lib/learning/store/rules'
+import { withStatus } from '../lib/learning/status'
 import {
   emptyLearning,
   type LearningSnapshot,
@@ -199,6 +200,9 @@ export function LearningProvider({ children }: { children: ReactNode }) {
   const value = useMemo<LearningValue>(
     () => ({
       ...snap,
+      // Статус материала не хранится, а считается из сделанного — и считается
+      // здесь, один раз на весь экран. См. `withStatus`.
+      materials: withStatus(snap.materials, snap.parts, snap.notes),
       loading,
       error,
       pending,
