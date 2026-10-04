@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { useT } from '../../state/LocaleContext'
 import { Icon } from '../Icon'
+import { Tip } from '../ui'
 
 /**
  * Строка журнала: одна сессия или одно занятие.
@@ -20,8 +21,8 @@ import { Icon } from '../Icon'
  * Когда строки сгруппированы по книге, маячка нет — его место наверху
  * занимает подробность шага.
  *
- * Написанное за сессией в строке не показывается — только значок пера с
- * числом. Нажатие раскрывает его под строкой: мысли живут в своей вкладке,
+ * Написанное за сессией в строке не показывается — только записка в кружке.
+ * Нажатие раскрывает его под строкой: мысли живут в своей вкладке,
  * а здесь их видно, только когда о них спросили.
  */
 export function LogRow({
@@ -113,18 +114,22 @@ export function LogRow({
         </div>
 
         <span className="log-side">
+          {/* Записка в лимонном кружке — круг тот же, что у действий в шапке
+              книги (`.icon-act`), но залитый: тихая обводка не звала нажать,
+              а за ней лежит написанное. Раскрытое — тёмным. Сколько написано —
+              в подсказке. */}
           {written > 0 && (
-            <button
-              type="button"
-              className="log-pen"
-              aria-expanded={open}
-              aria-label={t(open ? 'log.notesClose' : 'log.notesOpen', { n: written })}
-              title={t(open ? 'log.notesClose' : 'log.notesOpen', { n: written })}
-              onClick={onToggle}
-            >
-              <Icon name="pen" size={13} />
-              {written}
-            </button>
+            <Tip text={t(open ? 'log.notesClose' : 'log.notesOpen', { n: written })}>
+              <button
+                type="button"
+                className={`icon-act log-notes${open ? ' open' : ''}`}
+                aria-expanded={open}
+                aria-label={t(open ? 'log.notesClose' : 'log.notesOpen', { n: written })}
+                onClick={onToggle}
+              >
+                <Icon name="note" size={15} />
+              </button>
+            </Tip>
           )}
         </span>
         {mood && <span className="log-mood">{mood}</span>}

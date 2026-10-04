@@ -1820,38 +1820,39 @@ a.log-title:hover {
   color: var(--line-2);
 }
 .log-side {
+  /* По середине строки — на одной линии с лицом оценки справа. */
+  align-self: center;
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
   gap: 14px;
-  padding-top: 2px;
 }
-.log-pen {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  height: 26px;
-  padding: 0 8px;
-  border: 1px solid var(--line-2);
-  border-radius: 6px;
-  background: var(--paper);
-  font-family: var(--mono);
-  font-size: 12px;
-  color: var(--ink-2);
-  cursor: pointer;
-  transition:
-    border-color 0.2s,
-    color 0.2s,
-    background 0.2s;
-}
-.log-pen:hover {
-  border-color: var(--ink);
+/* Записка в журнале: лимонный кружок, а не тихий — за ним лежит написанное,
+   и он должен звать. Раскрытое — чернилами с лимонной запиской, чтобы строка
+   с открытым отличалась от соседних с первого взгляда. */
+.icon-act.log-notes {
+  width: 32px;
+  height: 32px;
+  border-color: var(--brand);
+  background: var(--brand);
   color: var(--ink);
 }
-.log-pen[aria-expanded='true'] {
-  background: var(--ink);
+.icon-act.log-notes.open {
   border-color: var(--ink);
-  color: var(--paper);
+  background: var(--ink);
+  color: var(--brand);
+}
+@media (hover: hover) and (pointer: fine) {
+  .icon-act.log-notes:hover {
+    border-color: var(--brand-2);
+    background: var(--brand-2);
+    color: var(--ink);
+  }
+  .icon-act.log-notes.open:hover {
+    border-color: var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+  }
 }
 .log-edit {
   opacity: 0;
