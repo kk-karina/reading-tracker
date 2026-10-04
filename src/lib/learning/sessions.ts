@@ -132,12 +132,12 @@ export function lastTouched(
 /**
  * Что прямая правка прогресса делает с журналом.
  *
- * Прогресс правят и мимо листа занятия: точкой главы на странице материала,
- * номером страницы там же. Пока такие правки меняли один материал, у них не
+ * Прогресс правят и мимо листа занятия: точкой главы на странице материала. Пока такие правки меняли один материал, у них не
  * было даты: глава отмечена, а в ритме, стрике и вкладке «Занятия» — пусто,
  * и дашборд потока молчал о том, что за материал садились. Теперь прямая
  * правка — тоже занятие: сегодняшнее по этому материалу, а если его нет —
- * новое. У прогресса один источник времени.
+ * новое. У прогресса один источник времени. Страницу прямо на странице
+ * материала больше не ставят — только листом занятия.
  */
 export type SessionOp =
   | { kind: 'add'; session: Omit<StudySession, 'id' | 'created_at'> }
@@ -194,33 +194,4 @@ export function markPart(
   const left = { ...host, part_ids: host.part_ids.filter((id) => id !== partId) }
   if (hollow(left, notes)) return { kind: 'delete', id: host.id }
   return { kind: 'update', id: host.id, patch: { part_ids: left.part_ids } }
-}
-
-/**
- * Номер страницы поставили на странице материала.
- *
- * Назад — это поправка, а не прогресс: занятия она не открывает. Сегодняшнее
- * занятие, поправленное к своему же началу, удаляется: шага в нём не осталось.
- */
-export function setPage(
-  sessions: StudySession[],
-  notes: Pick<StudyNote, 'session_id'>[],
-  material: Material,
-  page: number,
-  today: string,
-): SessionOp | null {
-  const same = todayOf(sessions, material.id, today)
-  if (same && same.page_from !== null) {
-    if (page === same.page_to) return null
-    const next = { ...same, page_to: page, page_from: Math.min(same.page_from, page) }
-    if (hollow(next, notes)) return { kind: 'delete', id: same.id }
-    const patch: Partial<StudySession> = { page_to: page }
-    if (next.page_from !== same.page_from) patch.page_from = next.page_from
-    return { kind: 'update', id: same.id, patch }
-  }
-
-  const from = material.page_current ?? 0
-  if (page <= from) return null
-  if (same) return { kind: 'update', id: same.id, patch: { page_from: from, page_to: page } }
-  return { kind: 'add', session: { ...blankSession(material.id, today), page_from: from, page_to: page } }
 }

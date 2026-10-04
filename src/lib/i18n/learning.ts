@@ -185,7 +185,6 @@ export const LEARNING = {
   'material.pagesTotal': { ru: 'Сколько страниц', en: 'How many pages' },
   'material.chaptersTotal': { ru: 'Сколько глав', en: 'How many chapters' },
   'material.lecturesTotal': { ru: 'Сколько лекций', en: 'How many lectures' },
-  'material.page': { ru: 'На какой странице', en: 'Current page' },
 
   'count.chapters': {
     ru: { one: '{n} глава', few: '{n} главы', many: '{n} глав' },

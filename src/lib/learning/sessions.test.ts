@@ -7,7 +7,6 @@ import {
   lastTouched,
   markPart,
   rollbackSession,
-  setPage,
 } from './sessions'
 import type { Material, StudyNote, StudySession } from './types'
 
@@ -236,39 +235,5 @@ describe('markPart — точка, отмеченная на странице м
 
   it('does nothing when a part marked before sessions existed is unmarked', () => {
     expect(markPart([], [], m, 'p3', false, today)).toBeNull()
-  })
-})
-
-describe('setPage — страница, поставленная на странице материала', () => {
-  const today = '2026-10-04'
-
-  it('opens a session from where the book stood to the new page', () => {
-    const op = setPage([], [], material({ page_current: 120 }), 160, today)
-    expect(op).toMatchObject({ kind: 'add', session: { page_from: 120, page_to: 160, date: today } })
-  })
-
-  it('moves the end of today’s session instead of opening a second one', () => {
-    const s = session({ id: 'x', date: today, page_from: 120, page_to: 160 })
-    expect(setPage([s], [], material({ page_current: 160 }), 175, today)).toEqual({
-      kind: 'update',
-      id: 'x',
-      patch: { page_to: 175 },
-    })
-  })
-
-  it('treats going back as a correction, not as progress', () => {
-    expect(setPage([], [], material({ page_current: 120 }), 100, today)).toBeNull()
-  })
-
-  it('removes today’s session corrected back to where it began', () => {
-    const s = session({ id: 'x', date: today, page_from: 120, page_to: 160 })
-    expect(setPage([s], [], material({ page_current: 160 }), 120, today)).toEqual({
-      kind: 'delete',
-      id: 'x',
-    })
-  })
-
-  it('does nothing when the page did not move', () => {
-    expect(setPage([], [], material({ page_current: 120 }), 120, today)).toBeNull()
   })
 })

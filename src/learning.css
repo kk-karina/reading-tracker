@@ -1347,18 +1347,6 @@
 
 
 
-/* Номер страницы стоит у самой полосы, а не отдельным рядом контролов под
-   шапкой: он и есть эта полоса, выраженная числом. Высота — как у плюса
-   рядом, иначе ряд получает две разные высоты на три предмета. */
-.mat-page-input {
-  flex: none;
-  width: 74px;
-  height: 28px;
-  padding: 0 8px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
 .toggle {
   display: inline-flex;
   align-items: center;

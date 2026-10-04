@@ -144,13 +144,6 @@ export function Material() {
     navigate(`/learning/${stream.slug}/materials?view=backlog`)
   }
 
-  const setPage = (value: string) => {
-    const n = Number(value.replace(/\D/g, ''))
-    const capped = material.pages_total ? Math.min(n, material.pages_total) : n
-    // Вместе со следом в журнале: страница, поставленная здесь, — тоже
-    // занятие за сегодня, иначе дашборд не узнал бы, что за книгу садились.
-    void direct.setPage(material, capped > 0 ? capped : null)
-  }
 
   const dash = <span className="faint">{t('book.unknown')}</span>
 
@@ -244,22 +237,8 @@ export function Material() {
                 <span style={{ width: `${barWidth(p.percent) ?? 0}%` }} />
               </div>
             )}
-            {/* Номер страницы стоит у самой полосы, а не отдельной строкой
-                контролов под шапкой: он и есть эта полоса, выраженная числом,
-                и меняется он чаще всего на странице. */}
-            {material.kind === 'book' && material.scale === 'pages' && (
-              <input
-                className="input mat-page-input"
-                inputMode="numeric"
-                aria-label={t('material.page')}
-                title={t('material.page')}
-                defaultValue={material.page_current ?? ''}
-                onBlur={(e) => setPage(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') e.currentTarget.blur()
-                }}
-              />
-            )}
+            {/* Страницу ставят плюсом — листом занятия, а не полем у полосы:
+                сколько прочитано, и так стоит ниже, в «Пройдено». */}
             <Tip text={t('study.log')}>
               <Jelly
                 className="log-dot"
