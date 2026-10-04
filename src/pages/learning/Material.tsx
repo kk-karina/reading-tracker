@@ -23,7 +23,7 @@ import { focusOf } from '../../lib/learning/buckets'
 import { sourceOf } from '../../lib/compose/linkMeta'
 import { barWidth, materialProgress, remainingOf } from '../../lib/learning/metrics'
 import { lastTouched } from '../../lib/learning/sessions'
-import { face } from '../../lib/rating'
+import { Mood } from '../../components/Mood'
 import { isBlankNote, noteHeading } from '../../lib/learning/notes'
 import { timeOf } from '../../lib/log'
 import { hasParts, partLabel, partWord, partsOf } from '../../lib/learning/parts'
@@ -452,11 +452,11 @@ export function Material() {
                     unit={l.unit}
                     detail={l.detail}
                     meter={l.meter}
+                    mood={x.rating && <Mood rating={x.rating} />}
                     when={[
                       fmtDate(x.date, locale),
                       timeOf(x.date, x.created_at),
                       x.minutes && l.unit ? fmtMinutes(x.minutes, locale) : null,
-                      face(x.rating),
                     ]}
                     written={written.length}
                     open={openSession === x.id}

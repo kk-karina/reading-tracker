@@ -30,6 +30,7 @@ export function LogRow({
   detail,
   subject,
   meter,
+  mood,
   when,
   written,
   open,
@@ -46,7 +47,14 @@ export function LogRow({
   subject?: { cover: ReactNode; title: string; to?: string }
   /** Насколько шаг сдвинул книгу: `PagesStrip` или `PartsStrip`. */
   meter?: ReactNode
-  /** Время, минуты, как прошло — по частям, пустые выпадут. */
+  /**
+   * Как прошло — лицом оценки у правого края строки. Выглядывает из-за края
+   * наискосок и по наведению на строку выезжает и выпрямляется — тот же жест,
+   * что у обложки в карточке бэклога (`.mat-card-cover`). Не рядом с шагом:
+   * там лицо вставало в ряд с обложкой книги и спорило с ней.
+   */
+  mood?: ReactNode
+  /** Время и минуты — по частям, пустые выпадут. */
   when?: ReactNode[]
   written: number
   open: boolean
@@ -87,15 +95,21 @@ export function LogRow({
           )}
           {top && <div className="log-top">{top}</div>}
           {meter && <div className="log-meter">{meter}</div>}
-          {sub.length > 0 && (
-            <div className="log-sub">
-              {sub.map((p, i) => (
-                <span key={i} className="log-sub-part">
-                  {p}
-                </span>
-              ))}
-            </div>
-          )}
+          {/* «Изменить» — последней частью мелкой строки, рядом с самой
+              записью, а не у правого края: там стоит лицо оценки, и
+              действие рядом с ним читалось как действие над ним. */}
+          <div className="log-sub">
+            {sub.map((p, i) => (
+              <span key={i} className="log-sub-part">
+                {p}
+              </span>
+            ))}
+            <span className="log-sub-part log-edit">
+              <button type="button" className="link-btn" onClick={onEdit}>
+                {t('book.edit')}
+              </button>
+            </span>
+          </div>
         </div>
 
         <span className="log-side">
@@ -112,10 +126,8 @@ export function LogRow({
               {written}
             </button>
           )}
-          <button type="button" className="link-btn log-edit" onClick={onEdit}>
-            {t('book.edit')}
-          </button>
         </span>
+        {mood && <span className="log-mood">{mood}</span>}
       </div>
 
       <AnimatePresence initial={false}>

@@ -1,4 +1,10 @@
-// Five faces for "how did it go". Index = rating - 1. Labels live in the dictionary.
-export const FACES = ['😖', '😕', '😐', '🙂', '😄'] as const
+/**
+ * Пять лиц для «как прошло». Индекс — оценка минус один. Имена — про то, что
+ * на лице, а не номер: картинки лежат в `src/assets/moods/` под этими именами
+ * (см. `docs/illustrations/README.md`), подписи — в словаре, `face.1`…`face.5`.
+ */
+export const MOODS = ['awful', 'unsure', 'flat', 'glad', 'great'] as const
+export type MoodId = (typeof MOODS)[number]
 
-export const face = (r: number | null | undefined) => (r && r >= 1 && r <= 5 ? FACES[r - 1] : null)
+export const moodOf = (r: number | null | undefined): MoodId | null =>
+  r && r >= 1 && r <= 5 ? MOODS[r - 1] : null

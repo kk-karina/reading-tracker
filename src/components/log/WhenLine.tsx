@@ -1,8 +1,8 @@
 import { useRef } from 'react'
 import { fmtDate } from '../../lib/format'
-import { FACES } from '../../lib/rating'
 import { useLocale } from '../../state/LocaleContext'
 import { Icon } from '../Icon'
+import { MoodPicker } from '../Mood'
 
 /**
  * Тихая строка: когда, сколько и как прошло.
@@ -74,25 +74,13 @@ export function WhenLine({
       )}
 
       {onRating && (
-        <div className="faces when-faces" role="group" aria-label={t('session.how')}>
-          {FACES.map((f, i) => {
-            const n = i + 1
-            const name = t(`face.${n as 1 | 2 | 3 | 4 | 5}`)
-            return (
-              <button
-                key={f}
-                type="button"
-                className={`face-btn sm${rating === n ? ' on' : ''}`}
-                aria-pressed={rating === n}
-                aria-label={name}
-                title={name}
-                onClick={() => onRating(rating === n ? null : n)}
-              >
-                {f}
-              </button>
-            )
-          })}
-        </div>
+        <MoodPicker
+          className="when-faces"
+          size="sm"
+          value={rating ?? null}
+          onChange={onRating}
+          label={t('session.how')}
+        />
       )}
     </div>
   )

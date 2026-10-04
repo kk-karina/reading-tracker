@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { fmtDate } from '../lib/format'
-import { FACES } from '../lib/rating'
 import type { Book } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
+import { MoodPicker } from './Mood'
 import { Jelly } from './ui'
 
 /**
@@ -38,20 +38,7 @@ export function Review({ book }: { book: Book }) {
 
       <div className="field">
         <span className="label">{t('review.how')}</span>
-        <div className="faces">
-          {FACES.map((f, i) => (
-            <button
-              key={f}
-              type="button"
-              className={`face-btn${rating === i + 1 ? ' on' : ''}`}
-              aria-label={t(`face.${(i + 1) as 1 | 2 | 3 | 4 | 5}`)}
-              title={t(`face.${(i + 1) as 1 | 2 | 3 | 4 | 5}`)}
-              onClick={() => setRating(rating === i + 1 ? null : i + 1)}
-            >
-              {f}
-            </button>
-          ))}
-        </div>
+        <MoodPicker value={rating} onChange={setRating} label={t('review.how')} />
       </div>
 
       <label className="field">

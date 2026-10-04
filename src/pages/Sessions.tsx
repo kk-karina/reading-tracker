@@ -9,7 +9,7 @@ import { ThoughtCard } from '../components/ThoughtCard'
 import { Empty, Jelly, Segmented } from '../components/ui'
 import { fmtDate, fmtMinutes } from '../lib/format'
 import { groupItems, timeOf } from '../lib/log'
-import { face } from '../lib/rating'
+import { Mood } from '../components/Mood'
 import type { Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
@@ -173,11 +173,11 @@ export function Sessions() {
                         <PagesStrip from={s.page_from} to={s.page_to} total={b.pages} />
                       ) : undefined
                     }
+                    mood={s.rating && <Mood rating={s.rating} />}
                     when={[
                       by === 'book' && fmtDate(s.date, locale),
                       time,
                       s.minutes && fmtMinutes(s.minutes, locale),
-                      face(s.rating),
                     ]}
                     written={thoughts.length}
                     open={open.has(s.id)}

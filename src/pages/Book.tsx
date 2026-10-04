@@ -14,7 +14,7 @@ import { ThoughtSheet } from '../components/ThoughtSheet'
 import { Empty, inkSlide, Jelly, Tip } from '../components/ui'
 import { sourceOf } from '../lib/compose/linkMeta'
 import { fmtDate, fmtMinutes } from '../lib/format'
-import { face } from '../lib/rating'
+import { Mood } from '../components/Mood'
 import {
   lastSessionDate,
   paceMinutesPerPage,
@@ -371,11 +371,11 @@ export function Book() {
                           {s.page_from} → {s.page_to}
                         </span>
                       }
+                      mood={s.rating && <Mood rating={s.rating} />}
                       when={[
                         fmtDate(s.date, locale),
                         timeOf(s.date, s.created_at),
                         s.minutes && fmtMinutes(s.minutes, locale),
-                        face(s.rating),
                       ]}
                       meter={
                         book.pages ? (

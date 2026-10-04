@@ -1576,11 +1576,6 @@ button.chip:active {
   filter: grayscale(1);
   opacity: 0.55;
 }
-.face-sm {
-  font-size: 13px;
-  margin: 0 6px;
-  vertical-align: -1px;
-}
 .day {
   margin-bottom: 28px;
 }
@@ -1631,7 +1626,7 @@ button.chip:active {
   display: grid;
   /* Правый край — постоянной ширины: с пером и без строки иначе разной
      ширины, и полосы прогресса разъезжались бы от строки к строке. */
-  grid-template-columns: 128px minmax(0, 1fr) 136px;
+  grid-template-columns: 128px minmax(0, 1fr) 136px 36px;
   align-items: start;
   column-gap: 20px;
   padding: 14px 0 15px;
@@ -1654,6 +1649,9 @@ button.chip:active {
 .log-num .icon {
   vertical-align: -3px;
 }
+/* Число с наклейкой отступает от единицы: наклейка садится на угол числа над
+   этим просветом и не закрывает ни цифр, ни «стр.». */
+
 .log-unit {
   font-size: 13px;
   color: var(--ink-3);
@@ -1859,6 +1857,30 @@ a.log-title:hover {
   opacity: 0;
   transition: opacity 0.2s;
 }
+/* Лицо оценки у правого края — наискосок, как обложка в карточке бэклога
+   (`.mat-card-cover`), только наоборот: та по наведению ложится набок, это
+   выпрямляется и подрастает — строку, на которую смотришь, лицо встречает. */
+.log-mood {
+  align-self: center;
+}
+.log-mood .mood-face {
+  transform: rotate(12deg);
+  transition: transform 0.3s var(--ease-spring);
+}
+.log-row:hover .log-mood .mood-face,
+.log-row:focus-within .log-mood .mood-face {
+  transform: rotate(0deg) scale(1.22);
+}
+@media (hover: none) {
+  .log-mood .mood-face {
+    transform: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .log-mood .mood-face {
+    transition: none;
+  }
+}
 .log-row:hover .log-edit,
 .log-row:focus-within .log-edit {
   opacity: 1;
@@ -1903,11 +1925,37 @@ a.log-title:hover {
     column-gap: 12px;
     row-gap: 8px;
   }
+
   .log-num {
     font-size: 20px;
   }
+  /* Узкая строка: лицо стоит ровно, в колонке шага у нижнего края — шаг
+     сверху, лицо на уровне полосы прогресса. Своего ряда не заводит. */
+  .log-mood {
+    grid-column: 1;
+    grid-row: 1;
+    align-self: end;
+  }
+  .log-mood .mood-face,
+  .log-row:hover .log-mood .mood-face,
+  .log-row:focus-within .log-mood .mood-face {
+    width: 28px;
+    height: 28px;
+    transform: none;
+  }
+  /* Места заданы явно: лицо оценки делит клетку с шагом, и без этого
+     автораскладка выталкивала бы шаг и контекст в чужие клетки. */
+  .log-step {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .log-ctx {
+    grid-column: 2;
+    grid-row: 1;
+  }
   .log-side {
     grid-column: 2;
+    grid-row: 2;
   }
   .log-things-inner {
     padding-left: 0;
@@ -3674,30 +3722,76 @@ a.group-subject:hover .group-subject-title {
   gap: 8px;
 }
 
+/* Кнопка оценки — само лицо, без рамки (см. `MoodPicker`). Невыбранные
+   приглушены так же, как всё приглушённое в приложении (`.rate.dim`): пять
+   лимонных кругов подряд кричали бы. Выбранное загорается цветом и получает
+   кольцо через просвет — тот же знак «выбрано», что у чернильной рамки. */
 .face-btn {
-  width: 42px;
-  height: 38px;
-  border: 1px solid var(--line-2);
-  border-radius: var(--r-sm);
-  background: var(--paper);
-  font-size: 19px;
-  line-height: 1;
+  flex: none;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
   cursor: pointer;
-  transition: border-color 0.2s, background 0.2s, transform 0.15s var(--ease-out);
+  transition:
+    transform 0.15s var(--ease-out),
+    box-shadow 0.2s var(--ease-out);
 }
-
-.face-btn:hover {
-  border-color: var(--ink);
-  transform: translateY(-2px);
+.face-btn img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  filter: grayscale(1);
+  /* Светлее, чем у прочего приглушённого: лицо мелкое, и при 0.55 штрих
+     тонет — его надо разглядеть, прежде чем выбрать. */
+  opacity: 0.7;
+  transition:
+    filter 0.2s var(--ease-out),
+    opacity 0.2s var(--ease-out);
 }
-
 .face-btn.on {
-  background: var(--brand);
-  border-color: var(--ink);
+  box-shadow:
+    0 0 0 2px var(--paper),
+    0 0 0 3.5px var(--ink);
+}
+.face-btn.on img {
+  filter: none;
+  opacity: 1;
+}
+/* Наведение приподнимает лицо и проявляет цвет наполовину — чем оно станет. */
+@media (hover: hover) and (pointer: fine) {
+  .face-btn:hover {
+    transform: translateY(-2px);
+  }
+  .face-btn:not(.on):hover img {
+    filter: grayscale(0.35);
+    opacity: 0.9;
+  }
+}
+.face-btn:active {
+  transform: scale(0.94);
+}
+.face-btn:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 4px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .face-btn,
+  .face-btn:hover,
+  .face-btn:active {
+    transform: none;
+  }
 }
 
-.face-sm {
-  margin-right: 6px;
+/* Лицо оценки в журнале — круглое, как в ряду выбора. */
+.mood-face {
+  display: block;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
 }
 
 /* ---------- the shelf as a turntable ---------- */
@@ -4381,13 +4475,13 @@ a.group-subject:hover .group-subject-title {
   border-bottom-color: var(--ink);
 }
 .when-faces {
-  gap: 4px;
+  /* Просвет шире кольца выбранного: иначе кольцо ложится на соседа. */
+  gap: 8px;
   margin-left: auto;
 }
 .face-btn.sm {
-  width: 32px;
-  height: 30px;
-  font-size: 16px;
+  width: 40px;
+  height: 40px;
 }
 
 /* Стопка написанного. Карточка — та же бумага, что в ленте; внутри поля

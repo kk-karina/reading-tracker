@@ -11,7 +11,7 @@ import { sourceOrder } from '../../lib/learning/buckets'
 import { isBlankNote, notesOfStream } from '../../lib/learning/notes'
 import type { StudySession } from '../../lib/learning/types'
 import { groupItems, timeOf } from '../../lib/log'
-import { face } from '../../lib/rating'
+import { Mood } from '../../components/Mood'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 import { useStream } from './StreamLayout'
@@ -161,12 +161,12 @@ export function StudySessions() {
                         : undefined
                     }
                     meter={l.meter}
+                    mood={s.rating && <Mood rating={s.rating} />}
                     when={[
                       by === 'material' && fmtDate(s.date, locale),
                       timeOf(s.date, s.created_at),
                       // Минуты уже стоят шагом, когда другого шага нет.
                       s.minutes && (l.unit ? fmtMinutes(s.minutes, locale) : null),
-                      face(s.rating),
                     ]}
                     written={written.length}
                     open={open.has(s.id)}
