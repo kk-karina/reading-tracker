@@ -157,6 +157,29 @@ export function statusPatch(
   }
 }
 
+/**
+ * Какие дни книги ставит сессия.
+ *
+ * Статус книги сессия не переключает — он считается из прочитанного (см.
+ * `statusOf`). Но даты подсчётом не получить: «начата» и «дочитана» — это
+ * дни, а не страницы, и записать их может только та запись, которая через
+ * эти пороги книгу и перевела. Неважно, записана она на полке или пришла
+ * парой из потока.
+ */
+export function sessionDates(
+  book: Pick<Book, 'pages' | 'started_at' | 'finished_at'>,
+  date: string,
+  pageTo: number,
+): Partial<Book> {
+  const dates: Partial<Book> = {}
+  if (!book.started_at) dates.started_at = date
+  if (book.pages && pageTo >= book.pages && !book.finished_at) {
+    dates.status = 'finished'
+    dates.finished_at = date
+  }
+  return dates
+}
+
 /* ---------- time ---------- */
 
 /**

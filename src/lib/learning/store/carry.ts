@@ -67,10 +67,18 @@ export async function carryOver(sb: SupabaseClient, snap: LearningSnapshot): Pro
       sb.from('streams').insert(snap.streams.map((s) => ({ ...s, focus_material_id: null }))),
     )
   }
-  if (snap.materials.length) await ok(() => sb.from('materials').insert(snap.materials))
+  // Связь с полкой не переезжает: книги браузера в облако не едут, и ключ
+  // указывал бы в никуда. Связать заново — одна кнопка на странице материала.
+  if (snap.materials.length) {
+    await ok(() => sb.from('materials').insert(snap.materials.map(({ book_id: _gone, ...m }) => m)))
+  }
   if (snap.parts.length) await ok(() => sb.from('material_parts').insert(snap.parts))
   // Занятия раньше конспектов: конспект ссылается на занятие.
-  if (snap.sessions.length) await ok(() => sb.from('study_sessions').insert(snap.sessions))
+  if (snap.sessions.length) {
+    await ok(() =>
+      sb.from('study_sessions').insert(snap.sessions.map(({ book_session_id: _gone, ...x }) => x)),
+    )
+  }
   if (snap.notes.length) await ok(() => sb.from('study_notes').insert(snap.notes))
 
   for (const s of focused) {

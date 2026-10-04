@@ -111,6 +111,7 @@ function migrateV2(old: SnapshotV2): LearningSnapshot {
       scale,
       pages_total: null,
       page_current: null,
+      book_id: null,
       cover_url: rest.cover_url ?? null,
     }
     materials.push(material)
@@ -154,10 +155,12 @@ const backlogStatus = (status: string): MaterialStatus =>
  */
 const fill = (snap: LearningSnapshot): LearningSnapshot => ({
   ...snap,
-  materials: snap.materials.map((m) => ({ ...m, status: backlogStatus(m.status) })),
+  materials: snap.materials.map((m) => ({ ...m, status: backlogStatus(m.status), book_id: m.book_id ?? null })),
   // Занятия появились позже всего остального: снимок без них — просто снимок,
   // в котором занятий ещё не записывали.
-  sessions: Array.isArray(snap.sessions) ? snap.sessions : [],
+  sessions: Array.isArray(snap.sessions)
+    ? snap.sessions.map((x) => ({ ...x, book_session_id: x.book_session_id ?? null }))
+    : [],
   notes: snap.notes.map((n) => ({ ...n, part_id: n.part_id ?? null, session_id: n.session_id ?? null })),
 })
 
@@ -243,7 +246,7 @@ export const localLearning: LearningStore = {
   },
 
   async addMaterial(item: NewMaterial) {
-    const made: Material = { ...item, id: uid(), created_at: now(), updated_at: now() }
+    const made: Material = { ...item, book_id: item.book_id ?? null, id: uid(), created_at: now(), updated_at: now() }
     change((snap) => rules.insert(snap, 'materials', made))
     return made
   },
@@ -267,7 +270,7 @@ export const localLearning: LearningStore = {
   },
 
   async addSession(item: NewStudySession) {
-    const made: StudySession = { ...item, id: uid(), created_at: now() }
+    const made: StudySession = { ...item, book_session_id: item.book_session_id ?? null, id: uid(), created_at: now() }
     change((snap) => rules.insert(snap, 'sessions', made))
     return made
   },

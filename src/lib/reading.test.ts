@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { lastSessionDate, pagesRead, progressOf } from './reading'
+import { lastSessionDate, pagesRead, progressOf, sessionDates } from './reading'
 import type { Session } from './types'
 
 const s = (over: Partial<Session>): Session => ({
@@ -320,5 +320,34 @@ describe('statusOf: статус книги выводится из прочит
     const got = withStatus([one, two], [s({ book_id: 'b1', page_to: 300 })])
     expect(got.map((x) => x.status)).toEqual(['finished', 'want'])
     expect(one.status).toBe('want')
+  })
+})
+
+describe('sessionDates: какие дни книги ставит сессия', () => {
+  const book = { pages: 300, started_at: null, finished_at: null }
+
+  test('the first session starts the book', () => {
+    expect(sessionDates(book, '2026-10-01', 40)).toEqual({ started_at: '2026-10-01' })
+  })
+
+  test('a later session does not move the start', () => {
+    expect(sessionDates({ ...book, started_at: '2026-09-01' }, '2026-10-01', 80)).toEqual({})
+  })
+
+  test('the last page finishes the book on that day', () => {
+    expect(sessionDates({ ...book, started_at: '2026-09-01' }, '2026-10-02', 300)).toEqual({
+      status: 'finished',
+      finished_at: '2026-10-02',
+    })
+  })
+
+  test('a finished book keeps its day', () => {
+    expect(
+      sessionDates({ ...book, started_at: '2026-09-01', finished_at: '2026-09-20' }, '2026-10-02', 300),
+    ).toEqual({})
+  })
+
+  test('a book without a page count is never finished by a page', () => {
+    expect(sessionDates({ ...book, pages: null, started_at: '2026-09-01' }, '2026-10-02', 900)).toEqual({})
   })
 })

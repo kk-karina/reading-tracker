@@ -3,10 +3,11 @@ import { useEffect, useLayoutEffect, useRef, useState, type TextareaHTMLAttribut
 import { Link } from 'react-router-dom'
 import type { BookCandidate } from '../../lib/books'
 import { sameDraft, type Draft } from '../../lib/compose/draft'
-import { classifyDuplicates, findDuplicates, type Home } from '../../lib/compose/duplicates'
+import { classifyDuplicates, findDuplicates, type Duplicate, type Home } from '../../lib/compose/duplicates'
 import { findOwn, withSource, type OwnHit } from '../../lib/compose/own'
 import { sourceOf } from '../../lib/compose/linkMeta'
 import type { BookScale, MaterialKind } from '../../lib/learning/types'
+import { canLink } from '../../lib/twin'
 import { useData } from '../../state/DataContext'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -92,6 +93,7 @@ export function Composer({
   onSave,
   onDelete,
   onClose,
+  linked,
 }: {
   title: string
   initial: Draft
@@ -101,10 +103,20 @@ export function Composer({
   home: Home
   /** Кто это, чтобы не найти в дублях себя. */
   self?: { bookId?: string; materialId?: string }
-  /** `false` — сохранение отменено (например, не подтвердили потерю отметок). */
-  onSave: (draft: Draft) => Promise<boolean | void>
+  /**
+   * `false` — сохранение отменено (например, не подтвердили потерю отметок).
+   * `copyOf` — запись в другом разделе, с которой заводится копия: обёртка
+   * связывает с ней новую, когда это одна книга по страницам.
+   */
+  onSave: (draft: Draft, copyOf: Duplicate | null) => Promise<boolean | void>
   onDelete?: () => void
   onClose: () => void
+  /**
+   * Та же книга в другом разделе, связанная с этой (см. `src/lib/twin.ts`).
+   * Показывается только при правке: страница записи о связи молчит, снимают
+   * её отсюда.
+   */
+  linked?: { title: string; href: string; onUnlink: () => void } | null
 }) {
   const { t } = useLocale()
   const { books } = useData()
@@ -209,6 +221,16 @@ export function Composer({
   // Карточка показывает то, что сохранится: у копии — с недостающим из
   // найденного и с его видом, если вид не выбирали руками.
   const view = copying && source ? withSource(draft, source.data, !kindChosen, guessed) : draft
+  // Копия книги по страницам связывается с найденной, если та ещё ни с чем не
+  // связана (так решают `BookForm` / `MaterialForm`): прогресс у них общий, и
+  // подсказка не должна обещать свой.
+  const willLink =
+    copying &&
+    !!source &&
+    canLink(view) &&
+    (source.where === 'stream'
+      ? !materials.find((m) => m.id === source.id)?.book_id
+      : !materials.some((m) => m.book_id === source.id))
   // Когда сохранить всё равно нельзя, терять нечего: закрытие не спрашивает.
   const dirty = !blocking && !sameDraft(draft, initial)
   const host = view.url.trim() ? sourceOf(view.url) : null
@@ -227,7 +249,7 @@ export function Composer({
       // Копия забирает из найденного всё, чего нет в карточке: та же книга не
       // должна оказаться в материалах без обложки, которая есть на полке.
       const ready = copying && source ? withSource(live.current, source.data, !kindTouched.current, guessed) : live.current
-      const done = await onSave(ready)
+      const done = await onSave(ready, copying ? source : null)
       if (done !== false) onClose()
     } finally {
       setSaving(false)
@@ -243,7 +265,9 @@ export function Composer({
         : source.where === 'shelf' || source.data.kind === 'book'
           ? t('compose.copyToMaterials')
           : t('compose.copyToStream')
-  const found = blocking ?? source
+  // При правке копию не заводят: найденное в другом разделе — не повод для
+  // плашки. Связь, если она есть, показывает своя.
+  const found = blocking ?? (editing ? null : source)
   const filled: Filled = fill.filled
   const glow = (k: FillKey) => <Glow at={filled[k]} />
 
@@ -413,12 +437,50 @@ export function Composer({
                         ? t('compose.onShelf')
                         : t('compose.inStream', { stream: found.stream ?? '' })}
                   </strong>
-                  <span>{blocking ? t('compose.blockHint') : t('compose.copyHint')}</span>
+                  <span>
+                    {blocking
+                      ? t('compose.blockHint')
+                      : willLink
+                        ? t('compose.copyLinkedHint')
+                        : t('compose.copyHint')}
+                  </span>
                 </span>
                 <Link className="compose-dupe-open" to={found.href} onClick={onClose}>
                   {t('compose.open')}
                   <Icon name="arrow-up-right-md" size={15} />
                 </Link>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Связь — той же плашкой, что дубль: это тот же вопрос «эта книга есть
+              и там», только уже решённый. Тихая подложка, а не лимонная: главная
+              кнопка от неё не меняется. */}
+          <AnimatePresence initial={false}>
+            {editing && linked && (
+              <motion.div
+                key="linked"
+                className="compose-dupe linked"
+                initial={{ opacity: 0, transform: 'translateY(4px)' }}
+                animate={{ opacity: 1, transform: 'translateY(0px)' }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+              >
+                <Icon name="link" size={18} />
+                <span className="compose-dupe-text">
+                  <strong>{linked.title}</strong>
+                  <span>{t('compose.linkedHint')}</span>
+                </span>
+                <span className="compose-dupe-acts">
+                  <Link className="compose-dupe-open" to={linked.href} onClick={onClose}>
+                    {t('compose.open')}
+                    <Icon name="arrow-up-right-md" size={15} />
+                  </Link>
+                  {/* Не красным: отвязка ничего не удаляет, записи остаются. */}
+                  <button type="button" className="link-btn" onClick={linked.onUnlink}>
+                    {t('compose.unlink')}
+                  </button>
+                </span>
               </motion.div>
             )}
           </AnimatePresence>

@@ -75,6 +75,7 @@ describe('книга ⇄ черновик', () => {
 
 const material: Material = {
   id: 'm1',
+  book_id: null,
   stream_id: 's1',
   title: 'Refactoring UI',
   kind: 'book',

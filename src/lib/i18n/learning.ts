@@ -118,6 +118,10 @@ export const LEARNING = {
     ru: 'Удалить это занятие? Отмеченное в нём снова станет непройденным, а конспекты останутся.',
     en: 'Delete this session? What it marked done goes back to not done; the notes stay.',
   },
+  'study.confirmDeleteTwin': {
+    ru: 'Удалить это занятие? Сессия той же книги на полке удалится тоже, конспекты останутся.',
+    en: 'Delete this session? The same session on the shelf goes too; the notes stay.',
+  },
   'study.entries': {
     ru: { one: '{n} запись', few: '{n} записи', many: '{n} записей' },
     en: { one: '{n} entry', other: '{n} entries' },

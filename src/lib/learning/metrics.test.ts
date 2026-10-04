@@ -13,6 +13,7 @@ import type { Material, MaterialPart, StudyNote } from './types'
 const MIN_BAR = 3
 
 const material = (over: Partial<Material> = {}): Material => ({
+  book_id: null,
   id: 'm1',
   stream_id: 'c1',
   title: 'Книга',

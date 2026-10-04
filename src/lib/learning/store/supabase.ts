@@ -107,9 +107,14 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
       throwIf(n.error)
       return {
         streams: (s.data ?? []) as Stream[],
-        materials: (m.data ?? []) as Material[],
+        // Связь с полкой — миграция 008. До неё колонок нет, и материал
+        // читается несвязанным.
+        materials: ((m.data ?? []) as Material[]).map((row) => ({ ...row, book_id: row.book_id ?? null })),
         parts: (p.data ?? []) as MaterialPart[],
-        sessions: (x.error ? [] : (x.data ?? [])) as StudySession[],
+        sessions: ((x.error ? [] : (x.data ?? [])) as StudySession[]).map((row) => ({
+          ...row,
+          book_session_id: row.book_session_id ?? null,
+        })),
         notes: ((n.data ?? []) as StudyNote[]).map((note) => ({
           ...note,
           session_id: note.session_id ?? null,
@@ -154,9 +159,13 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
     },
 
     async addMaterial(item: NewMaterial) {
-      return (await ok(() =>
-        sb.from('materials').insert(item).select('*').single(),
+      // Несвязанный материал пишется без ключа: на базе до миграции 008
+      // колонки нет, и пустое значение уронило бы запись целиком.
+      const { book_id, ...rest } = item
+      const made = (await ok(() =>
+        sb.from('materials').insert(book_id ? item : rest).select('*').single(),
       )) as Material
+      return { ...made, book_id: made.book_id ?? null }
     },
     async updateMaterial(id, patch) {
       const after = (await ok(() =>
@@ -189,9 +198,12 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
     },
 
     async addSession(item: NewStudySession) {
-      return (await ok(() =>
-        sb.from('study_sessions').insert(item).select('*').single(),
+      // Без пары — без ключа, по той же причине, что у материала.
+      const { book_session_id, ...rest } = item
+      const made = (await ok(() =>
+        sb.from('study_sessions').insert(book_session_id ? item : rest).select('*').single(),
       )) as StudySession
+      return { ...made, book_session_id: made.book_session_id ?? null }
     },
     async updateSession(id, patch) {
       await ok(() => sb.from('study_sessions').update(patch).eq('id', id))

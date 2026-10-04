@@ -99,6 +99,11 @@ export interface Material {
   /** Только при scale === 'pages'. */
   pages_total: number | null
   page_current: number | null
+  /**
+   * Та же книга на полке. Связанная пара пишет занятия и сессии друг другу —
+   * см. `src/lib/twin.ts`. Только у книги по страницам.
+   */
+  book_id: string | null
   sort: number
   created_at: string
   updated_at: string
@@ -144,6 +149,8 @@ export interface StudySession {
   completed: boolean
   minutes: number | null // необязательно, как и в чтении
   rating: number | null // 1–5, как прошло
+  /** Пара на полке — сессия той же книги, если материал связан с ней. */
+  book_session_id: string | null
   created_at: string
 }
 

@@ -95,6 +95,7 @@ function local(): LearningSnapshot {
     materials: [
       {
         id: 'm1',
+        book_id: null,
         stream_id: 's1',
         title: 'Книга',
         kind: 'book',

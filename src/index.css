@@ -2565,6 +2565,9 @@ a.group-subject:hover .group-subject-title {
 .book-info { flex: 1 1 300px; min-width: 0; }
 .book-title { font-size: clamp(26px, 4vw, 40px); margin: 0; }
 .book-author { margin: 10px 0 0; }
+/* Ссылка на поток стоит в строке автора и говорит её кеглем, а не 13px
+   отдельной подписи. */
+.book-author .link-btn { font-size: inherit; }
 
 .book-numbers {
   display: flex;
@@ -3045,11 +3048,23 @@ a.group-subject:hover .group-subject-title {
 .compose-dupe.blocking strong {
   color: var(--danger);
 }
+/* Связь — решённый дубль: подложка тихая, главная кнопка от неё не меняется.
+   Два действия рядом: открыть пару и отвязать. */
+.compose-dupe.linked {
+  background: var(--bg);
+}
+.compose-dupe-acts {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
 @media (max-width: 540px) {
   .compose-dupe {
     grid-template-columns: auto minmax(0, 1fr);
   }
-  .compose-dupe-open {
+  .compose-dupe-open,
+  .compose-dupe-acts {
     grid-column: 2;
     justify-self: start;
   }

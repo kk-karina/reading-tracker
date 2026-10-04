@@ -11,6 +11,7 @@ import {
 import type { Material, StudyNote, StudySession } from './types'
 
 const material = (over: Partial<Material> = {}): Material => ({
+  book_id: null,
   id: 'm1',
   stream_id: 's1',
   title: 'Книга',
@@ -29,6 +30,7 @@ const material = (over: Partial<Material> = {}): Material => ({
 })
 
 const session = (over: Partial<StudySession> = {}): StudySession => ({
+  book_session_id: null,
   id: 'x1',
   material_id: 'm1',
   date: '2026-10-03',

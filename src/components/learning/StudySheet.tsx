@@ -3,15 +3,10 @@ import { todayISO } from '../../lib/format'
 import { sourceOrder } from '../../lib/learning/buckets'
 import { materialProgress } from '../../lib/learning/metrics'
 import { partLabel, partWord, partsOf } from '../../lib/learning/parts'
-import {
-  applySession,
-  diffSession,
-  rollbackSession,
-  type SessionEffects,
-} from '../../lib/learning/sessions'
 import type { Material, MaterialPart, Stream, StudySession } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
+import { useSessionWrites } from '../../state/useSessionWrites'
 import { DraftStack } from '../log/DraftStack'
 import { FlagStep } from '../log/FlagStep'
 import { noteBlank, noteDraft, savedDrafts, type NoteDraft } from '../log/drafts'
@@ -73,19 +68,8 @@ export function StudySheet({
   onClose: () => void
 }) {
   const { t } = useLocale()
-  const {
-    materials,
-    parts,
-    sessions,
-    notes,
-    addSession,
-    updateSession,
-    deleteSession,
-    addNote,
-    deleteNote,
-    updateMaterial,
-    updatePart,
-  } = useLearning()
+  const { materials, parts, notes, addNote, deleteNote } = useLearning()
+  const writes = useSessionWrites()
 
   const options = material || session ? [] : sourceOrder(materials, stream.id, stream.focus_material_id)
   const [pickedId, setPickedId] = useState(
@@ -162,19 +146,14 @@ export function StudySheet({
   const toggle = (id: string) =>
     setPicked((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]))
 
-  /** Шаг и имена глав — одной записью на часть: два вызова подряд — это два
-      круга перерисовки и две точки отказа. */
-  const settle = async (fx: SessionEffects) => {
-    if (Object.keys(fx.material).length > 0) await updateMaterial(subject.id, fx.material)
-    const patches = new Map<string, Partial<MaterialPart>>()
-    for (const x of fx.parts) patches.set(x.id, { done: x.done })
+  /** Имена глав, вписанные в листе, — поверх отметок занятия, одной записью на часть. */
+  const typedNames = () => {
+    const out = new Map<string, Partial<MaterialPart>>()
     for (const [id, typed] of Object.entries(names)) {
       const part = chapters.find((c) => c.id === id)
-      if (part && typed.trim() !== part.title) {
-        patches.set(id, { ...patches.get(id), title: typed.trim() })
-      }
+      if (part && typed.trim() !== part.title) out.set(id, { title: typed.trim() })
     }
-    for (const [id, patch] of patches) await updatePart(id, patch)
+    return out
   }
 
   const save = async () => {
@@ -192,15 +171,8 @@ export function StudySheet({
       rating,
     }
 
-    let saved: StudySession | undefined
-    if (session) {
-      saved = { ...session, ...fields }
-      await updateSession(session.id, fields)
-      await settle(diffSession(subject, sessions, session, saved))
-    } else {
-      saved = await addSession(fields)
-      if (saved) await settle(applySession(subject, saved))
-    }
+    // Шаг материала и пара на полке, если материал связан с книгой, — там же.
+    const saved = await writes.saveStudy(subject, session, fields, typedNames())
     if (!saved) {
       setBusy(false)
       return
@@ -233,10 +205,11 @@ export function StudySheet({
   }
 
   const remove = async () => {
-    if (!session || !confirm(t('study.confirmDelete'))) return
+    if (!session) return
+    const twin = writes.twinOfStudy(session)
+    if (!confirm(t(twin ? 'study.confirmDeleteTwin' : 'study.confirmDelete'))) return
     setBusy(true)
-    await settle(rollbackSession(subject, sessions, session))
-    await deleteSession(session.id)
+    await writes.removeStudy(subject, session)
     onClose()
   }
 

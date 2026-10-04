@@ -4,6 +4,7 @@ import { progressOf } from '../lib/reading'
 import type { Book, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
+import { useSessionWrites } from '../state/useSessionWrites'
 import { DraftStack } from './log/DraftStack'
 import { PagesStep } from './log/PagesStep'
 import { SubjectPick } from './log/SubjectPick'
@@ -44,17 +45,8 @@ export function SessionSheet({
   onClose: () => void
 }) {
   const t = useT()
-  const {
-    books,
-    notes,
-    addSession,
-    updateSession,
-    deleteSession,
-    addNote,
-    updateNote,
-    deleteNote,
-    updateBook,
-  } = useData()
+  const { books, notes, addNote, updateNote, deleteNote } = useData()
+  const writes = useSessionWrites()
   const options = book || session ? [] : pickOrder(books)
   const [pickedId, setPickedId] = useState(() => book?.id ?? session?.book_id ?? options[0]?.id ?? '')
   const subject = book ?? books.find((b) => b.id === pickedId) ?? null
@@ -113,9 +105,9 @@ export function SessionSheet({
       minutes: Number(minutes) > 0 ? Number(minutes) : null,
       rating,
     }
-    let sessionId = session?.id
-    if (session) await updateSession(session.id, fields)
-    else sessionId = (await addSession(fields))?.id
+    // Даты книги и пара в потоке, если книга с ним связана, — там же.
+    const saved = await writes.saveReading(subject, session, fields)
+    const sessionId = saved?.id ?? session?.id
 
     for (const d of drafts) {
       const body = d.body.trim()
@@ -129,28 +121,16 @@ export function SessionSheet({
       }
     }
 
-    /*
-     * Статус книги сессия не переключает — он считается из прочитанного (см.
-     * `statusOf`). Но даты подсчётом не получить: «начата» и «дочитана» — это
-     * дни, а не страницы, и записать их может только та запись, которая через
-     * эти пороги книгу и перевела.
-     */
-    const dates: Partial<Book> = {}
-    if (!subject.started_at) dates.started_at = date
-    if (subject.pages && toNum >= subject.pages && !subject.finished_at) {
-      dates.status = 'finished'
-      dates.finished_at = date
-    }
-    if (Object.keys(dates).length > 0) await updateBook(subject.id, dates)
-
     setBusy(false)
     onClose()
   }
 
   const remove = async () => {
-    if (!session || !confirm(t('session.confirmDelete'))) return
+    if (!session) return
+    const twin = writes.twinOfReading(session.id)
+    if (!confirm(t(twin ? 'session.confirmDeleteTwin' : 'session.confirmDelete'))) return
     setBusy(true)
-    await deleteSession(session.id)
+    await writes.removeReading(session)
     onClose()
   }
 

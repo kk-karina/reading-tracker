@@ -140,14 +140,14 @@ export function lastTouched(
  * материала больше не ставят — только листом занятия.
  */
 export type SessionOp =
-  | { kind: 'add'; session: Omit<StudySession, 'id' | 'created_at'> }
+  | { kind: 'add'; session: Omit<StudySession, 'id' | 'created_at' | 'book_session_id'> }
   | { kind: 'update'; id: string; patch: Partial<StudySession> }
   | { kind: 'delete'; id: string }
 
 const todayOf = (sessions: StudySession[], materialId: string, today: string) =>
   sessions.find((s) => s.material_id === materialId && s.date === today)
 
-const blankSession = (materialId: string, today: string): Omit<StudySession, 'id' | 'created_at'> => ({
+const blankSession = (materialId: string, today: string): Omit<StudySession, 'id' | 'created_at' | 'book_session_id'> => ({
   material_id: materialId,
   date: today,
   page_from: null,

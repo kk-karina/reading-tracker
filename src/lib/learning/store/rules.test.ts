@@ -32,6 +32,7 @@ const stream = (over: Partial<Stream> & { id: string }): Stream => ({
 })
 
 const material = (over: Partial<Material> & { id: string; stream_id: string }): Material => ({
+  book_id: null,
   title: 'Материал',
   kind: 'book',
   author: null,
@@ -60,6 +61,7 @@ function filled(): LearningSnapshot {
     sessions: [
       {
         id: 'x1',
+        book_session_id: null,
         material_id: 'm1',
         date: '2026-09-02',
         page_from: null,

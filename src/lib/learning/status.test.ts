@@ -3,6 +3,7 @@ import { statusOf, withStatus } from './status'
 import type { Material, MaterialPart, StudyNote } from './types'
 
 const material = (over: Partial<Material> = {}): Material => ({
+  book_id: null,
   id: 'm1',
   stream_id: 'c1',
   title: 'Материал',

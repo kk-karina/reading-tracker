@@ -162,6 +162,8 @@ create table if not exists public.materials (
   scale text check (scale is null or scale in ('pages','parts')),
   pages_total integer,
   page_current integer,
+  -- The same book on the shelf. See migrations/008_book_link.sql.
+  book_id uuid references public.books(id) on delete set null,
   sort integer not null default 0,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -205,6 +207,8 @@ create table if not exists public.study_sessions (
   completed boolean not null default false,
   minutes integer check (minutes is null or minutes > 0),
   rating smallint check (rating is null or rating between 1 and 5),
+  -- Its twin on the shelf, when the material is linked to a book. See 008.
+  book_session_id uuid references public.sessions(id) on delete set null,
   created_at timestamptz not null default now()
 );
 
@@ -261,3 +265,7 @@ create index if not exists material_parts_material on public.material_parts (mat
 create index if not exists study_sessions_material on public.study_sessions (material_id, date desc);
 create index if not exists study_notes_material on public.study_notes (material_id, date desc);
 create index if not exists study_notes_session on public.study_notes (session_id);
+create unique index if not exists materials_book on public.materials (book_id)
+  where book_id is not null;
+create unique index if not exists study_sessions_book_session on public.study_sessions (book_session_id)
+  where book_session_id is not null;

@@ -26,7 +26,9 @@ import {
 import { timeOf } from '../lib/log'
 import type { NoteTag, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
+import { useLearning } from '../state/LearningContext'
 import { useLocale } from '../state/LocaleContext'
+import { useSessionWrites } from '../state/useSessionWrites'
 
 const TAGS: NoteTag[] = ['quote', 'idea', 'question', 'disagree', 'feeling']
 
@@ -53,6 +55,8 @@ export function Book() {
   const [editingSession, setEditingSession] = useState<Session | null>(null)
   const [tagFilter, setTagFilter] = useState<NoteTag | 'all'>('all')
   const [tab, setTab] = useState<Tab>('reflection')
+  const { streams } = useLearning()
+  const writes = useSessionWrites()
 
   if (loading) return null
   const book = books.find((b) => b.id === id)
@@ -94,9 +98,14 @@ export function Book() {
     review: null,
   }
 
+  // Та же книга в потоке. Связь ставится и снимается со страницы материала.
+  const twin = writes.materialOf(book.id)
+  const twinStream = twin && streams.find((s) => s.id === twin.stream_id)
+
   async function remove() {
     if (!book) return
     if (confirm(t('book.confirmDelete'))) {
+      await writes.forgetBook(book.id)
       await deleteBook(book.id)
       nav('/reading/shelf')
     }
@@ -154,6 +163,16 @@ export function Book() {
               человеку, а вывод из прочитанного — см. `statusOf`. */}
           <p className="muted book-author">
             {[book.author, t(`status.${book.status}`)].filter(Boolean).join(' · ')}
+            {/* Связь с обучением — свойство книги того же рода, что статус, и
+                стоит с ним в одной строке, а не отдельным абзацем под фактами. */}
+            {twin && twinStream && (
+              <>
+                {' · '}
+                <Link className="link-btn" to={`/learning/${twinStream.slug}/m/${twin.id}`}>
+                  {t('book.inStream', { stream: twinStream.name })}
+                </Link>
+              </>
+            )}
           </p>
 
           {/* Плюс вплотную к полосе, а не громкая кнопка под фактами: записать
@@ -220,7 +239,6 @@ export function Book() {
           <p className="small muted hint-line">
             {last ? t('book.lastRead', { date: fmtDate(last, locale) }) : t('book.notOpened')}
           </p>
-          {pace === null && <p className="small faint hint-line">{t('book.noTimeHint')}</p>}
 
           {/* Ссылка там же и так же, как у материала: книга на полке — тот же
               материал вида «книга». */}

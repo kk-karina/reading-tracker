@@ -173,6 +173,7 @@ const BASE = {
   'book.makeFocus': { ru: 'Сделать фокусом', en: 'Make it the focus' },
   'book.isFocus': { ru: 'В фокусе', en: 'In focus' },
   'book.edit': { ru: 'Изменить', en: 'Edit' },
+  'book.inStream': { ru: 'В потоке «{stream}»', en: 'In “{stream}”' },
   'book.delete': { ru: 'Удалить', en: 'Delete' },
   'book.confirmDelete': {
     ru: 'Удалить книгу вместе с её сессиями и мыслями?',
@@ -233,6 +234,22 @@ const BASE = {
   },
   'compose.blockShelf': { ru: 'Такая книга уже стоит на полке', en: 'This book is already on the shelf' },
   'compose.blockStream': { ru: 'Это уже есть в этом потоке', en: 'This is already in the stream' },
+  'compose.copyLinkedHint': {
+    ru: 'Добавится копия со всем, что там уже заполнено, и они будут связаны: сессии и занятия запишутся в обоих местах.',
+    en: 'A copy is added with everything already filled in there, and the two are linked: sessions are logged in both places.',
+  },
+  // Связь книги на полке с материалом — см. src/lib/twin.ts.
+  'compose.linkedShelf': { ru: 'Связь с книгой на полке', en: 'Linked to the book on the shelf' },
+  'compose.linkedStream': { ru: 'Связь с материалом в потоке «{stream}»', en: 'Linked to the material in “{stream}”' },
+  'compose.linkedHint': {
+    ru: 'Сессии и занятия записываются в обоих местах.',
+    en: 'Sessions are logged in both places.',
+  },
+  'compose.unlink': { ru: 'Отвязать', en: 'Unlink' },
+  'compose.confirmUnlink': {
+    ru: 'Отвязать? Записи останутся в обоих местах, новые перестанут дублироваться.',
+    en: 'Unlink? Records stay in both places; new ones stop mirroring.',
+  },
   'compose.onShelf': { ru: 'Эта книга есть на полке', en: 'This book is on the shelf' },
   'compose.inStream': { ru: 'Это есть в потоке «{stream}»', en: 'This is in “{stream}”' },
   'compose.copyToMaterials': { ru: 'Продублировать книгу в материалы', en: 'Copy the book to materials' },
@@ -325,10 +342,6 @@ const BASE = {
   'book.pages': { ru: 'Страницы', en: 'Pages' },
   'book.unknown': { ru: '—', en: '—' },
   'book.noTime': { ru: 'не записано', en: 'not recorded' },
-  'book.noTimeHint': {
-    ru: 'Поставь минуты хотя бы в одной сессии — дальше время и остаток посчитаются сами.',
-    en: 'Put minutes on one session and the time and the estimate work themselves out.',
-  },
   'book.approx': { ru: 'часть времени оценена по твоему темпу', en: 'part of this is estimated from your pace' },
   'book.perPage': { ru: '{n} мин/стр', en: '{n} min/page' },
   // Единственный вопрос про статус, на который прочитанное не отвечает само.
@@ -389,6 +402,11 @@ const BASE = {
   'session.confirmDelete': {
     ru: 'Удалить эту сессию? Мысли из неё останутся.',
     en: 'Delete this session? The thoughts from it stay.',
+  },
+  // Связанная книга пишет сессию и в поток: удаление уносит обе.
+  'session.confirmDeleteTwin': {
+    ru: 'Удалить эту сессию? Занятие той же книги в потоке удалится тоже, мысли останутся.',
+    en: 'Delete this session? The same session in the stream goes too; the thoughts stay.',
   },
   'session.removeNote': { ru: 'Убрать', en: 'Remove' },
   'session.noteOnPage': { ru: 'стр. {n}', en: 'p. {n}' },
