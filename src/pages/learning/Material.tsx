@@ -230,7 +230,7 @@ export function Material() {
                 started={started}
                 label={label}
                 word={word}
-                onToggle={(part) => void direct.togglePart(material, part)}
+                onToggle={(part, state) => void direct.togglePart(material, part, state)}
               />
             ) : (
               <div className="meter big" aria-hidden>

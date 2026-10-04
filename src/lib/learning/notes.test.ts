@@ -54,6 +54,7 @@ describe('notesOfStream', () => {
 })
 
 const part = (id: string, title: string, sort: number): MaterialPart => ({
+  started: false,
   id,
   material_id: 'm1',
   title,

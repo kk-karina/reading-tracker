@@ -32,6 +32,7 @@ const material = (over: Partial<Material> = {}): Material => ({
 })
 
 const part = (over: Partial<MaterialPart> = {}): MaterialPart => ({
+  started: false,
   id: crypto.randomUUID(),
   material_id: 'm1',
   title: 'Глава',

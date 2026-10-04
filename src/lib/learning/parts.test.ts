@@ -3,6 +3,8 @@ import {
   hasParts,
   parseTitles,
   partLabel,
+  cycleMark,
+  nextPartState,
   partState,
   partWord,
   partsOf,
@@ -13,6 +15,7 @@ import {
 import type { MaterialPart, StudyNote } from './types'
 
 const part = (over: Partial<MaterialPart> = {}): MaterialPart => ({
+  started: false,
   id: crypto.randomUUID(),
   material_id: 'm1',
   title: 'Глава',
@@ -285,8 +288,48 @@ describe('partState', () => {
     expect(partState(part({ id: 'a', done: true }), new Set(['a']))).toBe('done')
   })
 
+  it('начатая руками — начата и без конспекта', () => {
+    expect(partState(part({ id: 'a', started: true }), new Set())).toBe('started')
+    expect(partState(part({ id: 'a', started: true, done: true }), new Set())).toBe('done')
+  })
+
   it('написанная без отметки начата, остальные нетронуты', () => {
     expect(partState(part({ id: 'a' }), new Set(['a']))).toBe('started')
     expect(partState(part({ id: 'b' }), new Set(['a']))).toBe('fresh')
+  })
+})
+
+describe('nextPartState — цикл кликами', () => {
+  it('пусто → начата → пройдена → пусто', () => {
+    expect(nextPartState('fresh')).toBe('started')
+    expect(nextPartState('started')).toBe('done')
+    expect(nextPartState('done')).toBe('fresh')
+  })
+})
+
+describe('cycleMark — отметка части в листе занятия', () => {
+  it('нетронутая: наполовину → целиком → снята', () => {
+    const one = cycleMark([], 'a', false)
+    expect(one).toEqual([{ id: 'a', half: true }])
+    const two = cycleMark(one, 'a', false)
+    expect(two).toEqual([{ id: 'a', half: false }])
+    expect(cycleMark(two, 'a', false)).toEqual([])
+  })
+
+  it('начатая раньше сразу идёт к «целиком» и обратно', () => {
+    const one = cycleMark([], 'a', true)
+    expect(one).toEqual([{ id: 'a', half: false }])
+    expect(cycleMark(one, 'a', true)).toEqual([])
+  })
+
+  it('отметка держит своё место в порядке отметок', () => {
+    const marks = [
+      { id: 'a', half: true },
+      { id: 'b', half: false },
+    ]
+    expect(cycleMark(marks, 'a', false)).toEqual([
+      { id: 'a', half: false },
+      { id: 'b', half: false },
+    ])
   })
 })

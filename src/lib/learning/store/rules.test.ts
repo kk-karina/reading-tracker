@@ -54,14 +54,15 @@ function filled(): LearningSnapshot {
     streams: [stream({ id: 's1', focus_material_id: 'm1' }), stream({ id: 's2', slug: 'vtoroy' })],
     materials: [material({ id: 'm1', stream_id: 's1' }), material({ id: 'm2', stream_id: 's2' })],
     parts: [
-      { id: 'p1', material_id: 'm1', title: '', done: true, sort: 0 },
-      { id: 'p2', material_id: 'm1', title: '', done: false, sort: 1 },
-      { id: 'p3', material_id: 'm2', title: '', done: false, sort: 0 },
+      { id: 'p1', material_id: 'm1', title: '', done: true, started: false, sort: 0 },
+      { id: 'p2', material_id: 'm1', title: '', done: false, started: false, sort: 1 },
+      { id: 'p3', material_id: 'm2', title: '', done: false, started: false, sort: 0 },
     ],
     sessions: [
       {
         id: 'x1',
         book_session_id: null,
+        started_ids: [],
         material_id: 'm1',
         date: '2026-09-02',
         page_from: null,
@@ -244,6 +245,12 @@ describe('части и конспекты', () => {
 
   it('удаление части убирает её из занятий, которые её отметили', () => {
     expect(removePart(filled(), 'p1').sessions[0].part_ids).toEqual([])
+  })
+
+  it('удаление части убирает её и из начатых занятием', () => {
+    const snap = filled()
+    snap.sessions[0] = { ...snap.sessions[0], part_ids: [], started_ids: ['p1', 'p2'] }
+    expect(removePart(snap, 'p1').sessions[0].started_ids).toEqual(['p2'])
   })
 
   it('смена вида, уносящая части, убирает их и из занятий', () => {

@@ -78,10 +78,10 @@ export function PartNames({
                 <button
                   type="button"
                   className={`dot ${state} parts-dot`}
-                  aria-pressed={part.done}
+                  aria-pressed={state === 'done' ? true : state === 'started' ? 'mixed' : false}
                   aria-label={`${label(part, i)} — ${t(`part.state.${state}`)}`}
                   title={t(`part.state.${state}`)}
-                  onClick={() => void direct.togglePart(material, part)}
+                  onClick={() => void direct.togglePart(material, part, state)}
                 >
                   <span className="dot-fill" aria-hidden />
                 </button>

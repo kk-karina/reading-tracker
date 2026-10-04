@@ -149,9 +149,40 @@ export type PartState = 'done' | 'started' | 'fresh'
 /**
  * Как часть выглядит в ряду точек.
  *
- * Три состояния, а не два: «начата» — это конспект есть, отметки нет, и
- * величина эта производная (см. страницу материала), но ряд точек без неё
- * врал бы ровно про ту часть, на которой человек сейчас сидит.
+ * Три состояния, а не два: «начата» — пройдена до середины (отмечено руками)
+ * или конспект есть, а отметки нет. Ряд точек без него врал бы ровно про ту
+ * часть, на которой человек сейчас сидит.
  */
 export const partState = (part: MaterialPart, started: ReadonlySet<string>): PartState =>
-  part.done ? 'done' : started.has(part.id) ? 'started' : 'fresh'
+  part.done ? 'done' : part.started || started.has(part.id) ? 'started' : 'fresh'
+
+/**
+ * Шаг цикла по клику: пусто → начата → пройдена → пусто.
+ *
+ * Цикл, а не двойной клик: два быстрых клика дают то же «пройдена», но
+ * одиночному не приходится ждать таймера, который отличал бы его от двойного,
+ * а на телефоне двойное касание и вовсе увеличивает страницу.
+ */
+export const nextPartState = (state: PartState): PartState =>
+  state === 'fresh' ? 'started' : state === 'started' ? 'done' : 'fresh'
+
+/** Отметка части этим занятием: пройдена до середины или целиком. */
+export interface PartMark {
+  id: string
+  half: boolean
+}
+
+/**
+ * Шаг цикла в листе занятия: нет → наполовину → целиком → нет.
+ *
+ * Часть, начатая раньше (руками или конспектом), уже стоит наполовину:
+ * второй половинки ей не поставить, и цикл у неё короче — целиком и обратно.
+ * Отметка держит место, на котором её поставили: строки под точками идут в
+ * порядке отметок, и смена половинки на целую не должна их переставлять.
+ */
+export function cycleMark(marks: PartMark[], id: string, startedBefore: boolean): PartMark[] {
+  const mine = marks.find((m) => m.id === id)
+  if (!mine) return [...marks, { id, half: !startedBefore }]
+  if (mine.half) return marks.map((m) => (m.id === id ? { id, half: false } : m))
+  return marks.filter((m) => m.id !== id)
+}

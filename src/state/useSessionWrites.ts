@@ -72,7 +72,7 @@ export function useSessionWrites() {
   ) {
     if (Object.keys(fx.material).length > 0) await learning.updateMaterial(material.id, fx.material)
     const patches = new Map(extra)
-    for (const x of fx.parts) patches.set(x.id, { ...patches.get(x.id), done: x.done })
+    for (const { id, ...marks } of fx.parts) patches.set(id, { ...patches.get(id), ...marks })
     for (const [id, patch] of patches) await learning.updatePart(id, patch)
   }
 

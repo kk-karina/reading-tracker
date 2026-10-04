@@ -4,6 +4,7 @@ import { canLink, mergeHistory, mirrorOp, readingStep, studyStep, type Step } fr
 import type { Session } from './types'
 
 const study = (over: Partial<StudySession> = {}): StudySession => ({
+  started_ids: [],
   id: 'x1',
   material_id: 'm1',
   date: '2026-10-03',

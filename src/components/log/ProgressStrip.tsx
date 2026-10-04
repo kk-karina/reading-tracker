@@ -38,11 +38,14 @@ export function PagesStrip({ from, to, total }: { from: number; to: number; tota
 export function PartsStrip({
   parts,
   now,
+  half,
   done,
 }: {
   parts: { id: string }[]
   /** Отмеченные этим занятием. */
   now: ReadonlySet<string>
+  /** Пройденные этим занятием до середины — левой половиной, как начатая в ряду точек. */
+  half?: ReadonlySet<string>
   /** Пройденные другими занятиями или руками. */
   done: ReadonlySet<string>
 }) {
@@ -51,7 +54,10 @@ export function PartsStrip({
   return (
     <span className="strip strip-dots" style={{ '--strip-dot': `${dot}px` } as CSSProperties} aria-hidden>
       {parts.map((p) => (
-        <i key={p.id} className={now.has(p.id) ? 'now' : done.has(p.id) ? 'done' : undefined} />
+        <i
+          key={p.id}
+          className={now.has(p.id) ? 'now' : half?.has(p.id) ? 'half' : done.has(p.id) ? 'done' : undefined}
+        />
       ))}
     </span>
   )

@@ -24,13 +24,14 @@ export type NewMaterial = Pick<
   | 'sort'
 > &
   Partial<Pick<Material, 'book_id'>>
-export type NewMaterialPart = Pick<MaterialPart, 'material_id' | 'title' | 'done' | 'sort'>
+export type NewMaterialPart = Pick<MaterialPart, 'material_id' | 'title' | 'done' | 'sort'> &
+  Partial<Pick<MaterialPart, 'started'>>
 export type NewStudyNote = Pick<
   StudyNote,
   'material_id' | 'session_id' | 'part_id' | 'part' | 'title' | 'body' | 'tags' | 'date' | 'sort'
 >
-export type NewStudySession = Omit<StudySession, 'id' | 'created_at' | 'book_session_id'> &
-  Partial<Pick<StudySession, 'book_session_id'>>
+export type NewStudySession = Omit<StudySession, 'id' | 'created_at' | 'book_session_id' | 'started_ids'> &
+  Partial<Pick<StudySession, 'book_session_id' | 'started_ids'>>
 
 export interface LearningStore {
   load(): Promise<LearningSnapshot>

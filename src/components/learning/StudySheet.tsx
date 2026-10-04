@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { todayISO } from '../../lib/format'
 import { sourceOrder } from '../../lib/learning/buckets'
 import { materialProgress } from '../../lib/learning/metrics'
-import { partLabel, partWord, partsOf } from '../../lib/learning/parts'
+import { cycleMark, partLabel, partWord, partsOf, type PartMark } from '../../lib/learning/parts'
 import type { Material, MaterialPart, Stream, StudySession } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -25,14 +25,17 @@ function stepFor(material: Material | null, session?: StudySession) {
     return {
       from: String(session.page_from ?? material?.page_current ?? 0),
       to: session.page_to === null ? '' : String(session.page_to),
-      picked: session.part_ids,
+      picked: [
+        ...session.part_ids.map((id) => ({ id, half: false })),
+        ...session.started_ids.map((id) => ({ id, half: true })),
+      ],
       completed: session.completed,
     }
   }
   return {
     from: String(material?.page_current ?? 0),
     to: '',
-    picked: [] as string[],
+    picked: [] as PartMark[],
     // У статьи занятие почти всегда и есть «прочитала»: отметка стоит сразу,
     // снимают её реже, чем ставили бы.
     completed: material?.status !== 'done',
@@ -83,7 +86,7 @@ export function StudySheet({
   const [rating, setRating] = useState<number | null>(session?.rating ?? null)
   const [from, setFrom] = useState(first.from)
   const [to, setTo] = useState(first.to)
-  const [picked, setPicked] = useState<string[]>(first.picked)
+  const [picked, setPicked] = useState<PartMark[]>(first.picked)
   const [names, setNames] = useState<Record<string, string>>({})
   const [completed, setCompleted] = useState(first.completed)
   const [drafts, setDrafts] = useState<NoteDraft[]>(() =>
@@ -123,14 +126,22 @@ export function StudySheet({
   const label = (part: MaterialPart, i = chapters.indexOf(part)) =>
     partLabel(part, i, (n) => t(word === 'lecture' ? 'part.lecture' : 'part.chapter', { n }))
   const own = new Set(session?.part_ids ?? [])
+  const ownStarted = new Set(session?.started_ids ?? [])
   const locked = new Set(chapters.filter((c) => c.done && !own.has(c.id)).map((c) => c.id))
-  const started = new Set(
+  // Начатые раньше — не этим занятием: руками другим или конспектом. Своя
+  // половинка в этом листе — отметка, а не прошлое.
+  const wroteAbout = new Set(
     notes
       .filter((n) => n.material_id === subject.id && n.part_id)
       .map((n) => n.part_id as string),
   )
-  // Конспект занятия пишется о том, что в нём прошли: выбор из отмеченного.
-  const pickedParts = picked
+  const started = new Set(
+    chapters.filter((c) => wroteAbout.has(c.id) || (c.started && !ownStarted.has(c.id))).map((c) => c.id),
+  )
+  const pickedIds = picked.map((m) => m.id)
+  // Конспект занятия пишется о том, что в нём прошли — целиком или до
+  // середины: выбор из отмеченного.
+  const pickedParts = pickedIds
     .map((id) => chapters.find((c) => c.id === id))
     .filter((c): c is MaterialPart => !!c)
   const named = (part: MaterialPart) => {
@@ -143,8 +154,7 @@ export function StudySheet({
   const backwards = p.unit === 'page' && toNum !== null && toNum < fromNum
   const dirty = state() !== start
 
-  const toggle = (id: string) =>
-    setPicked((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]))
+  const toggle = (id: string) => setPicked((list) => cycleMark(list, id, started.has(id)))
 
   /** Имена глав, вписанные в листе, — поверх отметок занятия, одной записью на часть. */
   const typedNames = () => {
@@ -165,7 +175,8 @@ export function StudySheet({
       date,
       page_from: p.unit === 'page' && toNum !== null ? fromNum : null,
       page_to: p.unit === 'page' ? toNum : null,
-      part_ids: p.unit === 'part' ? picked : [],
+      part_ids: p.unit === 'part' ? picked.filter((m) => !m.half).map((m) => m.id) : [],
+      started_ids: p.unit === 'part' ? picked.filter((m) => m.half).map((m) => m.id) : [],
       completed: p.unit === 'flag' && completed,
       minutes: Number(minutes) > 0 ? Number(minutes) : null,
       rating,
@@ -190,7 +201,7 @@ export function StudySheet({
       await addNote({
         material_id: subject.id,
         session_id: saved.id,
-        part_id: picked.includes(d.partId) ? d.partId : null,
+        part_id: pickedIds.includes(d.partId) ? d.partId : null,
         part: null,
         title: null,
         body: d.body.trim(),
@@ -241,7 +252,7 @@ export function StudySheet({
         {p.unit === 'part' && (
           <PartsStep
             parts={chapters}
-            picked={picked}
+            marks={picked}
             locked={locked}
             started={started}
             names={names}
@@ -272,7 +283,7 @@ export function StudySheet({
           make={() =>
             noteDraft(
               drafts.some((d) => !d.saved) ? '' : (stream.outline ?? ''),
-              picked[picked.length - 1] ?? '',
+              pickedIds[pickedIds.length - 1] ?? '',
             )
           }
           isBlank={noteBlank(stream.outline)}

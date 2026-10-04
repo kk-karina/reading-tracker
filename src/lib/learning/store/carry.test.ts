@@ -111,7 +111,7 @@ function local(): LearningSnapshot {
         updated_at: '2026-09-01T00:00:00.000Z',
       },
     ],
-    parts: [{ id: 'p1', material_id: 'm1', title: '', done: true, sort: 0 }],
+    parts: [{ id: 'p1', material_id: 'm1', title: '', done: true, started: false, sort: 0 }],
     sessions: [],
     notes: [
       {

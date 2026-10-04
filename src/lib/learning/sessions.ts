@@ -1,3 +1,4 @@
+import type { PartState } from './parts'
 import type { Material, MaterialPart, StudyNote, StudySession } from './types'
 
 /**
@@ -14,7 +15,8 @@ import type { Material, MaterialPart, StudyNote, StudySession } from './types'
  */
 export interface SessionEffects {
   material: Partial<Material>
-  parts: Pick<MaterialPart, 'id' | 'done'>[]
+  /** Отметка «пройдена» и «начата» — каждая только если занятие её меняет. */
+  parts: (Pick<MaterialPart, 'id'> & Partial<Pick<MaterialPart, 'done' | 'started'>>)[]
 }
 
 const none = (): SessionEffects => ({ material: {}, parts: [] })
@@ -40,7 +42,10 @@ export function applySession(material: Material, session: StudySession): Session
     fx.material.page_current = session.page_to
   }
   if (session.completed && material.status !== 'done') fx.material.status = 'done'
-  fx.parts = session.part_ids.map((id) => ({ id, done: true }))
+  fx.parts = [
+    ...session.part_ids.map((id) => ({ id, done: true })),
+    ...session.started_ids.map((id) => ({ id, started: true })),
+  ]
   return fx
 }
 
@@ -74,6 +79,11 @@ export function diffSession(
   for (const id of before.part_ids) if (!will.has(id)) fx.parts.push({ id, done: false })
   for (const id of after.part_ids) if (!was.has(id)) fx.parts.push({ id, done: true })
 
+  const wasStarted = new Set(before.started_ids)
+  const willStart = new Set(after.started_ids)
+  for (const id of before.started_ids) if (!willStart.has(id)) fx.parts.push({ id, started: false })
+  for (const id of after.started_ids) if (!wasStarted.has(id)) fx.parts.push({ id, started: true })
+
   return fx
 }
 
@@ -99,7 +109,10 @@ export function rollbackSession(
     fx.material.page_current = session.page_from
   }
   if (session.completed) fx.material.status = 'backlog'
-  fx.parts = session.part_ids.map((id) => ({ id, done: false }))
+  fx.parts = [
+    ...session.part_ids.map((id) => ({ id, done: false })),
+    ...session.started_ids.map((id) => ({ id, started: false })),
+  ]
   return fx
 }
 
@@ -153,6 +166,7 @@ const blankSession = (materialId: string, today: string): Omit<StudySession, 'id
   page_from: null,
   page_to: null,
   part_ids: [],
+  started_ids: [],
   completed: false,
   minutes: null,
   rating: null,
@@ -163,26 +177,39 @@ const blankSession = (materialId: string, today: string): Omit<StudySession, 'id
  * ни оценки, ни написанного. Такое удаляется, а не висит пустой строкой.
  */
 function hollow(s: StudySession, notes: Pick<StudyNote, 'session_id'>[]): boolean {
-  const moved = s.part_ids.length > 0 || s.completed || (s.page_to !== null && s.page_to !== s.page_from)
+  const moved =
+    s.part_ids.length > 0 ||
+    s.started_ids.length > 0 ||
+    s.completed ||
+    (s.page_to !== null && s.page_to !== s.page_from)
   return !moved && s.minutes === null && s.rating === null && !notes.some((n) => n.session_id === s.id)
 }
 
-/** Точку главы отметили или сняли на странице материала. */
+/**
+ * Точку главы перевели на странице материала в новое состояние — цикл
+ * «пусто → начата → пройдена → пусто» (см. `nextPartState`).
+ */
 export function markPart(
   sessions: StudySession[],
   notes: Pick<StudyNote, 'session_id'>[],
   material: Material,
   partId: string,
-  done: boolean,
+  to: PartState,
   today: string,
 ): SessionOp | null {
-  if (done) {
+  if (to !== 'fresh') {
     const same = todayOf(sessions, material.id, today)
-    if (same) {
-      if (same.part_ids.includes(partId)) return null
-      return { kind: 'update', id: same.id, patch: { part_ids: [...same.part_ids, partId] } }
+    if (to === 'started') {
+      if (!same) return { kind: 'add', session: { ...blankSession(material.id, today), started_ids: [partId] } }
+      if (same.started_ids.includes(partId)) return null
+      return { kind: 'update', id: same.id, patch: { started_ids: [...same.started_ids, partId] } }
     }
-    return { kind: 'add', session: { ...blankSession(material.id, today), part_ids: [partId] } }
+    if (!same) return { kind: 'add', session: { ...blankSession(material.id, today), part_ids: [partId] } }
+    if (same.part_ids.includes(partId)) return null
+    // Начала и закончила в один день — это одно «пройдена», а не две отметки.
+    const patch: Partial<StudySession> = { part_ids: [...same.part_ids, partId] }
+    if (same.started_ids.includes(partId)) patch.started_ids = same.started_ids.filter((id) => id !== partId)
+    return { kind: 'update', id: same.id, patch }
   }
 
   // Снять — из того занятия, что её отметило, самого свежего из таких.

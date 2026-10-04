@@ -121,7 +121,7 @@ function migrateV2(old: SnapshotV2): LearningSnapshot {
       for (let i = 0; i < count; i++) {
         // Имени нет намеренно: безымянная часть зовётся своим номером по
         // порядку, и хранилищу не нужно знать язык, на котором это напишут.
-        parts.push({ id: uid(), material_id: material.id, title: '', done: i < written, sort: i })
+        parts.push({ id: uid(), material_id: material.id, title: '', done: i < written, started: false, sort: i })
       }
     }
   }
@@ -158,8 +158,14 @@ const fill = (snap: LearningSnapshot): LearningSnapshot => ({
   materials: snap.materials.map((m) => ({ ...m, status: backlogStatus(m.status), book_id: m.book_id ?? null })),
   // Занятия появились позже всего остального: снимок без них — просто снимок,
   // в котором занятий ещё не записывали.
+  // Начатые руками появились позже частей и занятий: их нет — значит, нет.
+  parts: snap.parts.map((p) => ({ ...p, started: p.started ?? false })),
   sessions: Array.isArray(snap.sessions)
-    ? snap.sessions.map((x) => ({ ...x, book_session_id: x.book_session_id ?? null }))
+    ? snap.sessions.map((x) => ({
+        ...x,
+        book_session_id: x.book_session_id ?? null,
+        started_ids: x.started_ids ?? [],
+      }))
     : [],
   notes: snap.notes.map((n) => ({ ...n, part_id: n.part_id ?? null, session_id: n.session_id ?? null })),
 })
@@ -258,7 +264,7 @@ export const localLearning: LearningStore = {
   },
 
   async addPart(item: NewMaterialPart) {
-    const made: MaterialPart = { ...item, id: uid() }
+    const made: MaterialPart = { ...item, started: item.started ?? false, id: uid() }
     change((snap) => rules.insert(snap, 'parts', made))
     return made
   },
@@ -270,7 +276,13 @@ export const localLearning: LearningStore = {
   },
 
   async addSession(item: NewStudySession) {
-    const made: StudySession = { ...item, book_session_id: item.book_session_id ?? null, id: uid(), created_at: now() }
+    const made: StudySession = {
+      ...item,
+      book_session_id: item.book_session_id ?? null,
+      started_ids: item.started_ids ?? [],
+      id: uid(),
+      created_at: now(),
+    }
     change((snap) => rules.insert(snap, 'sessions', made))
     return made
   },

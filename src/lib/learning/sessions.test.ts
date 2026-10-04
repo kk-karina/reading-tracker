@@ -30,6 +30,7 @@ const material = (over: Partial<Material> = {}): Material => ({
 })
 
 const session = (over: Partial<StudySession> = {}): StudySession => ({
+  started_ids: [],
   book_session_id: null,
   id: 'x1',
   material_id: 'm1',
@@ -128,6 +129,37 @@ describe('diffSession', () => {
   })
 })
 
+describe('started parts — главы наполовину', () => {
+  const m = material({ scale: 'parts' })
+
+  it('a new session marks its half-done parts started', () => {
+    const fx = applySession(m, session({ part_ids: ['p1'], started_ids: ['p2'] }))
+    expect(fx.parts).toEqual([
+      { id: 'p1', done: true },
+      { id: 'p2', started: true },
+    ])
+  })
+
+  it('an edit starts what was added and unstarts what was taken out', () => {
+    const before = session({ id: 'x', started_ids: ['p1', 'p2'] })
+    const after = { ...before, started_ids: ['p2', 'p3'] }
+    expect(diffSession(m, [before], before, after).parts).toEqual([
+      { id: 'p1', started: false },
+      { id: 'p3', started: true },
+    ])
+  })
+
+  it('a deleted session unstarts what it started', () => {
+    const fx = rollbackSession(m, [], session({ started_ids: ['p2'] }))
+    expect(fx.parts).toEqual([{ id: 'p2', started: false }])
+  })
+
+  it('a session with only a half-done part is not empty', () => {
+    const s = session({ id: 'x', date: '2026-10-04', part_ids: ['p1'], started_ids: ['p2'] })
+    expect(markPart([s], [], m, 'p1', 'fresh', '2026-10-04')?.kind).toBe('update')
+  })
+})
+
 describe('rollbackSession', () => {
   it('returns the page to where the latest session started', () => {
     const s = session({ page_from: 120, page_to: 164 })
@@ -183,7 +215,7 @@ describe('markPart — точка, отмеченная на странице м
   const m = material({ scale: 'parts' })
 
   it('opens a session for today when there is none', () => {
-    const op = markPart([], [], m, 'p3', true, today)
+    const op = markPart([], [], m, 'p3', 'done', today)
     expect(op).toEqual({
       kind: 'add',
       session: {
@@ -192,6 +224,7 @@ describe('markPart — точка, отмеченная на странице м
         page_from: null,
         page_to: null,
         part_ids: ['p3'],
+        started_ids: [],
         completed: false,
         minutes: null,
         rating: null,
@@ -201,7 +234,7 @@ describe('markPart — точка, отмеченная на странице м
 
   it('adds the part to today’s session of this material', () => {
     const s = session({ id: 'x', date: today, part_ids: ['p1'] })
-    expect(markPart([s], [], m, 'p3', true, today)).toEqual({
+    expect(markPart([s], [], m, 'p3', 'done', today)).toEqual({
       kind: 'update',
       id: 'x',
       patch: { part_ids: ['p1', 'p3'] },
@@ -210,12 +243,12 @@ describe('markPart — точка, отмеченная на странице м
 
   it('does not touch another material’s session of today', () => {
     const other = session({ id: 'o', material_id: 'm2', date: today })
-    expect(markPart([other], [], m, 'p3', true, today)?.kind).toBe('add')
+    expect(markPart([other], [], m, 'p3', 'done', today)?.kind).toBe('add')
   })
 
   it('takes the part out of the session that marked it', () => {
     const s = session({ id: 'x', date: '2026-10-01', part_ids: ['p1', 'p3'] })
-    expect(markPart([s], [], m, 'p3', false, today)).toEqual({
+    expect(markPart([s], [], m, 'p3', 'fresh', today)).toEqual({
       kind: 'update',
       id: 'x',
       patch: { part_ids: ['p1'] },
@@ -224,18 +257,45 @@ describe('markPart — точка, отмеченная на странице м
 
   it('removes a session left with nothing in it', () => {
     const s = session({ id: 'x', date: today, part_ids: ['p3'] })
-    expect(markPart([s], [], m, 'p3', false, today)).toEqual({ kind: 'delete', id: 'x' })
+    expect(markPart([s], [], m, 'p3', 'fresh', today)).toEqual({ kind: 'delete', id: 'x' })
   })
 
   it('keeps an emptied session that still has notes or minutes', () => {
     const s = session({ id: 'x', date: today, part_ids: ['p3'], minutes: 20 })
-    expect(markPart([s], [], m, 'p3', false, today)?.kind).toBe('update')
+    expect(markPart([s], [], m, 'p3', 'fresh', today)?.kind).toBe('update')
     const t = session({ id: 'y', date: today, part_ids: ['p3'] })
     const notes = [{ session_id: 'y' }] as StudyNote[]
-    expect(markPart([t], notes, m, 'p3', false, today)?.kind).toBe('update')
+    expect(markPart([t], notes, m, 'p3', 'fresh', today)?.kind).toBe('update')
   })
 
   it('does nothing when a part marked before sessions existed is unmarked', () => {
-    expect(markPart([], [], m, 'p3', false, today)).toBeNull()
+    expect(markPart([], [], m, 'p3', 'fresh', today)).toBeNull()
+  })
+
+  it('marks a part started in today’s session', () => {
+    const op = markPart([], [], m, 'p3', 'started', today)
+    expect(op?.kind).toBe('add')
+    expect(op?.kind === 'add' && op.session.started_ids).toEqual(['p3'])
+    expect(op?.kind === 'add' && op.session.part_ids).toEqual([])
+    const s = session({ id: 'x', date: today, part_ids: ['p1'] })
+    expect(markPart([s], [], m, 'p3', 'started', today)).toEqual({
+      kind: 'update',
+      id: 'x',
+      patch: { started_ids: ['p3'] },
+    })
+  })
+
+  it('started and finished on one day is one “done”', () => {
+    const s = session({ id: 'x', date: today, started_ids: ['p3'] })
+    expect(markPart([s], [], m, 'p3', 'done', today)).toEqual({
+      kind: 'update',
+      id: 'x',
+      patch: { part_ids: ['p3'], started_ids: [] },
+    })
+  })
+
+  it('a part started on another day stays started there', () => {
+    const before = session({ id: 'x', date: '2026-10-01', started_ids: ['p3'] })
+    expect(markPart([before], [], m, 'p3', 'done', today)?.kind).toBe('add')
   })
 })

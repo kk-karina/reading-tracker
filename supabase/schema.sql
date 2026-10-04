@@ -191,6 +191,8 @@ create table if not exists public.material_parts (
   -- out from the sort. The database is not told the language that is in.
   title text not null default '',
   done boolean not null default false,
+  -- Half done, set by hand. See migrations/009_started_parts.sql.
+  started boolean not null default false,
   sort integer not null default 0
 );
 
@@ -204,6 +206,8 @@ create table if not exists public.study_sessions (
   page_from integer,
   page_to integer,
   part_ids uuid[] not null default '{}',
+  -- Parts this session left half done. See 009.
+  started_ids uuid[] not null default '{}',
   completed boolean not null default false,
   minutes integer check (minutes is null or minutes > 0),
   rating smallint check (rating is null or rating between 1 and 5),

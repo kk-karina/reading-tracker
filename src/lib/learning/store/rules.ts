@@ -171,7 +171,11 @@ export function updateMaterial(
     // Ушедшая часть уходит и из занятий, которые её отметили: иначе откат
     // занятия пытался бы снять отметку с того, чего нет.
     sessions: cut.size
-      ? snap.sessions.map((x) => ({ ...x, part_ids: x.part_ids.filter((p) => !cut.has(p)) }))
+      ? snap.sessions.map((x) => ({
+          ...x,
+          part_ids: x.part_ids.filter((p) => !cut.has(p)),
+          started_ids: x.started_ids.filter((p) => !cut.has(p)),
+        }))
       : snap.sessions,
     notes: snap.notes,
   }
@@ -207,7 +211,13 @@ export function removePart(snap: LearningSnapshot, id: string): LearningSnapshot
     ...snap,
     parts: snap.parts.filter((p) => p.id !== id),
     sessions: snap.sessions.map((x) =>
-      x.part_ids.includes(id) ? { ...x, part_ids: x.part_ids.filter((p) => p !== id) } : x,
+      x.part_ids.includes(id) || x.started_ids.includes(id)
+        ? {
+            ...x,
+            part_ids: x.part_ids.filter((p) => p !== id),
+            started_ids: x.started_ids.filter((p) => p !== id),
+          }
+        : x,
     ),
     notes: snap.notes.map((n) => (n.part_id === id ? { ...n, part_id: null } : n)),
   }

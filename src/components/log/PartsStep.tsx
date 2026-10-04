@@ -1,4 +1,5 @@
 import { AnimatePresence, motion } from 'motion/react'
+import type { PartMark } from '../../lib/learning/parts'
 import type { MaterialPart } from '../../lib/learning/types'
 import { useLocale } from '../../state/LocaleContext'
 import { PartDots } from '../learning/PartDots'
@@ -11,12 +12,15 @@ import { listItem } from '../ui'
  * места. За одно занятие проходят и две-три лекции, поэтому отметок здесь
  * сколько угодно, а не одна галочка у одной выбранной главы.
  *
+ * Точка идёт по циклу: наполовину → целиком → снята (`cycleMark`). Пройденная
+ * до середины — та же «начата», что ядром стоит в ряду точек везде.
+ *
  * Отмеченные части тут же встают строками с полем имени: главу называют в
  * тот заход, когда её только что прочитали, а не потом, вспоминая.
  */
 export function PartsStep({
   parts,
-  picked,
+  marks,
   locked,
   started,
   names,
@@ -26,10 +30,11 @@ export function PartsStep({
   onName,
 }: {
   parts: MaterialPart[]
-  /** Отмеченные этим занятием — по порядку отметки. */
-  picked: string[]
+  /** Отмеченные этим занятием — по порядку отметки, наполовину или целиком. */
+  marks: PartMark[]
   /** Закрытые раньше, другими занятиями или руками. */
   locked: ReadonlySet<string>
+  /** Начатые раньше: руками другим занятием или конспектом. */
   started: ReadonlySet<string>
   /** Набранные здесь имена. Нет ключа — имя части не трогали. */
   names: Record<string, string>
@@ -44,14 +49,22 @@ export function PartsStep({
     return <p className="small faint">{t('study.noParts')}</p>
   }
 
-  const mine = new Set(picked)
+  const mine = new Map(marks.map((m) => [m.id, m.half]))
   // Ряд показывает, какой материал станет после сохранения: закрытое раньше и
-  // отмеченное сейчас залиты одинаково — это одно и то же «пройдено».
-  const shown = parts.map((p) => ({ ...p, done: locked.has(p.id) || mine.has(p.id) }))
+  // отмеченное сейчас залиты одинаково — это одно и то же «пройдено»; начатое
+  // раньше и отмеченное наполовину сейчас — одно и то же «начата».
+  const shown = parts.map((p) => ({
+    ...p,
+    done: locked.has(p.id) || mine.get(p.id) === false,
+    started: mine.get(p.id) === true,
+  }))
   const after = shown.filter((p) => p.done).length
-  const rows = parts
-    .map((p, i) => ({ part: p, i }))
-    .filter(({ part }) => mine.has(part.id))
+  const rows = marks
+    .map((m) => {
+      const i = parts.findIndex((p) => p.id === m.id)
+      return i < 0 ? null : { part: parts[i], i, half: m.half }
+    })
+    .filter((r): r is { part: MaterialPart; i: number; half: boolean } => r !== null)
 
   return (
     <div className="step">
@@ -67,10 +80,12 @@ export function PartsStep({
 
       <ul className="step-parts">
         <AnimatePresence initial={false}>
-          {rows.map(({ part, i }) => (
+          {rows.map(({ part, i, half }) => (
             <motion.li key={part.id} className="step-part" layout="position" {...listItem}>
-              <span className="step-part-mark" aria-hidden>
-                ✓
+              {/* Знак — тем же местом и кеглем: ✓ целиком, ½ до середины. Диктору
+                  — словом, знак ему ничего не скажет. */}
+              <span className={`step-part-mark${half ? ' half' : ''}`} aria-label={half ? t('part.halfMark') : undefined}>
+                {half ? '½' : '✓'}
               </span>
               <input
                 className="step-part-name"

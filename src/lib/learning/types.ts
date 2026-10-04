@@ -122,6 +122,11 @@ export interface MaterialPart {
   material_id: string
   title: string
   done: boolean
+  /**
+   * Начата руками — пройдена до середины. Отметка «пройдена» флаг не снимает:
+   * откат пройденной возвращает её начатой, какой она и была.
+   */
+  started: boolean
   sort: number
 }
 
@@ -145,6 +150,8 @@ export interface StudySession {
   page_to: number | null
   /** Части, отмеченные пройденными этим занятием. За заход их бывает несколько. */
   part_ids: string[]
+  /** Части, которые занятие оставило начатыми, — пройденные до середины. */
+  started_ids: string[]
   /** Только у статьи и ролика: «прошла целиком» этим занятием. */
   completed: boolean
   minutes: number | null // необязательно, как и в чтении

@@ -1790,6 +1790,19 @@ a.log-title:hover {
   background: var(--ink);
   box-shadow: none;
 }
+/* Пройдена этим занятием до середины — левой половиной, как начатая точка в
+   большом ряду: та же картинка в мелком масштабе. Половина — слоем поверх
+   кольца: слева точка залита вместе с краем, справа край как у пустой. */
+.strip-dots i.half {
+  position: relative;
+}
+.strip-dots i.half::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  background: linear-gradient(90deg, var(--ink) 50%, transparent 50%);
+}
 /* Обычной гарнитурой с табличными цифрами: здесь и названия глав, и время, а
    моноширинный делал «Типографика, Лекция 4» похожей на код. Моноширинным
    остаётся только диапазон страниц — он мера (`.mono` в разметке). */
@@ -4261,9 +4274,20 @@ a.group-subject:hover .group-subject-title {
   gap: 10px;
 }
 .step-part-mark {
+  flex: none;
+  width: 12px;
   font-family: var(--mono);
   font-size: 13px;
+  text-align: center;
   color: var(--ink-2);
+}
+/* В моноширинной ½ выходит вдвое мельче галочки и читается крапинкой —
+   дробь берёт гарнитуру текста и кегль под стать ✓. Ширина у обоих знаков
+   одна, чтобы имена в строках стояли по одной линии. */
+.step-part-mark.half {
+  font-family: inherit;
+  font-size: 15px;
+  line-height: 1;
 }
 .step-part-name {
   flex: 1;

@@ -217,6 +217,11 @@ export const LEARNING = {
   // всё остальное сказано заливкой. Род женский у обоих слов, главы и лекции.
   'part.state.done': { ru: 'пройдена', en: 'done' },
   'part.state.started': { ru: 'начата', en: 'started' },
+  // Пройдена до середины — та же «начата», только поставленная руками.
+  'part.halfMark': { ru: 'наполовину', en: 'halfway' },
+  // «½ лекции» — шаг занятия, в котором ничего не пройдено целиком.
+  'unit.halfLecture': { ru: 'лекции', en: 'lecture' },
+  'unit.halfChapter': { ru: 'главы', en: 'chapter' },
   'part.state.fresh': { ru: 'не пройдена', en: 'not done' },
   'part.names': { ru: 'Назвать списком', en: 'Name from a list' },
   'part.paste': { ru: 'Вставить оглавление', en: 'Paste the contents' },

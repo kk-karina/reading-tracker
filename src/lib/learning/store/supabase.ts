@@ -110,10 +110,12 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
         // Связь с полкой — миграция 008. До неё колонок нет, и материал
         // читается несвязанным.
         materials: ((m.data ?? []) as Material[]).map((row) => ({ ...row, book_id: row.book_id ?? null })),
-        parts: (p.data ?? []) as MaterialPart[],
+        // Начатые руками — миграция 009. До неё колонок нет, и начатого руками нет.
+        parts: ((p.data ?? []) as MaterialPart[]).map((row) => ({ ...row, started: row.started ?? false })),
         sessions: ((x.error ? [] : (x.data ?? [])) as StudySession[]).map((row) => ({
           ...row,
           book_session_id: row.book_session_id ?? null,
+          started_ids: row.started_ids ?? [],
         })),
         notes: ((n.data ?? []) as StudyNote[]).map((note) => ({
           ...note,
@@ -185,9 +187,12 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
     },
 
     async addPart(item: NewMaterialPart) {
-      return (await ok(() =>
-        sb.from('material_parts').insert(item).select('*').single(),
+      // Неначатая часть пишется без ключа: на базе до миграции 009 колонки нет.
+      const { started, ...rest } = item
+      const made = (await ok(() =>
+        sb.from('material_parts').insert(started ? item : rest).select('*').single(),
       )) as MaterialPart
+      return { ...made, started: made.started ?? false }
     },
     async updatePart(id, patch) {
       await ok(() => sb.from('material_parts').update(patch).eq('id', id))
@@ -198,12 +203,18 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
     },
 
     async addSession(item: NewStudySession) {
-      // Без пары — без ключа, по той же причине, что у материала.
-      const { book_session_id, ...rest } = item
+      // Без пары и без начатых — без ключей: на базе до миграций 008 и 009
+      // колонок нет, и пустое значение уронило бы запись целиком.
+      const { book_session_id, started_ids, ...rest } = item
+      const row = {
+        ...rest,
+        ...(book_session_id ? { book_session_id } : {}),
+        ...(started_ids?.length ? { started_ids } : {}),
+      }
       const made = (await ok(() =>
-        sb.from('study_sessions').insert(book_session_id ? item : rest).select('*').single(),
+        sb.from('study_sessions').insert(row).select('*').single(),
       )) as StudySession
-      return { ...made, book_session_id: made.book_session_id ?? null }
+      return { ...made, book_session_id: made.book_session_id ?? null, started_ids: made.started_ids ?? [] }
     },
     async updateSession(id, patch) {
       await ok(() => sb.from('study_sessions').update(patch).eq('id', id))

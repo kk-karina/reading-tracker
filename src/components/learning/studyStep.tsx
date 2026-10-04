@@ -41,31 +41,43 @@ export function useStudyLine() {
         ) : undefined,
       }
     }
-    if (session.part_ids.length > 0) {
+    if (session.part_ids.length > 0 || session.started_ids.length > 0) {
       const n = session.part_ids.length
       const word = partWord(material?.kind ?? 'book')
       const mine = material ? partsOf(parts, material.id) : []
-      const names = session.part_ids
-        .map((id) => {
-          const i = mine.findIndex((p) => p.id === id)
-          return i < 0
-            ? null
-            : partLabel(mine[i], i, (k) =>
-                t(word === 'lecture' ? 'part.lecture' : 'part.chapter', { n: k }),
-              )
-        })
+      const name = (id: string) => {
+        const i = mine.findIndex((p) => p.id === id)
+        return i < 0
+          ? null
+          : partLabel(mine[i], i, (k) => t(word === 'lecture' ? 'part.lecture' : 'part.chapter', { n: k }))
+      }
+      // Пройденные целиком, затем начатые — со словом: «Лекция 6 наполовину».
+      const half = t('part.halfMark')
+      const names = [
+        ...session.part_ids.map(name),
+        ...session.started_ids.map((id) => {
+          const named = name(id)
+          return named && `${named} ${half}`
+        }),
+      ]
         .filter(Boolean)
         .join(', ')
       const now = new Set(session.part_ids)
       return {
-        step: `+${n}`,
-        unit: t(word === 'lecture' ? 'unit.lectures' : 'unit.chapters', { n }),
+        // Шаг — пройденное целиком; в счёт «N из M» половинка не идёт. Если
+        // целых нет, шаг всё равно был — половинкой.
+        step: n > 0 ? `+${n}` : '½',
+        unit:
+          n > 0
+            ? t(word === 'lecture' ? 'unit.lectures' : 'unit.chapters', { n })
+            : t(word === 'lecture' ? 'unit.halfLecture' : 'unit.halfChapter'),
         detail: names,
         meter:
           mine.length > 0 ? (
             <PartsStrip
               parts={mine}
               now={now}
+              half={new Set(session.started_ids)}
               done={new Set(mine.filter((p) => p.done && !now.has(p.id)).map((p) => p.id))}
             />
           ) : undefined,

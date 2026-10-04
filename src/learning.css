@@ -1427,39 +1427,48 @@
    а фон может только появиться целиком. Из нуля ничего не растёт — поэтому
    непройденная уже стоит на месте, просто маленькая и прозрачная. */
 .dot-fill {
-  width: 100%;
-  height: 100%;
+  /* Поверх обводки, а не внутри неё: у начатой залитая левая половина
+     закрывает и свой край — слева точка выглядит залитой, справа пустой. */
+  position: absolute;
+  inset: -1px;
   border-radius: 50%;
   background: var(--ink);
   opacity: 0;
   transform: scale(0.2);
+  clip-path: inset(0 0 0 0);
   transition:
     transform 0.18s var(--ease-spring),
     opacity 0.18s var(--ease-out),
+    clip-path 0.22s var(--ease-out),
     background-color 0.18s var(--ease-out);
 }
 
 /* Три состояния — те же, что знаком стоят в списке частей и в выборе главы
    на листе занятия: пройдена, начата, не тронута. */
+/* Обводка начатой — как у пустой: правая половина и есть пустая, а левую
+   край закрывает заливка. Чёрный контур целиком — это «пройдена». */
 .dot.started {
-  border-color: var(--ink-3);
-}
-/* Ядро начатой заметно больше половины: на семипиксельной точке меньшее уже
-   не видно, а начатая — это ровно та часть, на которой человек сейчас сидит. */
-.dot.started .dot-fill {
-  opacity: 1;
-  transform: scale(0.56);
-  background: var(--ink-3);
+  border-color: var(--line-2);
 }
 .dot.done {
   border-color: var(--ink);
+}
+/* Начатая залита на левую половину — буквально «пройдена наполовину», и
+   читается так даже на семипиксельной точке. Срез, а не вторая фигура:
+   второй клик дозаливает правую половину тем же телом, и цикл выглядит как
+   одна заливка в два шага. */
+.dot.started .dot-fill {
+  opacity: 1;
+  transform: scale(1);
+  clip-path: inset(0 50% 0 0);
 }
 .dot.done .dot-fill {
   opacity: 1;
   transform: scale(1);
 }
 
-/* Наведение показывает, чем точка станет: непройденная набирает бледное ядро.
+/* Наведение показывает, чем точка станет: непройденная — бледной левой
+   половиной, начатая — бледной правой, которую дозальёт клик.
    Под пальцем hover ложный, поэтому жест заперт за настоящим курсором. */
 @media (hover: hover) and (pointer: fine) {
   .dot:hover {
@@ -1468,8 +1477,19 @@
   }
   .dot.fresh:hover .dot-fill {
     opacity: 1;
-    transform: scale(0.3);
+    transform: scale(1);
+    clip-path: inset(0 50% 0 0);
     background: var(--line-2);
+  }
+  .dot.started:hover {
+    background: linear-gradient(90deg, transparent 50%, var(--line-2) 50%);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .dot-fill {
+    transition:
+      opacity 0.18s var(--ease-out),
+      background-color 0.18s var(--ease-out);
   }
 }
 .dot:active {
