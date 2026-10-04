@@ -2,14 +2,12 @@ import { motion } from 'motion/react'
 import { useEffect, useRef } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import type { DictKey } from '../lib/i18n/dict'
-import type { Locale } from '../lib/i18n/translate'
 import { configError } from '../lib/supabase'
-import { useAuth } from '../state/AuthContext'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
 import { CursorDot } from './fun'
-import { Icon } from './Icon'
-import { Jelly, Segmented, inkSlide } from './ui'
+import { Profile } from './ProfileBookmark'
+import { Jelly, inkSlide } from './ui'
 
 /** Разделов ровно два. Настройки — инструмент, а не третье место. */
 const SECTIONS: { to: string; key: DictKey }[] = [
@@ -17,15 +15,9 @@ const SECTIONS: { to: string; key: DictKey }[] = [
   { to: '/learning', key: 'nav.hub' },
 ]
 
-const LOCALES: { value: Locale; label: string }[] = [
-  { value: 'ru', label: 'РУ' },
-  { value: 'en', label: 'EN' },
-]
-
 export function Shell() {
-  const { user } = useAuth()
   const { error, loaded, loading, reload } = useData()
-  const { locale, setLocale, t } = useLocale()
+  const { t } = useLocale()
   const location = useLocation()
 
   // На телефоне пять пунктов не помещаются, и меню прокручивается. Активный
@@ -69,20 +61,9 @@ export function Shell() {
               </NavLink>
             ))}
           </nav>
-          {/* In the bar rather than tucked away in settings: the language follows the book. */}
-          <div className="topbar-right">
-            <NavLink to="/settings" className="icon-btn" aria-label={t('nav.settings')}>
-              <Icon name="settings" />
-            </NavLink>
-            <Segmented
-              name={t('locale.label')}
-              value={locale}
-              options={LOCALES}
-              onChange={setLocale}
-              className="sm"
-            />
-            <span className="who">{user?.email}</span>
-          </div>
+          {/* Справа одно лицо. Язык, выгрузка и выход свисают из-под него
+              закладкой: всё это — про тебя и про устройство, а не про книги. */}
+          <Profile />
         </div>
       </header>
 

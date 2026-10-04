@@ -15,7 +15,6 @@ const BASE = {
   // как шло чтение, и хранилище того, что от него осталось.
   'nav.sessions': { ru: 'Сессии', en: 'Sessions' },
   'nav.thoughts': { ru: 'Мысли', en: 'Thoughts' },
-  'nav.settings': { ru: 'Настройки', en: 'Settings' },
 
   'locale.label': { ru: 'Язык интерфейса', en: 'Interface language' },
 
@@ -54,22 +53,44 @@ const BASE = {
     en: { one: '{n} day', other: '{n} days' },
   },
 
-  'settings.title': { ru: 'Настройки', en: 'Settings' },
-  'settings.account': { ru: 'Аккаунт', en: 'Account' },
+  'profile.title': { ru: 'Профиль', en: 'Profile' },
+  'profile.export': { ru: 'Скачать всё в JSON', en: 'Download all as JSON' },
+  'profile.carry': { ru: 'Перенести обучение в облако', en: 'Move learning to the cloud' },
+  'profile.import': { ru: 'Загрузить из JSON', en: 'Load from JSON' },
+  'profile.importNote': { ru: 'заменит всё на устройстве', en: 'replaces everything here' },
+  'profile.clear': { ru: 'Стереть всё с устройства', en: 'Erase this device' },
+  'avatar.prev': { ru: 'Предыдущий аватар', en: 'Previous avatar' },
+  'avatar.next': { ru: 'Следующий аватар', en: 'Next avatar' },
+  // Лист называется так же, как кнопка, которая его открыла.
+  'avatar.change': { ru: 'Сменить аватар', en: 'Change avatar' },
+  // Подписи для экранного диктора: в сетке видны только рисунки.
+  'avatar.shades': { ru: 'В тёмных очках', en: 'In sunglasses' },
+  'avatar.books': { ru: 'Со стопкой книг', en: 'With a stack of books' },
+  'avatar.music': { ru: 'Слушает музыку', en: 'Listening to music' },
+  'avatar.coffee': { ru: 'С чашкой', en: 'With a cup' },
+  'avatar.cap': { ru: 'В кепке', en: 'In a cap' },
+  'avatar.cheeks': { ru: 'Щёки в ладонях', en: 'Cheeks in hands' },
+  'avatar.reading': { ru: 'Читает', en: 'Reading' },
+  'avatar.bun': { ru: 'С пучком', en: 'With a hair bun' },
+  'avatar.glasses': { ru: 'В круглых очках', en: 'In round glasses' },
+  'avatar.cat': { ru: 'С котом', en: 'With a cat' },
+  'avatar.panama': { ru: 'В панаме', en: 'In a bucket hat' },
+  'avatar.hair': { ru: 'С длинными волосами', en: 'With long hair' },
+  'avatar.pencil': { ru: 'С карандашом', en: 'With a pencil' },
+  'avatar.hoodie': { ru: 'В худи', en: 'In a hoodie' },
+  'avatar.roof': { ru: 'Книга домиком', en: 'Book as a roof' },
+  'avatar.headphones': { ru: 'В больших наушниках', en: 'In big headphones' },
+  'avatar.flower': { ru: 'С цветком', en: 'With a flower' },
+  'avatar.hug': { ru: 'Обнимает колени', en: 'Hugging knees' },
+  'avatar.ponytail': { ru: 'С хвостиком', en: 'With a ponytail' },
+  'avatar.stack': { ru: 'С горой книг', en: 'With a pile of books' },
+
   'settings.signOut': { ru: 'Выйти', en: 'Sign out' },
   'settings.localMode': {
     ru: 'Локальный режим — данные остаются в этом браузере',
     en: 'Local mode — data stays in this browser',
   },
   'settings.language': { ru: 'Язык', en: 'Language' },
-  'settings.data': { ru: 'Данные', en: 'Data' },
-  'settings.export': { ru: 'Экспорт', en: 'Export' },
-  'settings.exportHint': { ru: 'Выгрузить всё в JSON', en: 'Export everything as JSON' },
-  'settings.import': { ru: 'Импорт', en: 'Import' },
-  'settings.importHint': {
-    ru: 'Загрузить JSON-выгрузку (заменит текущие данные)',
-    en: 'Import a JSON export (replaces current data)',
-  },
   'settings.imported': { ru: 'Загружено.', en: 'Imported.' },
   'settings.importFailed': { ru: 'Не удалось прочитать файл.', en: 'Could not import.' },
   'settings.notAnExport': {
@@ -80,24 +101,14 @@ const BASE = {
     ru: 'Заменить всё на этом устройстве содержимым файла?',
     en: 'Replace everything on this device with the file contents?',
   },
-  'settings.clear': { ru: 'Очистить', en: 'Clear' },
-  'settings.clearHint': {
-    ru: 'Удалить все данные на этом устройстве',
-    en: 'Delete everything on this device',
-  },
   'settings.confirmClear': {
     ru: 'Удалить все локальные данные? Это необратимо.',
     en: 'Delete all local data? This cannot be undone.',
   },
 
   // Перенос обучения в облако. Обычно случается сам при первом входе; строка
-  // в настройках нужна для случая, когда сам он не взялся: в облаке уже что-то
+  // в профиле нужна для случая, когда сам он не взялся: в облаке уже что-то
   // есть, а в браузере осталось написанное до аккаунта.
-  'settings.carry': { ru: 'Перенести', en: 'Move' },
-  'settings.carryHint': {
-    ru: 'Перенести обучение из этого браузера в облако',
-    en: 'Move this browser’s learning to the cloud',
-  },
   'settings.carryDone': {
     ru: 'Перенесено: {n}. Локальная копия осталась на месте.',
     en: 'Moved {n} rows. The local copy stays where it was.',
@@ -144,10 +155,6 @@ const BASE = {
 
   'settings.sample': { ru: 'Добавить примеры', en: 'Add the sample books' },
   'settings.sampleLoading': { ru: 'Добавляю…', en: 'Adding…' },
-  'settings.sampleHint': {
-    ru: 'Четырнадцать книг с обложками — чтобы полка была не пустая и её было куда листать.',
-    en: 'Fourteen books with covers, so the shelf is not empty and there is something to scroll.',
-  },
   'settings.sampleAdded': {
     ru: { one: 'Добавлена {n} книга.', few: 'Добавлено {n} книги.', many: 'Добавлено {n} книг.' },
     en: { one: 'Added {n} book.', other: 'Added {n} books.' },

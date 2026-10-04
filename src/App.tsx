@@ -14,7 +14,6 @@ import { StreamLayout } from './pages/learning/StreamLayout'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
 import { ReadingLayout } from './pages/ReadingLayout'
-import { Settings } from './pages/Settings'
 import { Sessions } from './pages/Sessions'
 import { Shelf } from './pages/Shelf'
 import { Thoughts } from './pages/Thoughts'
@@ -140,7 +139,8 @@ function Screens() {
             <Route path="learning/m/:id" element={<LegacyMaterial />} />
             <Route path="learning/n/:id" element={<LegacyNote />} />
 
-            <Route path="settings" element={<Settings />} />
+            {/* Настройки стали закладкой профиля в шапке. */}
+            <Route path="settings" element={<Navigate to="/reading" replace />} />
 
             {/* Адреса до перестройки. Роуты хэшевые и уже разошлись по закладкам. */}
             <Route path="shelf" element={<Navigate to="/reading/shelf" replace />} />
