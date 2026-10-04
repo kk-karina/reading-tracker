@@ -1,7 +1,14 @@
-import type { LearningSnapshot, Material, MaterialPart, Stream, StudyNote } from '../types'
+import type {
+  LearningSnapshot,
+  Material,
+  MaterialPart,
+  Stream,
+  StudyNote,
+  StudySession,
+} from '../types'
 
 /** Адрес, цель и фокус не спрашиваются при создании: адрес выдаёт хранилище, остальное появляется потом. */
-export type NewStream = Pick<Stream, 'name' | 'icon' | 'accent' | 'outline' | 'sort'>
+export type NewStream = Pick<Stream, 'name' | 'accent' | 'outline' | 'sort'>
 export type NewMaterial = Pick<
   Material,
   | 'stream_id'
@@ -19,8 +26,9 @@ export type NewMaterial = Pick<
 export type NewMaterialPart = Pick<MaterialPart, 'material_id' | 'title' | 'done' | 'sort'>
 export type NewStudyNote = Pick<
   StudyNote,
-  'material_id' | 'part_id' | 'part' | 'title' | 'body' | 'tags' | 'date' | 'sort'
+  'material_id' | 'session_id' | 'part_id' | 'part' | 'title' | 'body' | 'tags' | 'date' | 'sort'
 >
+export type NewStudySession = Omit<StudySession, 'id' | 'created_at'>
 
 export interface LearningStore {
   load(): Promise<LearningSnapshot>
@@ -34,7 +42,7 @@ export interface LearningStore {
   addMaterial(item: NewMaterial): Promise<Material>
   /** Вид или шкала, при которых частей не бывает, уносят части этого материала. */
   updateMaterial(id: string, patch: Partial<Material>): Promise<void>
-  /** Каскадом уносит части и конспекты материала. */
+  /** Каскадом уносит части, занятия и конспекты материала. */
   deleteMaterial(id: string): Promise<void>
 
   /**
@@ -44,6 +52,11 @@ export interface LearningStore {
   addPart(item: NewMaterialPart): Promise<MaterialPart>
   updatePart(id: string, patch: Partial<MaterialPart>): Promise<void>
   deletePart(id: string): Promise<void>
+
+  addSession(item: NewStudySession): Promise<StudySession>
+  updateSession(id: string, patch: Partial<StudySession>): Promise<void>
+  /** Конспекты занятия остаются — без занятия, как мысли в чтении. */
+  deleteSession(id: string): Promise<void>
 
   addNote(item: NewStudyNote): Promise<StudyNote>
   updateNote(id: string, patch: Partial<StudyNote>): Promise<void>

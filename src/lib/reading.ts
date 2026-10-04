@@ -157,35 +157,6 @@ export function statusPatch(
   }
 }
 
-export interface Share {
-  /** null marks the folded tail — everything past the sixth group. */
-  key: string | null
-  count: number
-}
-
-const MAX_SHARES = 6
-
-/**
- * Books grouped by one of their text fields, biggest first. Past six groups the
- * tail folds into one: more colour classes than that stop being tellable apart.
- */
-export function sharesBy(books: Book[], field: 'genre' | 'language'): Share[] {
-  const counts = new Map<string, number>()
-  for (const b of books) {
-    const value = b[field]?.trim()
-    if (value) counts.set(value, (counts.get(value) ?? 0) + 1)
-  }
-
-  const sorted = [...counts.entries()]
-    .map(([key, count]) => ({ key, count }) as Share)
-    .sort((a, b) => b.count - a.count)
-
-  if (sorted.length <= MAX_SHARES) return sorted
-  const kept = sorted.slice(0, MAX_SHARES - 1)
-  const rest = sorted.slice(MAX_SHARES - 1).reduce((sum, s) => sum + s.count, 0)
-  return [...kept, { key: null, count: rest }]
-}
-
 /* ---------- time ---------- */
 
 /**

@@ -30,7 +30,6 @@ beforeEach(() => {
 
 const aStream = {
   name: 'Professional Growth',
-  icon: 'compass' as const,
   accent: null,
   outline: null,
   sort: 0,
@@ -38,7 +37,7 @@ const aStream = {
 
 describe('localLearning', () => {
   it('начинает с пустого снимка', async () => {
-    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], notes: [] })
+    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [] })
   })
 
   it('заводит поток и возвращает его из load', async () => {
@@ -88,6 +87,7 @@ describe('localLearning', () => {
     })
     await localLearning.addNote({
       material_id: mat.id,
+      session_id: null,
       part_id: null,
       part: 'Глава 1',
       title: null,
@@ -135,6 +135,7 @@ describe('localLearning', () => {
     })
     await localLearning.addNote({
       material_id: a.id,
+      session_id: null,
       part_id: null,
       part: null,
       title: null,
@@ -145,6 +146,7 @@ describe('localLearning', () => {
     })
     const keep = await localLearning.addNote({
       material_id: b.id,
+      session_id: null,
       part_id: null,
       part: null,
       title: null,
@@ -178,6 +180,7 @@ describe('localLearning', () => {
     })
     const note = await localLearning.addNote({
       material_id: mat.id,
+      session_id: null,
       part_id: null,
       part: null,
       title: null,
@@ -194,7 +197,7 @@ describe('localLearning', () => {
 
   it('переживает испорченное хранилище', async () => {
     localStorage.setItem('readingtracker.learning.v1', '{не json')
-    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], notes: [] })
+    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [] })
   })
 
   it('достраивает недостающие массивы в старом снимке', async () => {
@@ -209,10 +212,10 @@ describe('переезд снимка v1 → v2', () => {
   it('переносит категории в потоки с адресами и оставляет v1 на месте', async () => {
     const v1 = {
       categories: [
-        { id: 'c1', name: 'Professional Growth', icon: 'compass', accent: null,
+        { id: 'c1', name: 'Professional Growth', accent: null,
           outline: null, sort: 0, archived: false,
           created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' },
-        { id: 'c2', name: 'Английский', icon: 'chat', accent: 'sage',
+        { id: 'c2', name: 'Английский', accent: 'sage',
           outline: null, sort: 1, archived: false,
           created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' },
       ],
@@ -254,7 +257,7 @@ describe('переезд снимка v1 → v2', () => {
 
   it('достраивает недостающие materials и notes в старом снимке v1', async () => {
     localStorage.setItem('readingtracker.learning.v1', JSON.stringify({
-      categories: [{ id: 'c1', name: 'Growth', icon: 'compass', accent: null, outline: null,
+      categories: [{ id: 'c1', name: 'Growth', accent: null, outline: null,
         sort: 0, archived: false, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' }],
       // materials и notes отсутствуют вовсе.
     }))
@@ -268,7 +271,7 @@ describe('переезд снимка v1 → v2', () => {
 
   it('переживает отказ записи и всё равно отдаёт мигрированный снимок', async () => {
     localStorage.setItem('readingtracker.learning.v1', JSON.stringify({
-      categories: [{ id: 'c1', name: 'Growth', icon: 'compass', accent: null, outline: null,
+      categories: [{ id: 'c1', name: 'Growth', accent: null, outline: null,
         sort: 0, archived: false, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' }],
       materials: [], notes: [],
     }))
@@ -286,7 +289,7 @@ describe('переезд снимка v1 → v2', () => {
 
   it('мигрирует категорию без имени в запасной адрес вместо падения', async () => {
     localStorage.setItem('readingtracker.learning.v1', JSON.stringify({
-      categories: [{ id: 'c1', icon: 'compass', accent: null, outline: null,
+      categories: [{ id: 'c1', accent: null, outline: null,
         sort: 0, archived: false, created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z' }],
       materials: [], notes: [],
     }))
@@ -300,14 +303,14 @@ describe('переезд снимка v1 → v2', () => {
     localStorage.setItem('readingtracker.learning.v1',
       JSON.stringify({ categories: 'oops', materials: [], notes: [] }))
 
-    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], notes: [] })
+    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [] })
   })
 })
 
 describe('целостность фокуса', () => {
   it('снимает фокус с удалённого материала', async () => {
     const stream = await localLearning.addStream({
-      name: 'Professional Growth', icon: 'compass', accent: null, outline: null, sort: 0,
+      name: 'Professional Growth', accent: null, outline: null, sort: 0,
     })
     const material = await localLearning.addMaterial({
       stream_id: stream.id, title: 'Book', kind: 'book', author: null, url: null,
@@ -322,10 +325,10 @@ describe('целостность фокуса', () => {
 
   it('снимает фокус с материала, уехавшего в другой поток', async () => {
     const from = await localLearning.addStream({
-      name: 'From', icon: 'compass', accent: null, outline: null, sort: 0,
+      name: 'From', accent: null, outline: null, sort: 0,
     })
     const to = await localLearning.addStream({
-      name: 'To', icon: 'compass', accent: null, outline: null, sort: 1,
+      name: 'To', accent: null, outline: null, sort: 1,
     })
     const material = await localLearning.addMaterial({
       stream_id: from.id, title: 'Book', kind: 'book', author: null, url: null,
@@ -341,7 +344,7 @@ describe('целостность фокуса', () => {
 
   it('снимает фокус с материала, ушедшего из работы', async () => {
     const stream = await localLearning.addStream({
-      name: 'Professional Growth', icon: 'compass', accent: null, outline: null, sort: 0,
+      name: 'Professional Growth', accent: null, outline: null, sort: 0,
     })
     const material = await localLearning.addMaterial({
       stream_id: stream.id, title: 'Book', kind: 'book', author: null, url: null,
@@ -356,10 +359,10 @@ describe('целостность фокуса', () => {
 
   it('снимает фокус у любого потока, указывающего на материал удалённого потока', async () => {
     const stream = await localLearning.addStream({
-      name: 'Professional Growth', icon: 'compass', accent: null, outline: null, sort: 0,
+      name: 'Professional Growth', accent: null, outline: null, sort: 0,
     })
     const other = await localLearning.addStream({
-      name: 'Other', icon: 'compass', accent: null, outline: null, sort: 1,
+      name: 'Other', accent: null, outline: null, sort: 1,
     })
     const material = await localLearning.addMaterial({
       stream_id: stream.id, title: 'Book', kind: 'book', author: null, url: null,
@@ -377,7 +380,7 @@ describe('целостность фокуса', () => {
 
   it('оставляет фокус, когда материал правят, не уводя из работы', async () => {
     const stream = await localLearning.addStream({
-      name: 'Professional Growth', icon: 'compass', accent: null, outline: null, sort: 0,
+      name: 'Professional Growth', accent: null, outline: null, sort: 0,
     })
     const material = await localLearning.addMaterial({
       stream_id: stream.id, title: 'Book', kind: 'book', author: null, url: null,
@@ -394,7 +397,7 @@ describe('целостность фокуса', () => {
 describe('адрес потока', () => {
   it('выдаётся при создании и переживает переименование', async () => {
     const stream = await localLearning.addStream({
-      name: 'Professional Growth', icon: 'compass', accent: null, outline: null, sort: 0,
+      name: 'Professional Growth', accent: null, outline: null, sort: 0,
     })
     expect(stream.slug).toBe('professional-growth')
 
@@ -406,8 +409,8 @@ describe('адрес потока', () => {
   })
 
   it('разводит два потока с одним именем', async () => {
-    await localLearning.addStream({ name: 'Driving', icon: 'car', accent: null, outline: null, sort: 0 })
-    const second = await localLearning.addStream({ name: 'Driving', icon: 'car', accent: null, outline: null, sort: 1 })
+    await localLearning.addStream({ name: 'Driving', accent: null, outline: null, sort: 0 })
+    const second = await localLearning.addStream({ name: 'Driving', accent: null, outline: null, sort: 1 })
     expect(second.slug).toBe('driving-2')
   })
 })
@@ -419,7 +422,6 @@ describe('переезд v2 → v3', () => {
     id: 's1',
     slug: 'growth',
     name: 'Growth',
-    icon: 'compass',
     accent: null,
     goal: null,
     focus_material_id: null,
@@ -449,6 +451,7 @@ describe('переезд v2 → v3', () => {
   const noteV2 = (over: Record<string, unknown> = {}) => ({
     id: crypto.randomUUID(),
     material_id: 'm1',
+    session_id: null,
     part_id: null,
     part: null,
     title: null,
@@ -575,6 +578,7 @@ describe('переезд v2 → v3', () => {
       streams: [],
       materials: [],
       parts: [],
+      sessions: [],
       notes: [],
     })
   })
@@ -707,5 +711,78 @@ describe('снимок, написанный до появления указа�
     expect(snap.notes[0].part_id).toBe(null)
     // Имя, набранное руками, остаётся: связать его с главой задним числом нечем.
     expect(snap.notes[0].part).toBe('Глава 1. Название руками')
+  })
+})
+
+describe('занятия', () => {
+  const aMaterial = (streamId: string) => ({
+    stream_id: streamId,
+    title: 'Книга',
+    kind: 'book' as const,
+    author: null,
+    url: null,
+    status: 'backlog' as const,
+    cover_url: null,
+    scale: 'pages' as const,
+    pages_total: 300,
+    page_current: null,
+    sort: 0,
+  })
+
+  it('снимок без занятий читается как снимок, где их ещё не записывали', async () => {
+    localStorage.setItem(
+      'readingtracker.learning.v3',
+      JSON.stringify({ streams: [], materials: [], parts: [], notes: [] }),
+    )
+    expect((await localLearning.load()).sessions).toEqual([])
+  })
+
+  it('удалённое занятие оставляет свои конспекты без занятия', async () => {
+    const s = await localLearning.addStream(aStream)
+    const m = await localLearning.addMaterial(aMaterial(s.id))
+    const x = await localLearning.addSession({
+      material_id: m.id,
+      date: '2026-10-03',
+      page_from: 0,
+      page_to: 40,
+      part_ids: [],
+      completed: false,
+      minutes: 30,
+      rating: null,
+    })
+    await localLearning.addNote({
+      material_id: m.id,
+      session_id: x.id,
+      part_id: null,
+      part: null,
+      title: null,
+      body: 'мысль',
+      tags: [],
+      date: '2026-10-03',
+      sort: 0,
+    })
+
+    await localLearning.deleteSession(x.id)
+    const snap = await localLearning.load()
+
+    expect(snap.sessions).toEqual([])
+    expect(snap.notes.map((n) => n.session_id)).toEqual([null])
+  })
+
+  it('удаление материала уносит его занятия', async () => {
+    const s = await localLearning.addStream(aStream)
+    const m = await localLearning.addMaterial(aMaterial(s.id))
+    await localLearning.addSession({
+      material_id: m.id,
+      date: '2026-10-03',
+      page_from: 0,
+      page_to: 40,
+      part_ids: [],
+      completed: false,
+      minutes: null,
+      rating: null,
+    })
+    await localLearning.deleteMaterial(m.id)
+    expect((await localLearning.load()).sessions).toEqual([])
   })
 })

@@ -139,6 +139,7 @@ const note = (over: Partial<StudyNote> = {}): StudyNote => ({
   id: crypto.randomUUID(),
   material_id: 'm1',
   part: null,
+  session_id: null,
   part_id: null,
   title: null,
   body: '',

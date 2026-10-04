@@ -1,17 +1,14 @@
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
-import { Icon, type IconName } from '../../components/Icon'
 import { StreamForm } from '../../components/StreamForm'
-import { Jelly } from '../../components/ui'
+import { funnyGoal } from '../../lib/learning/goals'
+import { ACCENTS } from '../../lib/learning/types'
+import { Empty, Jelly } from '../../components/ui'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 
 /** Подсказки при пустом разделе — быстрый старт, а не константы системы. */
-const SUGGESTED: { name: string; icon: IconName }[] = [
-  { name: 'Professional Growth', icon: 'compass' },
-  { name: 'Driving', icon: 'car' },
-  { name: 'English', icon: 'chat' },
-]
+const SUGGESTED = ['Professional Growth', 'Driving', 'English']
 
 /**
  * У обучения нет витрины потоков.
@@ -24,8 +21,8 @@ const SUGGESTED: { name: string; icon: IconName }[] = [
  * Собственный экран остаётся ровно для случая, когда открывать нечего.
  */
 export function LearningIndex() {
-  const { t } = useLocale()
-  const { streams, loading, addStream } = useLearning()
+  const { t, locale } = useLocale()
+  const { streams, loading, addStream, updateStream } = useLearning()
   const [adding, setAdding] = useState(false)
   const [showArchive, setShowArchive] = useState(false)
 
@@ -43,23 +40,38 @@ export function LearningIndex() {
       <div className="page-head">
         <h1 className="display">{t('hub.title')}</h1>
       </div>
-      <div className="hero-empty">
-        <p className="muted">{t('hub.empty')}</p>
-        <Jelly className="btn" onClick={() => setAdding(true)}>
-          {t('hub.newStream')}
-        </Jelly>
+      {/* Готовые потоки стоят ниже кнопки и отдельной подписью: это не второй
+          способ завести поток, а подсказка, что туда вообще вписывают. */}
+      <Empty
+        art="signpost"
+        hint={t('hub.emptyBody')}
+        action={
+          <Jelly className="btn ghost sm" onClick={() => setAdding(true)}>
+            {t('hub.newStream')}
+          </Jelly>
+        }
+      >
+        {t('hub.empty')}
+      </Empty>
+
+      <div className="hub-suggest">
         <p className="small faint">{t('hub.suggest')}</p>
         <div className="row-tight">
-          {SUGGESTED.map((s, i) => (
+          {SUGGESTED.map((name, i) => (
             <button
-              key={s.name}
+              key={name}
               type="button"
               className="btn ghost sm"
-              onClick={() =>
-                void addStream({ name: s.name, icon: s.icon, accent: null, outline: null, sort: i })
-              }
+              onClick={async () => {
+                // Цвет раздаётся по порядку, как и в форме: поток без него
+                // пришёл бы в полосу переключения без метки. Цель — так же,
+                // как в форме: придуманная по имени, чтобы готовый поток
+                // открывался не с вопросом «зачем».
+                const made = await addStream({ name, accent: ACCENTS[i % ACCENTS.length], outline: null, sort: i })
+                if (made) await updateStream(made.id, { goal: funnyGoal(name, locale) })
+              }}
             >
-              {s.name}
+              {name}
             </button>
           ))}
         </div>
@@ -77,7 +89,7 @@ export function LearningIndex() {
               {archived.map((s) => (
                 <li key={s.id}>
                   <Link to={`/learning/${s.slug}`} data-accent={s.accent ?? undefined}>
-                    <Icon name={s.icon} size={16} />
+                    <i className="stream-dot" data-accent={s.accent ?? undefined} aria-hidden />
                     {s.name}
                   </Link>
                 </li>

@@ -5,6 +5,7 @@ import type { StudyNote } from './types'
 const note = (over: Partial<StudyNote> = {}): StudyNote => ({
   id: 'n1',
   material_id: 'm1',
+  session_id: null,
   part_id: null,
   part: null,
   title: null,

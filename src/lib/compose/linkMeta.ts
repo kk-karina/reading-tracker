@@ -1,4 +1,4 @@
-import type { MaterialKind } from './types'
+import type { MaterialKind } from '../learning/types'
 
 /**
  * Что удалось узнать о материале по одной ссылке.

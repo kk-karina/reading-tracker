@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { noteHeading, notesOfStream } from './notes'
+import { isBlankNote, noteHeading, notesOfStream } from './notes'
 import type { Material, MaterialPart, StudyNote } from './types'
 
 const material = (id: string, streamId: string): Material => ({
@@ -22,6 +22,7 @@ const material = (id: string, streamId: string): Material => ({
 const note = (id: string, materialId: string): StudyNote => ({
   id,
   material_id: materialId,
+  session_id: null,
   part_id: null,
   part: null,
   title: null,
@@ -90,5 +91,27 @@ describe('noteHeading', () => {
 
   it('безымянный лист остаётся безымянным', () => {
     expect(noteHeading(note('n1', 'm1'), parts, label)).toBe(null)
+  })
+})
+
+describe('isBlankNote', () => {
+  it('пустая строка и одни пробелы — пусто', () => {
+    expect(isBlankNote('', null)).toBe(true)
+    expect(isBlankNote('   \n  ', null)).toBe(true)
+  })
+
+  it('нетронутый контур потока — тоже пусто', () => {
+    const outline = '## Главное\n\n## Вопросы'
+    expect(isBlankNote(outline, outline)).toBe(true)
+    expect(isBlankNote(`\n${outline}  `, outline)).toBe(true)
+  })
+
+  it('дописанное в контур — уже конспект', () => {
+    const outline = '## Главное\n\n## Вопросы'
+    expect(isBlankNote(`${outline}\n- рекурсия`, outline)).toBe(false)
+  })
+
+  it('написанное без контура — конспект', () => {
+    expect(isBlankNote('одна строка', null)).toBe(false)
   })
 })

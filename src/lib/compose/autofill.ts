@@ -1,5 +1,5 @@
-import type { LinkMeta } from './cover'
-import type { MaterialKind } from './types'
+import type { LinkMeta } from './linkMeta'
+import type { MaterialKind } from '../learning/types'
 
 /** То, во что автозаполнение может попасть. Строки, а не null: это состояние формы. */
 export interface AutofillFields {

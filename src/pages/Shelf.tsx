@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
 import { BookForm } from '../components/BookForm'
 import { CoverReel } from '../components/CoverReel'
-import { Jelly, Segmented } from '../components/ui'
+import { Empty, Jelly, Segmented } from '../components/ui'
 import { progressOf } from '../lib/reading'
 import { addSampleShelf } from '../lib/seed'
 import type { Book, BookStatus, Session } from '../lib/types'
@@ -69,15 +69,12 @@ export function Shelf() {
 
   return (
     <>
-      <div className="page-head">
-        <h1 className="display">{t('nav.shelf')}</h1>
-      </div>
-
       {/* The page bar: what you are looking at on the left, what you can do
-          about it on the right. */}
-      <div className="filter-bar">
-        <div className="row-tight">
-          {books.length > 0 && (
+          about it on the right. Пустой полке полосы не достаётся: срезать
+          нечего, а «Добавить книгу» переехало в пустоту — см. `Empty`. */}
+      {books.length > 0 && (
+        <div className="filter-bar">
+          <div className="row-tight">
             <Segmented
               name={t('shelf.view')}
               value={view}
@@ -88,39 +85,47 @@ export function Shelf() {
               onChange={chooseView}
               className="sm"
             />
-          )}
-          {present.length > 1 && (
-            <Segmented
-              name={t('shelf.status')}
-              value={active}
-              options={[
-                { value: 'all' as StatusFilter, label: t('shelf.allStatuses') },
-                ...present.map((s) => ({ value: s as StatusFilter, label: t(`status.${s}`) })),
-              ]}
-              onChange={setStatus}
-              className="sm"
-            />
-          )}
-        </div>
-        <div className="row-tight">
-          <Jelly className="btn" onClick={() => setAdding(true)}>
-            {t('shelf.add')}
-          </Jelly>
-        </div>
-      </div>
-
-      {books.length === 0 ? (
-        <div className="panel">
-          <p className="muted" style={{ marginTop: 0 }}>
-            {t('shelf.empty')}
-          </p>
+            {present.length > 1 && (
+              <Segmented
+                name={t('shelf.status')}
+                value={active}
+                options={[
+                  { value: 'all' as StatusFilter, label: t('shelf.allStatuses') },
+                  ...present.map((s) => ({ value: s as StatusFilter, label: t(`status.${s}`) })),
+                ]}
+                onChange={setStatus}
+                className="sm"
+              />
+            )}
+          </div>
           <div className="row-tight">
-            <Jelly className="btn ghost sm" onClick={loadSeed} disabled={seeding}>
-              {t('shelf.loadSample')}
+            <Jelly className="btn" onClick={() => setAdding(true)}>
+              {t('shelf.add')}
             </Jelly>
-            <span className="small faint">{t('shelf.sampleHint')}</span>
           </div>
         </div>
+      )}
+
+      {books.length === 0 ? (
+        /* Пример полки стоит рядом с «Добавить» вторым, приглушённым: это
+           способ посмотреть, как всё работает, не заводя своего, — но
+           основной жест здесь всё-таки первый. */
+        <Empty
+          art="reading"
+          hint={t('shelf.emptyBody')}
+          action={
+            <>
+              <Jelly className="btn ghost sm" onClick={() => setAdding(true)}>
+                {t('shelf.add')}
+              </Jelly>
+              <Jelly className="btn ghost sm" onClick={loadSeed} disabled={seeding}>
+                {t('shelf.loadSample')}
+              </Jelly>
+            </>
+          }
+        >
+          {t('shelf.empty')}
+        </Empty>
       ) : view === 'reel' ? (
         <CoverReel
           books={shown.flatMap((s) => books.filter((b) => b.status === s))}
@@ -158,7 +163,7 @@ function ShelfBook({ book, sessions, index }: { book: Book; sessions: Session[];
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.03 * index, duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
     >
-      <Link to={`/book/${book.id}`} className="shelf-book">
+      <Link to={`/reading/book/${book.id}`} className="shelf-book">
         <motion.div whileHover={{ y: -6, rotate: -1.5 }} whileTap={{ scale: 0.97 }}>
           <BookCover book={book} />
         </motion.div>

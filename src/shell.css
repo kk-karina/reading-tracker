@@ -45,6 +45,94 @@
 .subnav-label {
   position: relative;
 }
+/* Первый пункт начинается по краю страницы, как и всё над ним и под ним:
+   внутренний отступ разводит соседей, а первому разводиться не с кем. Так же
+   устроены вкладки книги — `.tabs > .tab:first-child` в index.css. */
+.subnav > a:first-child .subnav-item {
+  padding-left: 0;
+}
+.subnav > a:first-child .subnav-ink {
+  left: 0;
+}
+
+/* ---------- полоса-заголовок ----------
+   Заголовок и навигация одним рядом. Активный таб набран заголовком страницы,
+   соседи стоят на той же базовой линии мельче и тише: ряд читается как «вот
+   где я, вот что рядом», а не как меню под названием. Так устроены потоки в
+   обучении и подразделы чтения. */
+.title-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 18px;
+  margin: 0 0 32px;
+}
+/* Под полосой может стоять ещё и чернильная полоса подразделов — тогда это
+   одна шапка в два ряда, и разрыв между ними меньше, чем до содержимого. */
+.title-tabs:has(+ .subnav) {
+  margin-bottom: 18px;
+}
+.title-tab {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 9px;
+  flex: none;
+  max-width: 100%;
+  font-size: 17px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  color: var(--ink-3);
+  text-decoration: none;
+  /* Кегль не тянется — меняется разом. Переход по `font-size` пересчитывал
+     раскладку каждый кадр: имя активного таба едет с семнадцати пикселей на
+     тридцать два, и все соседи справа ползут за ним двести восемьдесят
+     миллисекунд. Это и читалось как «негладко» — не медленно, а вязко.
+
+     Тянуть тут нечего и по существу: смена таба — это переход на другую
+     страницу, и заголовок обязан встать новым сразу, как встаёт всё под ним.
+     Цвет остаётся переходом: он ничего не двигает. */
+  transition: color 0.2s ease;
+}
+.title-tab:hover {
+  color: var(--ink);
+}
+/* Архивный поток стоит в ряду, но не притворяется рабочим. */
+.title-tab[data-dim]:not([data-on]) {
+  opacity: 0.55;
+}
+.title-tab[data-on] {
+  font-weight: 400;
+  font-size: clamp(26px, 3.4vw, 32px);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.title-tab-name {
+  font: inherit;
+  letter-spacing: inherit;
+  margin: 0;
+}
+/* Служебные пункты ряда (архив, «плюс») тише самих табов. */
+.title-tab-side {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.title-tab-side:hover,
+.title-tab-side:hover .icon {
+  color: var(--ink);
+}
+.title-tab-side .icon {
+  color: var(--ink-3);
+}
 
 .icon-btn {
   display: inline-flex;

@@ -1,8 +1,10 @@
+import { motion } from 'motion/react'
+import { useEffect, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import { fmtDate } from '../../lib/format'
-import { focusOf, studying } from '../../lib/learning/buckets'
+import { focusOf, sourceOrder, studying } from '../../lib/learning/buckets'
 import { barWidth, materialProgress } from '../../lib/learning/metrics'
-import { lastActivity } from '../../lib/learning/rhythm'
+import { lastTouched } from '../../lib/learning/sessions'
 import type { Material, Stream, StudyNote } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -12,6 +14,17 @@ import { MaterialCover } from './MaterialCover'
 
 /** Сколько соседей показать корешками; остальные уходят в число. */
 const SPINES = 4
+
+/** Сколько материалов предложить на выбор, когда фокуса нет. Дальше — число. */
+const PICKS = 4
+
+/**
+ * Обложка фокуса и обложка в выборе — один предмет: выбранная уезжает с места
+ * в ряду на место фокуса, а не исчезает, чтобы появиться в другом углу.
+ * Это и есть ответ на нажатие — другого подтверждения у выбора нет.
+ */
+const coverId = (id: string) => `focus-cover-${id}`
+const COVER_MOVE = { type: 'spring', duration: 0.45, bounce: 0.15 } as const
 
 /**
  * Нижний ярус подложки: за что сесть прямо сейчас.
@@ -33,28 +46,100 @@ export function StreamFocus({
   materials,
   notes,
   onLog,
+  onAdd,
 }: {
   stream: Stream
   materials: Material[]
   notes: StudyNote[]
   onLog: () => void
+  /** Завести материал. Нужен, когда сажать в фокус пока нечего. */
+  onAdd: () => void
 }) {
   const { t, locale } = useLocale()
   // Части берутся из контекста, а не пропом: они нужны здесь ровно на одну
   // строку прогресса и не стоят того, чтобы менять сигнатуру для трёх экранов.
-  const { parts } = useLearning()
+  const { parts, sessions, updateMaterial, updateStream } = useLearning()
 
   const focus = focusOf(materials, stream.focus_material_id)
   const others = studying(materials, stream.id).filter((m) => m.id !== focus?.id)
   const from = { to: `/learning/${stream.slug}`, label: t('nav.dashboard') }
 
+  // Кандидаты в фокус — всё, что не пройдено, от горячего к остывшему: то, за
+  // что уже садилась, стоит раньше того, что ждёт в бэклоге.
+  const open = focus ? [] : sourceOrder(materials, stream.id, null).filter((m) => m.status !== 'done')
+  const hasAny = materials.some((m) => m.stream_id === stream.id)
+
+  /** Тот же порядок, что у переключателя на странице материала: сначала
+      статус, потом указатель — иначе правка статуса стёрла бы только что
+      поставленный фокус. */
+  const pick = async (m: Material) => {
+    if (m.status !== 'active') await updateMaterial(m.id, { status: 'active' })
+    await updateStream(stream.id, { focus_material_id: m.id })
+  }
+
+  // Выбирать из одного — не выбор, а лишний клик. Единственный материал
+  // садится в фокус сам, в том числе только что заведённый первым. Запоминаем,
+  // кого уже посадили: иначе ответ стора, пришедший позже следующей
+  // отрисовки, вызвал бы вторую запись того же самого.
+  const sole = open.length === 1 ? open[0] : null
+  const seated = useRef<string | null>(null)
+  useEffect(() => {
+    if (!sole || seated.current === sole.id) return
+    seated.current = sole.id
+    void pick(sole)
+    // `pick` пересоздаётся на каждой отрисовке и поводом для записи не является.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sole?.id])
+
   if (!focus) {
+    // Один кандидат уже садится в фокус — показывать его в ряду «выбери»
+    // на один кадр значило бы мигнуть выбором, которого нет.
+    if (sole) return <div className="hero-focus hero-focus-empty" aria-busy />
+
+    if (open.length === 0) {
+      return (
+        <div className="hero-focus hero-focus-empty">
+          <p className="hero-focus-emptytext">
+            {t(hasAny ? 'stream.focusAllDone' : 'stream.focusNone')}
+          </p>
+          <Jelly className="btn hero-btn" onClick={onAdd}>
+            {t(hasAny ? 'learning.newMaterial' : 'stream.focusFirst')}
+          </Jelly>
+        </div>
+      )
+    }
+
+    const choices = open.slice(0, PICKS)
+    const more = open.length - choices.length
     return (
       <div className="hero-focus hero-focus-empty">
         <p className="hero-focus-emptytext">{t('stream.focusEmpty')}</p>
-        <Link className="btn hero-btn" to={`/learning/${stream.slug}/materials?view=active`}>
-          {t('nav.materials')}
-        </Link>
+        <div className="hero-pick">
+          {choices.map((m) => (
+            <button
+              key={m.id}
+              type="button"
+              className="hero-pick-item"
+              title={t('material.makeFocus')}
+              onClick={() => void pick(m)}
+            >
+              <motion.span className="hero-pick-cover" layoutId={coverId(m.id)} transition={COVER_MOVE}>
+                <MaterialCover material={m} size="md" />
+              </motion.span>
+              <span className="hero-pick-title">{m.title}</span>
+              <span className="hero-pick-by">
+                {[t(`kind.${m.kind}`), m.status === 'active' ? t('mview.active') : null]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </span>
+            </button>
+          ))}
+          {more > 0 && (
+            <Link className="hero-also-more" to={`/learning/${stream.slug}/materials`} state={{ from }}>
+              {t('stream.moreStudying', { n: more })}
+            </Link>
+          )}
+        </div>
       </div>
     )
   }
@@ -63,7 +148,7 @@ export function StreamFocus({
   const width = barWidth(p.percent)
   // Только собственные записи фокуса: иначе только что выбранный материал
   // показывает чужую последнюю запись и выглядит начатым.
-  const last = lastActivity(notes.filter((n) => n.material_id === focus.id).map((n) => n.date))
+  const last = lastTouched(focus.id, sessions, notes)
   const shown = others.slice(0, SPINES)
   const rest = others.length - shown.length
 
@@ -76,7 +161,9 @@ export function StreamFocus({
         aria-hidden
         tabIndex={-1}
       >
-        <MaterialCover material={focus} size="lg" />
+        <motion.span className="hero-focus-art" layoutId={coverId(focus.id)} transition={COVER_MOVE}>
+          <MaterialCover material={focus} size="lg" />
+        </motion.span>
       </Link>
 
       <div className="hero-focus-main">

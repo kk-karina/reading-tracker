@@ -8,7 +8,7 @@
  * ужимать здесь не оптимизация, а условие работоспособности.
  */
 
-import type { MaterialKind } from './types'
+import type { MaterialKind } from '../learning/types'
 
 /**
  * Кадр обложки — та же пропорция, что рисует MaterialCover.

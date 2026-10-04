@@ -80,8 +80,6 @@ describe('Rhythm', () => {
 })
 
 describe('WeeklyBars', () => {
-  const NWEEKS = 12
-
   const read = (pages: number, date: string): Session => ({
     id: `${date}-${pages}`,
     book_id: 'b1',
@@ -93,67 +91,46 @@ describe('WeeklyBars', () => {
     created_at: '',
   })
 
-  /** The books of the one week that has any, bottom of the pile first. */
-  const pile = (html: string): { bottom: number; height: number; color: string }[] =>
-    [
-      ...html.matchAll(
-        /class="wk-book" style="bottom:(\d+(?:\.\d+)?)(?:px)?;height:(\d+(?:\.\d+)?)px;[^"]*background-color:([^;"]+)/g,
-      ),
-    ].map((m) => ({ bottom: Number(m[1]), height: Number(m[2]), color: m[3] }))
+  /** The height of every bar drawn, oldest week first. */
+  const bars = (html: string): number[] =>
+    [...html.matchAll(/class="wk-bar" style="height:(\d+(?:\.\d+)?)px"/g)].map((m) => Number(m[1]))
 
   const week = (sessions: Session[]) => renderToStaticMarkup(<WeeklyBars sessions={sessions} />)
 
-  test('a week piles up into books, each resting on the one below', () => {
-    const books = pile(week([read(120, todayISO())]))
-
-    expect(books.length).toBeGreaterThan(2) // a pile, not one tall slab
-    expect(books[0].bottom).toBe(0) // it starts on the shelf, not in the air
-    for (const [i, b] of books.entries()) {
-      if (i === 0) continue
-      const below = books[i - 1]
-      expect(b.bottom).toBeGreaterThanOrEqual(below.bottom + below.height) // no overlap
-      expect(b.bottom - (below.bottom + below.height)).toBeLessThan(4) // and no float
-    }
-  })
-
-  test('no two books in a pile are the same size or colour as the last', () => {
-    const books = pile(week([read(150, todayISO())]))
-
-    expect(new Set(books.map((b) => b.height)).size).toBeGreaterThan(1)
-    for (const [i, b] of books.entries()) {
-      if (i > 0) expect(b.color).not.toBe(books[i - 1].color)
-    }
-  })
-
-  test('a heavier week is a taller pile of more books', () => {
+  test('a heavier week is a taller bar, in proportion', () => {
     const today = todayISO()
     // Both weeks in one chart, or each would be the tallest in its own and be
     // drawn full height.
-    const cols = week([read(30, toISO(addDays(fromISO(today), -7))), read(170, today)])
-      .split('class="wk-col"')
-      .slice(1)
-      .map(pile)
-    const [light, heavy] = [cols[NWEEKS - 2], cols[NWEEKS - 1]]
+    const [light, heavy] = bars(
+      week([read(40, toISO(addDays(fromISO(today), -7))), read(160, today)]),
+    )
 
-    const top = (p: typeof light) => p.at(-1)!.bottom + p.at(-1)!.height
-    expect(heavy.length).toBeGreaterThan(light.length)
-    expect(top(heavy)).toBeGreaterThan(top(light))
+    expect(heavy).toBeGreaterThan(light)
+    expect(heavy / light).toBeCloseTo(4)
   })
 
-  test('with no observer to fire, the pile renders standing', () => {
+  test('the bars render standing, with nothing left to animate in', () => {
     const html = week([read(60, todayISO())])
 
-    // Server markup has nothing to trigger the drop, so nothing may be left
-    // hidden above the shelf: a chart that never animates still has to read.
-    expect(html).toContain('opacity:1')
+    // A chart is data before it is an effect: no mark may wait on a trigger.
+    expect(bars(html)).toHaveLength(1)
     expect(html).not.toContain('opacity:0')
-    expect(html).not.toContain('translateY(-')
+    expect(html).not.toContain('scale')
   })
 
   test('a week with nothing in it keeps its place in the row', () => {
+    const html = week([read(30, todayISO())])
+
+    // Eleven quiet weeks around one that was read: emptiness among data is a
+    // reading too, so each keeps its column.
+    expect([...html.matchAll(/class="wk-none"/g)]).toHaveLength(11)
+  })
+
+  test('twelve empty weeks are an empty state, not an empty shelf', () => {
     const html = week([])
 
-    expect(pile(html)).toHaveLength(0)
-    expect([...html.matchAll(/class="wk-none"/g)]).toHaveLength(12)
+    expect(bars(html)).toHaveLength(0)
+    expect(html).not.toContain('wk-none')
+    expect(html).toContain('empty-pic')
   })
 })

@@ -1,6 +1,6 @@
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { ok, retrying, throwIf } from '../../store/retry'
-import type { Material, MaterialPart, Stream, StudyNote } from '../types'
+import type { Material, MaterialPart, Stream, StudyNote, StudySession } from '../types'
 import { losesFocus, losesParts, nextSlug } from './rules'
 import type {
   LearningStore,
@@ -8,9 +8,20 @@ import type {
   NewMaterialPart,
   NewStream,
   NewStudyNote,
+  NewStudySession,
 } from './types'
 
 const now = () => new Date().toISOString()
+
+/**
+ * Таблицы нет: Postgres (`42P01`) или кэш схемы PostgREST (`PGRST205`).
+ *
+ * Так выглядит база, на которой ещё не прогнали `007_study_sessions.sql`.
+ * Занятия в ней читаются как «ещё не записывали», а не роняют весь раздел:
+ * потоки, материалы и конспекты от миграции не зависят и должны открываться.
+ */
+const missingTable = (error: { code?: string } | null) =>
+  error?.code === '42P01' || error?.code === 'PGRST205'
 
 /** Postgres на нарушении уникальности. Здесь — занятый адрес потока. */
 const DUPLICATE = '23505'
@@ -22,7 +33,8 @@ const SLUG_TRIES = 3
 
 /**
  * Обучение в Supabase. Таблицы: streams, materials, material_parts,
- * study_notes — см. supabase/migrations/003_learning.sql. `user_id`
+ * study_sessions, study_notes — см. supabase/migrations/003_learning.sql и
+ * 007_study_sessions.sql. `user_id`
  * проставляет умолчание колонки (`auth.uid()`), границы ставит RLS.
  *
  * Правила того, что означает мутация, живут в `rules.ts` и применяются здесь
@@ -66,13 +78,20 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
 
   return {
     async load() {
-      // Все четыре ответа собираются прежде, чем какому-то позволено упасть:
+      // Все пять ответов собираются прежде, чем какому-то позволено упасть:
       // ранний бросок оставляет соседние отказы без ожидающего, и браузер
       // считает их необработанными. Та же причина, что в читательском сторе.
-      const [s, m, p, n] = await Promise.all([
+      const [s, m, p, x, n] = await Promise.all([
         retrying(() => sb.from('streams').select('*').order('sort').order('created_at')),
         retrying(() => sb.from('materials').select('*').order('sort').order('created_at')),
         retrying(() => sb.from('material_parts').select('*').order('sort')),
+        retrying(() =>
+          sb
+            .from('study_sessions')
+            .select('*')
+            .order('date', { ascending: false })
+            .order('created_at', { ascending: false }),
+        ),
         retrying(() =>
           sb
             .from('study_notes')
@@ -84,12 +103,17 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
       throwIf(s.error)
       throwIf(m.error)
       throwIf(p.error)
+      if (!missingTable(x.error)) throwIf(x.error)
       throwIf(n.error)
       return {
         streams: (s.data ?? []) as Stream[],
         materials: (m.data ?? []) as Material[],
         parts: (p.data ?? []) as MaterialPart[],
-        notes: (n.data ?? []) as StudyNote[],
+        sessions: (x.error ? [] : (x.data ?? [])) as StudySession[],
+        notes: ((n.data ?? []) as StudyNote[]).map((note) => ({
+          ...note,
+          session_id: note.session_id ?? null,
+        })),
       }
     },
 
@@ -97,7 +121,7 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
       // Занятые адреса читаются целиком: их десятки, а не тысячи, и это
       // дешевле, чем вставлять наугад и разбирать отказ как норму.
       const taken = (await ok(() => sb.from('streams').select('slug'))) as { slug: string }[]
-      const snap = { streams: taken as Stream[], materials: [], parts: [], notes: [] }
+      const snap = { streams: taken as Stream[], materials: [], parts: [], sessions: [], notes: [] }
 
       const tried: string[] = []
       for (let attempt = 0; attempt < SLUG_TRIES; attempt++) {
@@ -164,10 +188,28 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
       await ok(() => sb.from('material_parts').delete().eq('id', id))
     },
 
-    async addNote(item: NewStudyNote) {
+    async addSession(item: NewStudySession) {
       return (await ok(() =>
-        sb.from('study_notes').insert(item).select('*').single(),
+        sb.from('study_sessions').insert(item).select('*').single(),
+      )) as StudySession
+    },
+    async updateSession(id, patch) {
+      await ok(() => sb.from('study_sessions').update(patch).eq('id', id))
+    },
+    async deleteSession(id) {
+      // Конспекты занятия отвязывает `on delete set null`.
+      await ok(() => sb.from('study_sessions').delete().eq('id', id))
+    },
+
+    async addNote(item: NewStudyNote) {
+      // Конспект без занятия пишется без ключа: на базе до миграции 007
+      // колонки нет, и пустое значение уронило бы запись целиком.
+      const { session_id, ...rest } = item
+      const row = session_id ? item : rest
+      const made = (await ok(() =>
+        sb.from('study_notes').insert(row).select('*').single(),
       )) as StudyNote
+      return { ...made, session_id: made.session_id ?? null }
     },
     async updateNote(id, patch) {
       await ok(() =>

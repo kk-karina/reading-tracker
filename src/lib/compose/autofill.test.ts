@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { mergeLinkMeta, metaIsEmpty, type AutofillFields } from './autofill'
-import type { LinkMeta } from './cover'
+import type { LinkMeta } from './linkMeta'
 
 const fields = (over: Partial<AutofillFields> = {}): AutofillFields => ({
   title: '',

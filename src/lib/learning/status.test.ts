@@ -32,6 +32,7 @@ const part = (over: Partial<MaterialPart> = {}): MaterialPart => ({
 const note = (over: Partial<StudyNote> = {}): StudyNote => ({
   id: crypto.randomUUID(),
   material_id: 'm1',
+  session_id: null,
   part_id: null,
   part: null,
   title: null,

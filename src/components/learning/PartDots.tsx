@@ -50,6 +50,8 @@ export function PartDots({
   label,
   word,
   onToggle,
+  locked,
+  className,
 }: {
   parts: MaterialPart[]
   /** Части, по которым конспект есть, а отметки нет. */
@@ -57,6 +59,13 @@ export function PartDots({
   label: (part: MaterialPart, index: number) => string
   word: 'chapter' | 'lecture'
   onToggle: (part: MaterialPart) => void
+  /**
+   * Части, которые здесь не нажимаются. Лист занятия отмечает то, что пройдено
+   * в этот заход; закрытое раньше стоит залитым, но снять его отсюда значило
+   * бы переписать чужое занятие.
+   */
+  locked?: ReadonlySet<string>
+  className?: string
 }) {
   const { t } = useLocale()
 
@@ -66,7 +75,7 @@ export function PartDots({
 
   return (
     <div
-      className="dots"
+      className={`dots${className ? ` ${className}` : ''}`}
       role="group"
       aria-label={t(word === 'lecture' ? 'part.lectures' : 'part.chapters')}
       style={
@@ -85,6 +94,7 @@ export function PartDots({
             type="button"
             className={`dot ${state}`}
             aria-pressed={part.done}
+            disabled={locked?.has(part.id)}
             // Подпись диктору — имя и состояние; подсказка мыши — одно имя:
             // состояние она и так показывает заливкой.
             aria-label={`${name} — ${t(`part.state.${state}`)}`}

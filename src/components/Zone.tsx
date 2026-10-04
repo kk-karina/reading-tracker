@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
+import { Icon } from './Icon'
+import { Jelly, Tip } from './ui'
 
 /**
  * Зона экрана: имя, линия и то, что под ней.
@@ -12,7 +14,14 @@ import { Link } from 'react-router-dom'
  * остаётся тем, чем и должен быть, — подписью к числу внутри панели.
  *
  * Ссылка справа ведёт в раздел, который эта зона показывает куском. Рядом с
- * ней может стоять действие — то, ради чего в этот раздел и идут.
+ * ней может стоять плюс — дописать в то, что зона показывает. Плюс рисует сама
+ * зона, а не тот, кто её зовёт: на обоих дашбордах он должен быть одним и тем
+ * же кружком, что и у полосы прогресса, — иначе один жест пришлось бы учить
+ * в трёх видах. Кнопка с подписью здесь не нужна: подпись уже стоит слева,
+ * это имя зоны.
+ *
+ * Пояснение справа — то, что раньше было подсказкой в шапке панели: тихой
+ * строкой, чтобы не спорить с именем.
  *
  * Имя необязательно. Панель, которая и так говорит, что она такое — ритм
  * занятий читается с графика, — заголовка над собой не просит: он только
@@ -21,23 +30,33 @@ import { Link } from 'react-router-dom'
  */
 export function Zone({
   title,
+  hint,
   link,
-  action,
+  add,
   children,
 }: {
   title?: string
+  hint?: string
   link?: { to: string; label: string }
-  action?: ReactNode
+  /** Что добавляет плюс. `label` уходит в подсказку и в имя для диктора. */
+  add?: { label: string; onClick: () => void }
   children: ReactNode
 }) {
-  const head = title || link || action
+  const head = title || hint || link || add
   return (
     <section className="zone">
       {head && (
         <div className="zone-head">
           {title && <h2 className="zone-title">{title}</h2>}
           <span className="zone-acts">
-            {action}
+            {hint && <span className="zone-hint">{hint}</span>}
+            {add && (
+              <Tip text={add.label}>
+                <Jelly className="log-dot" onClick={add.onClick} aria-label={add.label}>
+                  <Icon name="plus" size={15} />
+                </Jelly>
+              </Tip>
+            )}
             {link && (
               <Link className="zone-link" to={link.to}>
                 {link.label}

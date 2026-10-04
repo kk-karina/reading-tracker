@@ -6,6 +6,7 @@ import {
   nextSlug,
   removeMaterial,
   removePart,
+  removeSession,
   removeStream,
   updateMaterial,
   updateNote,
@@ -19,7 +20,6 @@ const BEFORE = '2026-09-01T10:00:00.000Z'
 const stream = (over: Partial<Stream> & { id: string }): Stream => ({
   slug: over.id,
   name: 'Поток',
-  icon: 'compass',
   accent: null,
   goal: null,
   focus_material_id: null,
@@ -57,10 +57,25 @@ function filled(): LearningSnapshot {
       { id: 'p2', material_id: 'm1', title: '', done: false, sort: 1 },
       { id: 'p3', material_id: 'm2', title: '', done: false, sort: 0 },
     ],
+    sessions: [
+      {
+        id: 'x1',
+        material_id: 'm1',
+        date: '2026-09-02',
+        page_from: null,
+        page_to: null,
+        part_ids: ['p1'],
+        completed: false,
+        minutes: null,
+        rating: null,
+        created_at: '2026-09-02T00:00:00.000Z',
+      },
+    ],
     notes: [
       {
         id: 'n1',
         material_id: 'm1',
+        session_id: null,
         part_id: 'p1',
         part: null,
         title: null,
@@ -167,6 +182,7 @@ describe('материал', () => {
     const next = removeMaterial(filled(), 'm1')
     expect(next.materials.map((m) => m.id)).toEqual(['m2'])
     expect(next.parts.map((p) => p.id)).toEqual(['p3'])
+    expect(next.sessions).toEqual([])
     expect(next.notes).toEqual([])
     expect(next.streams[0].focus_material_id).toBeNull()
   })
@@ -224,6 +240,15 @@ describe('части и конспекты', () => {
     expect(next.notes[0].part_id).toBeNull()
   })
 
+  it('удаление части убирает её из занятий, которые её отметили', () => {
+    expect(removePart(filled(), 'p1').sessions[0].part_ids).toEqual([])
+  })
+
+  it('смена вида, уносящая части, убирает их и из занятий', () => {
+    const next = updateMaterial(filled(), 'm1', { kind: 'article', scale: null }, NOW)
+    expect(next.sessions[0].part_ids).toEqual([])
+  })
+
   it('правка конспекта проставляет updated_at', () => {
     const next = updateNote(filled(), 'n1', { body: 'другое' }, NOW)
     expect(next.notes[0].body).toBe('другое')
@@ -237,5 +262,15 @@ describe('вставка созданной строки', () => {
     const next = insert(filled(), 'materials', made)
     expect(next.materials.map((m) => m.id)).toEqual(['m1', 'm2', 'm3'])
     expect(next.streams).toEqual(filled().streams)
+  })
+})
+
+describe('занятия', () => {
+  it('удаление занятия оставляет его конспекты без занятия', () => {
+    const snap = filled()
+    snap.notes[0].session_id = 'x1'
+    const next = removeSession(snap, 'x1')
+    expect(next.sessions).toEqual([])
+    expect(next.notes.map((n) => n.session_id)).toEqual([null])
   })
 })

@@ -9,6 +9,7 @@ import {
   type MaterialStatus,
   type Stream,
   type StudyNote,
+  type StudySession,
 } from '../types'
 import * as rules from './rules'
 import type {
@@ -17,6 +18,7 @@ import type {
   NewMaterialPart,
   NewStream,
   NewStudyNote,
+  NewStudySession,
 } from './types'
 
 const KEY = 'readingtracker.learning.v3'
@@ -123,7 +125,7 @@ function migrateV2(old: SnapshotV2): LearningSnapshot {
     }
   }
 
-  return { streams, materials, parts, notes }
+  return { streams, materials, parts, sessions: [], notes }
 }
 
 /**
@@ -153,7 +155,10 @@ const backlogStatus = (status: string): MaterialStatus =>
 const fill = (snap: LearningSnapshot): LearningSnapshot => ({
   ...snap,
   materials: snap.materials.map((m) => ({ ...m, status: backlogStatus(m.status) })),
-  notes: snap.notes.map((n) => ({ ...n, part_id: n.part_id ?? null })),
+  // Занятия появились позже всего остального: снимок без них — просто снимок,
+  // в котором занятий ещё не записывали.
+  sessions: Array.isArray(snap.sessions) ? snap.sessions : [],
+  notes: snap.notes.map((n) => ({ ...n, part_id: n.part_id ?? null, session_id: n.session_id ?? null })),
 })
 
 function read(): LearningSnapshot {
@@ -259,6 +264,18 @@ export const localLearning: LearningStore = {
   },
   async deletePart(id) {
     change((snap) => rules.removePart(snap, id))
+  },
+
+  async addSession(item: NewStudySession) {
+    const made: StudySession = { ...item, id: uid(), created_at: now() }
+    change((snap) => rules.insert(snap, 'sessions', made))
+    return made
+  },
+  async updateSession(id, patch) {
+    change((snap) => rules.updateSession(snap, id, patch))
+  },
+  async deleteSession(id) {
+    change((snap) => rules.removeSession(snap, id))
   },
 
   async addNote(item: NewStudyNote) {

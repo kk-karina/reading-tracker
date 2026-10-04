@@ -6,11 +6,11 @@ import type { Material, MaterialPart, StudyNote } from './types'
  * `stream_id`. Три экрана считали это порознь и разошлись; здесь одно
  * правило и один проход, а не вложенный перебор на каждый конспект.
  */
-export function notesOfStream(
+export function notesOfStream<T extends Pick<StudyNote, 'material_id'>>(
   materials: Material[],
-  notes: StudyNote[],
+  notes: T[],
   streamId: string,
-): StudyNote[] {
+): T[] {
   const ids = new Set(materials.filter((m) => m.stream_id === streamId).map((m) => m.id))
   return notes.filter((n) => ids.has(n.material_id))
 }
@@ -40,4 +40,22 @@ export function noteHeading(
     if (i >= 0) return label(mine[i], i)
   }
   return note.part ?? note.title ?? null
+}
+
+/**
+ * Пустой ли лист — то есть стоит ли его вообще класть в хранилище.
+ *
+ * Лист занятия открывается с контуром потока в теле: контур на то и заведён,
+ * чтобы не начинать с чистого места. Но нетронутый контур — это всё ещё
+ * ничего не написанное, и раньше он уезжал в хранилище наравне с конспектом:
+ * записала занятие, отметила главу — в ленте появился лист, в котором нечего
+ * читать. Десять занятий подряд давали десять одинаковых пустышек.
+ *
+ * Поэтому пустым считается и нетронутый контур, а не только пустая строка.
+ * Прогресс от этого не страдает: главу закрывает отметка, страницу — число,
+ * статью — флаг, и ни одному из них конспект не нужен.
+ */
+export function isBlankNote(body: string, outline: string | null): boolean {
+  const written = body.trim()
+  return written === '' || written === (outline ?? '').trim()
 }

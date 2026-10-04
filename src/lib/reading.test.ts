@@ -67,7 +67,7 @@ describe('lastSessionDate', () => {
   })
 })
 
-import { finishedInYear, sharesBy, streakDays, stuckBooks } from './reading'
+import { finishedInYear, streakDays, stuckBooks } from './reading'
 import type { Book } from './types'
 
 const b = (over: Partial<Book>): Book => ({
@@ -80,6 +80,7 @@ const b = (over: Partial<Book>): Book => ({
   genre: null,
   language: null,
   status: 'reading',
+  url: null,
   is_focus: false,
   rating: null,
   review: null,
@@ -152,28 +153,6 @@ describe('finishedInYear', () => {
   test('ignores a book that is not finished, whatever date it carries', () => {
     const books = [b({ status: 'reading', finished_at: '2026-05-05' })]
     expect(finishedInYear(books, 2026)).toEqual([])
-  })
-})
-
-describe('sharesBy', () => {
-  test('groups books and orders the biggest group first', () => {
-    const books = [b({ genre: 'Бизнес' }), b({ genre: 'Психология' }), b({ genre: 'Бизнес' })]
-    expect(sharesBy(books, 'genre')).toEqual([
-      { key: 'Бизнес', count: 2 },
-      { key: 'Психология', count: 1 },
-    ])
-  })
-
-  test('leaves out books with the field empty rather than inventing a group', () => {
-    const books = [b({ genre: 'Бизнес' }), b({ genre: null })]
-    expect(sharesBy(books, 'genre')).toEqual([{ key: 'Бизнес', count: 1 }])
-  })
-
-  test('folds everything past the sixth group into one', () => {
-    const books = 'abcdefgh'.split('').map((g) => b({ genre: g }))
-    const shares = sharesBy(books, 'genre')
-    expect(shares).toHaveLength(6)
-    expect(shares[5]).toEqual({ key: null, count: 3 })
   })
 })
 

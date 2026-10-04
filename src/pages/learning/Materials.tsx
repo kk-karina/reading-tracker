@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
+import type { EmptyArtName } from '../../components/EmptyArt'
 import { MaterialForm } from '../../components/MaterialForm'
 import { MaterialRow } from '../../components/learning/MaterialRow'
 import { StudySheet } from '../../components/learning/StudySheet'
-import { Chip, Jelly, Segmented } from '../../components/ui'
+import { Chip, Empty, Jelly, Segmented } from '../../components/ui'
 import { fmtDate } from '../../lib/format'
 import type { DictKey } from '../../lib/i18n/dict'
 import {
@@ -14,7 +15,7 @@ import {
   type MaterialView,
 } from '../../lib/learning/buckets'
 import { barWidth, materialProgress } from '../../lib/learning/metrics'
-import { lastActivity } from '../../lib/learning/rhythm'
+import { lastTouched } from '../../lib/learning/sessions'
 import type { Material } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -35,10 +36,17 @@ import { useStream } from './StreamLayout'
  * иначе. Одна полоса на все разделы учится один раз.
  */
 
-const EMPTY: Record<MaterialView, DictKey> = {
-  active: 'studying.empty',
-  backlog: 'materials.emptyBacklog',
-  done: 'materials.emptyDone',
+/**
+ * Пустой срез — не промах фильтра, а состояние потока: «ничего не изучаю»
+ * и «бэклог разобран» говорят о человеке, а не о том, что не попал в
+ * рейку. Поэтому у каждого свой рисунок, и подобран он по смыслу строки:
+ * навалился на стопку — бери из неё; читает спокойно — делать нечего;
+ * мечтает о шапочке — пройденное впереди.
+ */
+const EMPTY: Record<MaterialView, { text: DictKey; art: EmptyArtName }> = {
+  active: { text: 'studying.empty', art: 'pile' },
+  backlog: { text: 'materials.emptyBacklog', art: 'reading' },
+  done: { text: 'materials.emptyDone', art: 'laptop' },
 }
 
 const isView = (v: string | null): v is MaterialView =>
@@ -47,7 +55,7 @@ const isView = (v: string | null): v is MaterialView =>
 export function Materials() {
   const { t, locale } = useLocale()
   const stream = useStream()
-  const { materials, notes, parts, updateMaterial } = useLearning()
+  const { materials, notes, sessions, parts, updateMaterial } = useLearning()
   const [adding, setAdding] = useState(false)
   /** Материал, по которому сейчас записывают занятие. Лист тот же, что на герое. */
   const [logging, setLogging] = useState<Material | null>(null)
@@ -79,31 +87,52 @@ export function Materials() {
 
   return (
     <>
-      {/* Полоса страницы: чем сузить — слева, что можно завести — справа. */}
-      <div className="filter-bar">
-        <div className="row-tight">
-          <Segmented
-            name={t('materials.filters')}
-            value={view}
-            options={MATERIAL_VIEWS.map((v) => ({
-              value: v,
-              label: `${t(`mview.${v}`)} ${counts[v]}`,
-            }))}
-            onChange={(v) => go(v)}
-            className="sm"
-          />
+      {/* Полоса страницы: чем сузить — слева, что можно завести — справа.
+          Пока в потоке нет ничего вовсе, рейка показывала бы три нуля, а
+          «Новый материал» висел бы над пустотой: оба переезжают вниз. */}
+      {!nothingAtAll && (
+        <div className="filter-bar">
+          <div className="row-tight">
+            <Segmented
+              name={t('materials.filters')}
+              value={view}
+              options={MATERIAL_VIEWS.map((v) => ({
+                value: v,
+                label: `${t(`mview.${v}`)} ${counts[v]}`,
+              }))}
+              onChange={(v) => go(v)}
+              className="sm"
+            />
+          </div>
+          <div className="row-tight">
+            <Jelly className="btn" onClick={() => setAdding(true)}>
+              {t('learning.newMaterial')}
+            </Jelly>
+          </div>
         </div>
-        <div className="row-tight">
-          <Jelly className="btn" onClick={() => setAdding(true)}>
-            {t('learning.newMaterial')}
-          </Jelly>
-        </div>
-      </div>
+      )}
 
       {rows.length === 0 ? (
-        <div className="empty small">
-          {t(nothingAtAll ? 'materials.emptyAll' : EMPTY[view])}
-        </div>
+        /* Пустой поток и пустой срез — разные вещи: первому нужно объяснить,
+           что такое материал, и дать его завести; второму хватает строки и
+           рисунка. Между срезами рисунок подменяется на месте, без нового
+           въезда, — рейка переключается часто, и каждый раз встречать её
+           приветствием было бы тиком. */
+        nothingAtAll ? (
+          <Empty
+            art="box"
+            hint={t('materials.emptyAllBody')}
+            action={
+              <Jelly className="btn ghost sm" onClick={() => setAdding(true)}>
+                {t('learning.newMaterial')}
+              </Jelly>
+            }
+          >
+            {t('materials.emptyAll')}
+          </Empty>
+        ) : (
+          <Empty art={EMPTY[view].art}>{t(EMPTY[view].text)}</Empty>
+        )
       ) : (
         /* Одна карточка на все три среза. Различает их не вид карточки, а то,
            что каждый срез к ней добавляет: «изучаю» — прогресс с плюсом,
@@ -111,9 +140,7 @@ export function Materials() {
         <ul className="mat-list">
           {rows.map((m) => {
             const p = materialProgress(m, parts)
-            const last = lastActivity(
-              notes.filter((n) => n.material_id === m.id).map((n) => n.date),
-            )
+            const last = lastTouched(m.id, sessions, notes)
             const isFocus = view === 'active' && m.id === stream.focus_material_id
             const width = barWidth(p.percent)
             return (
@@ -176,13 +203,7 @@ export function Materials() {
       )}
 
       {logging && (
-        <StudySheet
-          stream={stream}
-          material={logging}
-          notes={notes}
-          title={t('study.log')}
-          onClose={() => setLogging(null)}
-        />
+        <StudySheet stream={stream} material={logging} onClose={() => setLogging(null)} />
       )}
       {adding && <MaterialForm streamId={stream.id} onClose={() => setAdding(false)} />}
     </>

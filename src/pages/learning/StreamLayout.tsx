@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { Link, Navigate, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom'
+import { Navigate, Outlet, useNavigate, useOutletContext, useParams } from 'react-router-dom'
 import { Icon } from '../../components/Icon'
 import { StreamForm } from '../../components/StreamForm'
 import { SubNav } from '../../components/SubNav'
+import { TitleTabs } from '../../components/TitleTabs'
 import type { Stream } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -54,31 +55,19 @@ export function StreamLayout({ bare = false }: { bare?: boolean }) {
         крупнее соседей ровно настолько, чтобы читаться заголовком зоны, —
         отдельного экрана-витрины под выбор не нужно.
       */}
-      <nav className="stream-tabs" aria-label={t('hub.title')}>
-        {tabs.map((s) => {
-          const on = s.id === stream.id
-          return (
-            <Link
-              key={s.id}
-              to={`/learning/${s.slug}`}
-              className="stream-tab"
-              // Размер живёт на самой ссылке, а не на вложенном заголовке:
-              // узел таба переживает переключение, и рост разыгрывается
-              // переходом, а не скачком.
-              data-on={on || undefined}
-              data-archived={s.archived || undefined}
-              aria-current={on ? 'page' : undefined}
-            >
-              <Icon name={s.icon} size={15} />
-              {on ? <h1 className="stream-tab-name">{s.name}</h1> : s.name}
-            </Link>
-          )
-        })}
-
+      <TitleTabs
+        label={t('hub.title')}
+        items={tabs.map((s) => ({
+          to: `/learning/${s.slug}`,
+          label: s.name,
+          lead: <i className="stream-dot" data-accent={s.accent ?? undefined} aria-hidden />,
+          dim: s.archived,
+        }))}
+      >
         {/* Архив живёт тут же: витрины, где он лежал раньше, больше нет. */}
         {archived.length > 0 && (
           <button
-            className="stream-tab-side"
+            className="title-tab-side"
             type="button"
             aria-expanded={showArchive}
             onClick={() => setShowArchive((v) => !v)}
@@ -88,7 +77,7 @@ export function StreamLayout({ bare = false }: { bare?: boolean }) {
         )}
 
         <button
-          className="stream-tab-side"
+          className="title-tab-side"
           type="button"
           aria-label={t('hub.newStream')}
           title={t('hub.newStream')}
@@ -96,7 +85,7 @@ export function StreamLayout({ bare = false }: { bare?: boolean }) {
         >
           <Icon name="plus" size={15} />
         </button>
-      </nav>
+      </TitleTabs>
 
       <SubNav
         id="stream"
@@ -104,10 +93,23 @@ export function StreamLayout({ bare = false }: { bare?: boolean }) {
         items={[
           { to: `/learning/${stream.slug}`, label: t('nav.dashboard'), end: true },
           { to: `/learning/${stream.slug}/materials`, label: t('nav.materials') },
+          { to: `/learning/${stream.slug}/sessions`, label: t('nav.studySessions') },
           { to: `/learning/${stream.slug}/notes`, label: t('nav.notes') },
         ]}
       />
 
+      {/* Содержимое подменяется в кадре, без перехода, и это не недоделка.
+          Любое гашение целой страницы — это проход через пустоту: уходящее
+          доходит до нуля, размонтируется, страница схлопывается до двух полос
+          и разворачивается обратно под проявляющимся новым. Как ни расставляй
+          уход и приход — по очереди или внахлёст, — глаз видит мигание, а не
+          переход.
+
+          Перекрыть пустоту можно было бы, продержав старое поверх нового, но
+          высоты у подразделов разные, и наложение даёт собственный прыжок.
+          Поэтому здесь ничего не анимируется: о переключении говорят чернила
+          под подразделом и заголовок потока, а содержимое просто становится
+          другим — мгновенно и без вспышки. */}
       <Outlet context={{ stream } satisfies StreamCtx} />
 
       {/* Новый поток заводится прямо отсюда, и открыть его надо сразу: иначе

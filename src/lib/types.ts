@@ -15,6 +15,12 @@ export interface Book {
   pages: number | null
   cover_url: string | null
   external_id: string | null // Google Books volume id, so the same book is not added twice
+  /**
+   * Где книга живёт в сети — магазин, издательство, Goodreads. Источник для ✦
+   * в форме и ссылка наружу со страницы книги. У книг из старых снимков поля
+   * нет совсем, поэтому читается через `?? null`.
+   */
+  url: string | null
   genre: string | null
   language: string | null
   status: BookStatus

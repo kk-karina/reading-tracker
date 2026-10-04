@@ -1,5 +1,6 @@
 import { motion } from 'motion/react'
 import { NavLink } from 'react-router-dom'
+import { inkSlide } from './ui'
 
 export interface SubNavItem {
   to: string
@@ -29,7 +30,7 @@ export function SubNav({ items, id, label }: { items: SubNavItem[]; id: string; 
                 <motion.span
                   layoutId={`subnav-ink-${id}`}
                   className="subnav-ink"
-                  transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+                  transition={inkSlide}
                 />
               )}
               <span className="subnav-label">{i.label}</span>

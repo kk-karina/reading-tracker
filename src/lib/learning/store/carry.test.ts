@@ -78,7 +78,6 @@ function fakeClient(fail?: (call: Call) => boolean) {
 const stream = (over: Partial<Stream> & { id: string }): Stream => ({
   slug: over.id,
   name: 'Поток',
-  icon: 'compass',
   accent: null,
   goal: null,
   focus_material_id: null,
@@ -112,10 +111,12 @@ function local(): LearningSnapshot {
       },
     ],
     parts: [{ id: 'p1', material_id: 'm1', title: '', done: true, sort: 0 }],
+    sessions: [],
     notes: [
       {
         id: 'n1',
         material_id: 'm1',
+        session_id: null,
         part_id: 'p1',
         part: null,
         title: null,

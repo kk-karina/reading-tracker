@@ -7,17 +7,49 @@ export const LEARNING = {
   'nav.dashboard': { ru: 'Дашборд', en: 'Dashboard' },
   'nav.materials': { ru: 'Материалы', en: 'Materials' },
   // Раздел называется тем, что в нём лежит. «Заметки» — это про пометки на
-  // полях; здесь пишут конспект занятия, и он же и есть прогресс.
+  // полях; здесь пишут конспект занятия.
   'nav.notes': { ru: 'Конспекты', en: 'Notes' },
+  // Занятия — журнал прогресса потока, рядом со своим хранилищем конспектов:
+  // те же две вкладки, что у материала.
+  'nav.studySessions': { ru: 'Занятия', en: 'Sessions' },
+  'sjournal.material': { ru: 'Материал', en: 'Material' },
+  'sjournal.allMaterials': { ru: 'Все материалы', en: 'All materials' },
+  'group.byMaterial': { ru: 'По материалам', en: 'By material' },
+  'ssessions.empty': { ru: 'Занятий пока нет', en: 'No sessions yet' },
+  'ssessions.emptyBody': {
+    ru: 'Запиши, что прошла, — занятия встанут сюда строками, по дням или по материалам.',
+    en: 'Log what you got through — sessions line up here, by day or by material.',
+  },
+  'notes.empty': { ru: 'Конспектов пока нет', en: 'No notes yet' },
+  'notes.emptyBody': {
+    ru: 'Всё, что ты записала по материалам потока, соберётся здесь — с занятием или без.',
+    en: 'Everything you write down across the stream collects here — with a session or without.',
+  },
+  'unit.lectures': {
+    ru: { one: 'лекция', few: 'лекции', many: 'лекций' },
+    en: { one: 'lecture', other: 'lectures' },
+  },
+  'unit.chapters': {
+    ru: { one: 'глава', few: 'главы', many: 'глав' },
+    en: { one: 'chapter', other: 'chapters' },
+  },
+  'sjournal.whole': { ru: 'целиком', en: 'in full' },
+  'material.notFound': { ru: 'Материал удалён', en: 'Material deleted' },
+  'material.tabSessions': { ru: 'Занятия', en: 'Sessions' },
+  'material.sessionsEmpty': { ru: 'Занятий пока нет', en: 'No sessions yet' },
 
-  'learning.newMaterial': { ru: 'Новый материал', en: 'New material' },
+  // Все двери «завести» начинаются одним глаголом: «Добавить книгу», «Добавить
+  // конспект», «Добавить материал». «Новый материал» рядом с ними читался как
+  // другое действие, хотя открывает тот же композер.
+  'learning.newMaterial': { ru: 'Добавить материал', en: 'Add a material' },
 
   'hub.title': { ru: 'Лернинг Хаб', en: 'Learning Hub' },
-  'hub.empty': {
-    ru: 'Пока ни одного потока. Поток — это область, в которой ты учишься.',
-    en: 'No streams yet. A stream is an area you are learning in.',
+  'hub.empty': { ru: 'Пока ни одного потока', en: 'No streams yet' },
+  'hub.emptyBody': {
+    ru: 'Поток — это область, в которой ты учишься: материалы, конспекты и ритм считаются внутри него.',
+    en: 'A stream is an area you are learning in: its materials, notes and rhythm all count inside it.',
   },
-  'hub.newStream': { ru: 'Новый поток', en: 'New stream' },
+  'hub.newStream': { ru: 'Добавить поток', en: 'Add a stream' },
   'hub.suggest': { ru: 'Или сразу один из этих:', en: 'Or start with one of these:' },
   'hub.archiveShort': { ru: 'Архив ({n})', en: 'Archive ({n})' },
   'hub.archived': {
@@ -33,58 +65,83 @@ export const LEARNING = {
   'stream.goalEmpty': { ru: 'Зачем этот поток?', en: 'What is this stream for?' },
   'stream.focus': { ru: 'Сейчас в фокусе', en: 'In focus now' },
   'stream.focusEmpty': { ru: 'Выбери, за что сесть.', en: 'Choose what to sit down with.' },
+  'stream.focusNone': {
+    ru: 'Здесь встанет то, за что садишься.',
+    en: 'Whatever you sit down with will stand here.',
+  },
+  'stream.focusFirst': { ru: 'Добавить первый материал', en: 'Add the first material' },
+  'stream.focusAllDone': {
+    ru: 'Всё пройдено. Что дальше?',
+    en: 'All done. What’s next?',
+  },
+  'stream.goalAnother': { ru: 'Придумать другую', en: 'Think of another' },
   'stream.open': { ru: 'Открыть', en: 'Open' },
   // Не считаемый: «из 8 недель» не склоняется от n.
   'stream.activeWeeks': {
     ru: 'Активна {n} из 8 недель',
     en: 'Active {n} of the last 8 weeks',
   },
-  'stream.lastNote': { ru: 'последняя запись {date}', en: 'last note {date}' },
-  'stream.neverNoted': { ru: 'записей пока нет', en: 'no notes yet' },
+  'stream.lastNote': { ru: 'последний конспект {date}', en: 'last note {date}' },
+  'stream.neverNoted': { ru: 'конспектов пока нет', en: 'no notes yet' },
 
   'stream.continue': { ru: 'Продолжить', en: 'Continue' },
 
-  // Дашборд: имена зон экрана. Отвечают на вопрос, а не называют сущность, —
-  // «Что осталось», а не «Конспекты». У зоны ритма имени нет вовсе: панель с
-  // числами и графиком называет себя сама.
-  'stream.zoneNow': { ru: 'Сейчас', en: 'Right now' },
+  // Дашборд: имена зон экрана. Зона либо отвечает на вопрос — «Что осталось»,
+  // — либо зовёт сущность тем же словом, что и весь остальной интерфейс.
+  // Синоним тут хуже вопроса: «Очередь» над тем, что на соседней вкладке
+  // зовётся бэклогом, заставляла гадать, одно ли это. У зоны ритма имени нет
+  // вовсе: панель с числами и графиком называет себя сама.
   'stream.zoneThinking': { ru: 'Что осталось', en: 'What it left' },
-  'stream.zoneQueue': { ru: 'Очередь', en: 'The queue' },
+  'stream.zoneBacklog': { ru: 'Бэклог', en: 'Backlog' },
+  'stream.backlogAll': { ru: 'Весь бэклог', en: 'The whole backlog' },
   'stream.goalHint': { ru: 'Нажми, чтобы изменить цель', en: 'Click to edit the goal' },
   'stream.moreStudying': {
     ru: { one: 'и ещё {n}', few: 'и ещё {n}', many: 'и ещё {n}' },
     en: { one: 'and {n} more', other: 'and {n} more' },
   },
-  'stream.moreQueued': {
-    ru: { one: 'и ещё {n} в очереди', few: 'и ещё {n} в очереди', many: 'и ещё {n} в очереди' },
-    en: { one: 'and {n} more queued', other: 'and {n} more queued' },
+  'stream.moreBacklog': {
+    ru: { one: 'и ещё {n} в бэклоге', few: 'и ещё {n} в бэклоге', many: 'и ещё {n} в бэклоге' },
+    en: { one: 'and {n} more in the backlog', other: 'and {n} more in the backlog' },
   },
 
-  // Лист один, а поводов к нему два, и называются они разными словами. Занятие
-  // записывают, когда уже посидели за материалом: источник известен, речь о том,
-  // что из него пройдено. Конспект добавляют, когда есть что записать: о чём —
-  // спрашивает сам лист. Отсюда и две подписи: у полосы прогресса первая, над
-  // листами и в ленте — вторая.
-  'study.log': { ru: 'Записать занятие', en: 'Log activity' },
-  'note.add': { ru: 'Добавить конспект', en: 'Add note' },
+  // Две двери и два листа. Занятие записывают, когда посидели за материалом:
+  // речь о том, что из него пройдено, а конспекты к нему — по желанию.
+  // Конспект добавляют, когда есть что записать, и занятия он не требует.
+  'study.log': { ru: 'Записать занятие', en: 'Log a session' },
+  'note.add': { ru: 'Добавить конспект', en: 'Add a note' },
+  'study.editTitle': { ru: 'Правка занятия', en: 'Edit the session' },
+  'study.delete': { ru: 'Удалить занятие', en: 'Delete session' },
+  // Говорится, что откатится, а что нет: удаление занятия — это не только
+  // строка в дневнике, но и отметки на главах.
+  'study.confirmDelete': {
+    ru: 'Удалить это занятие? Отмеченное в нём снова станет непройденным, а конспекты останутся.',
+    en: 'Delete this session? What it marked done goes back to not done; the notes stay.',
+  },
+  'study.entries': {
+    ru: { one: '{n} запись', few: '{n} записи', many: '{n} записей' },
+    en: { one: '{n} entry', other: '{n} entries' },
+  },
+  'draft.addNote': { ru: 'Конспект', en: 'Note' },
+  'draft.part': { ru: 'К какой части', en: 'Which part' },
+  'draft.noPart': { ru: 'Без главы', en: 'No chapter' },
+  'draft.open': { ru: 'Открыть', en: 'Open' },
+  'step.pickChapters': {
+    ru: 'Отметь главы, которые прошла',
+    en: 'Mark the chapters you got through',
+  },
+  'step.pickLectures': {
+    ru: 'Отметь лекции, которые прошла',
+    en: 'Mark the lectures you got through',
+  },
   'study.source': { ru: 'Источник', en: 'Source' },
   'study.noMaterials': {
     ru: 'В потоке пока нет материалов — конспект пишется о чём-то, так что сначала добавь материал.',
     en: 'This stream has no materials yet — a note is about something, so add a material first.',
   },
   'study.willBe': { ru: 'Станет {done} из {total}', en: 'That makes it {done} of {total}' },
-  'study.willBePage': {
-    ru: 'Станет {done} из {total} стр.',
-    en: 'That makes it p. {done} of {total}',
-  },
-  'study.toPage': { ru: 'Дочитала до страницы', en: 'Read up to page' },
   'study.noParts': {
     ru: 'У материала ещё нет глав — они заводятся на его странице.',
     en: 'This material has no chapters yet — they are added on its page.',
-  },
-  'study.willBeNoTotal': {
-    ru: { one: 'Станет {n} конспект', few: 'Станет {n} конспекта', many: 'Станет {n} конспектов' },
-    en: { one: 'That makes {n} note', other: 'That makes {n} notes' },
   },
   'stream.alsoStudying': { ru: 'Ещё изучаю', en: 'Also studying' },
   'stream.weekNotes': { ru: 'Конспектов за 7 дней', en: 'Notes in the last 7 days' },
@@ -93,23 +150,16 @@ export const LEARNING = {
     en: { one: 'on {n} day', other: 'on {n} days' },
   },
   'stream.streakScope': { ru: 'во всём обучении', en: 'across all learning' },
-  'stream.notesRecent': { ru: 'Последние конспекты', en: 'Latest notes' },
   // Раздел зовётся Конспектами; ссылка на него звала его старым именем.
   'stream.notesAll': { ru: 'Все конспекты', en: 'All notes' },
-  'stream.notesNone': { ru: 'Конспектов пока нет.', en: 'No notes yet.' },
-  'stream.resources': { ru: 'Ресурсы и бэклог', en: 'Resources and backlog' },
-  'stream.resourcesNone': {
-    ru: 'В бэклоге пусто — добавить нечего разбирать.',
-    en: 'The backlog is empty — nothing waiting to be sorted.',
-  },
-  'stream.thought': { ru: 'Мысль недели', en: 'Thought of the week' },
+  'stream.notesNone': { ru: 'Конспектов пока нет', en: 'No notes yet' },
+  'stream.resourcesNone': { ru: 'В бэклоге пусто', en: 'The backlog is empty' },
   'chart.studyRhythm': {
     ru: 'Конспектов в день за полгода',
     en: 'Notes per day, last 26 weeks',
   },
 
   'stream.name': { ru: 'Название', en: 'Name' },
-  'stream.icon': { ru: 'Иконка', en: 'Icon' },
   'stream.accent': { ru: 'Цвет', en: 'Colour' },
   'stream.outline': { ru: 'Контур конспекта', en: 'Note outline' },
   'stream.outlineHint': {
@@ -140,6 +190,12 @@ export const LEARNING = {
     ru: { one: '{n} глава', few: '{n} главы', many: '{n} глав' },
     en: { one: '{n} chapter', other: '{n} chapters' },
   },
+  // Сводка дня в дневнике потока: части разных материалов — и главы, и
+  // лекции, — поэтому общим словом.
+  'count.parts': {
+    ru: { one: '{n} часть', few: '{n} части', many: '{n} частей' },
+    en: { one: '{n} part', other: '{n} parts' },
+  },
   'count.lectures': {
     ru: { one: '{n} лекция', few: '{n} лекции', many: '{n} лекций' },
     en: { one: '{n} lecture', other: '{n} lectures' },
@@ -148,32 +204,31 @@ export const LEARNING = {
   'part.lecture': { ru: 'Лекция {n}', en: 'Lecture {n}' },
   'part.chapters': { ru: 'Главы', en: 'Chapters' },
   'part.lectures': { ru: 'Лекции', en: 'Lectures' },
-  // Одно слово на выбор части и одно на отметку — у книги глава, у курса лекция.
-  // Пара ключей, а не подстановка слова в шаблон: в английском «Chapter done» и
-  // «Lecture done» ещё совпадают по форме, а в русском род уже расходится.
-  'part.pickChapter': { ru: 'Глава', en: 'Chapter' },
-  'part.pickLecture': { ru: 'Лекция', en: 'Lecture' },
-  'part.doneChapter': { ru: 'Глава пройдена', en: 'Chapter done' },
-  'part.doneLecture': { ru: 'Лекция пройдена', en: 'Lecture done' },
-  'part.started': { ru: 'начата', en: 'started' },
-  'part.add': { ru: 'Добавить', en: 'Add' },
-  'part.remove': { ru: 'Убрать', en: 'Remove' },
-  'part.rename': { ru: 'Название части', en: 'Part name' },
   // Имя главы правится в двух местах — в списке частей и в листе занятия.
   // Подпись при этом разная: в списке правят «часть», а на листе сидят с
   // конкретной главой, и звать её «частью» там было бы казённо.
   'part.nameChapter': { ru: 'Название главы', en: 'Chapter name' },
   'part.nameLecture': { ru: 'Название лекции', en: 'Lecture name' },
-  'part.nameHint': {
-    ru: 'Пустое — останется номером.',
-    en: 'Leave it empty to keep the number.',
-  },
   // Состояние части словом — так её читает экранный диктор в ряду точек, где
   // всё остальное сказано заливкой. Род женский у обоих слов, главы и лекции.
   'part.state.done': { ru: 'пройдена', en: 'done' },
   'part.state.started': { ru: 'начата', en: 'started' },
   'part.state.fresh': { ru: 'не пройдена', en: 'not done' },
   'part.names': { ru: 'Назвать списком', en: 'Name from a list' },
+  'part.paste': { ru: 'Вставить оглавление', en: 'Paste the contents' },
+  'part.backToList': { ru: 'К списку', en: 'Back to the list' },
+  'part.addLecture': { ru: 'Лекция', en: 'Lecture' },
+  'part.addChapter': { ru: 'Глава', en: 'Chapter' },
+  'part.renameOne': { ru: 'Название: {name}', en: 'Name: {name}' },
+  'part.removeOne': { ru: 'Убрать: {name}', en: 'Remove: {name}' },
+  'part.pastePlaceholderLectures': {
+    ru: '1. Введение\n2. Токены\n3. Компоненты',
+    en: '1. Introduction\n2. Tokens\n3. Components',
+  },
+  'part.pastePlaceholderChapters': {
+    ru: '1. Вступление\n2. Первая глава\n3. Вторая глава',
+    en: '1. Introduction\n2. Chapter one\n3. Chapter two',
+  },
   'part.namesChapters': {
     ru: 'По строке на главу, сверху вниз. Вставляй программу прямо как есть: номер в начале строки снимется сам. Пустая строка оставляет главу при её номере.',
     en: 'One line per chapter, top to bottom. Paste the contents as they are — a leading number is stripped. A blank line leaves that chapter at its number.',
@@ -198,7 +253,6 @@ export const LEARNING = {
   'material.read': { ru: 'Прочитано', en: 'Read' },
   'material.watched': { ru: 'Просмотрено', en: 'Watched' },
 
-  'material.coverUpload': { ru: 'Загрузить файл', en: 'Upload a file' },
   'material.coverBadType': {
     ru: 'Это не картинка. Нужен файл изображения.',
     en: 'That is not an image file.',
@@ -222,28 +276,16 @@ export const LEARNING = {
   'material.factLeft': { ru: 'Осталось', en: 'Left' },
   'material.factNotes': { ru: 'Конспекты', en: 'Notes' },
   'material.factLast': { ru: 'Последнее занятие', en: 'Last session' },
-  'material.partsEmpty': {
-    ru: 'Частей пока нет. Заведи их по одной или вставь программу списком — тогда прогресс пойдёт по ним.',
-    en: 'No parts yet. Add them one by one, or paste the syllabus as a list — progress then counts by them.',
-  },
-  'material.partsLocked': {
-    ru: 'У этого материала нет глав: статья и ролик меряются отметкой, книга — страницами.',
-    en: 'This material has no chapters: an article or a video is a single mark, a book counts pages.',
-  },
   'material.edit': { ru: 'Настроить материал', en: 'Edit material' },
   'material.delete': { ru: 'Удалить материал', en: 'Delete material' },
   'material.confirmDelete': {
     ru: 'Удалить материал вместе с его конспектами?',
     en: 'Delete the material and its notes?',
   },
-  'material.notesEmpty': {
-    ru: 'Конспектов пока нет. Глава отмечается пройденной в листе занятия.',
-    en: 'No notes yet. A chapter is marked done when you log a session.',
-  },
+  'material.notesEmpty': { ru: 'Конспектов пока нет', en: 'No notes yet' },
   'material.progress': { ru: '{done} из {total}', en: '{done} of {total}' },
   'material.cover': { ru: 'Обложка', en: 'Cover' },
   'material.fetch': { ru: 'Заполнить по ссылке', en: 'Fill in from the link' },
-  'material.fetching': { ru: 'Читаю ссылку…', en: 'Reading the link…' },
   'material.fetchNothing': {
     ru: 'По этой ссылке ничего не нашлось — впиши руками.',
     en: 'Nothing came back from that link — type it in by hand.',
@@ -252,7 +294,6 @@ export const LEARNING = {
     ru: 'Адрес уйдёт стороннему сервису, который читает разметку страницы.',
     en: 'The address goes to a third-party service that reads the page markup.',
   },
-  'material.coverClear': { ru: 'Убрать обложку', en: 'Remove the cover' },
   'material.makeFocus': { ru: 'Сделать фокусом потока', en: 'Make it the stream focus' },
   'material.isFocus': { ru: 'В фокусе потока', en: 'The stream focus' },
 
@@ -261,14 +302,18 @@ export const LEARNING = {
   'kind.course': { ru: 'Курс', en: 'Course' },
   'kind.video': { ru: 'Видео', en: 'Video' },
 
-  'mstatus.backlog': { ru: 'В очереди', en: 'Queued' },
-  'material.alreadyDone': { ru: 'Уже пройдено', en: 'Already done' },
-  'mstatus.active': { ru: 'В работе', en: 'Active' },
-  'mstatus.done': { ru: 'Пройдено', en: 'Done' },
+  // Статус материала — тем же словом, что срез «Материалов», в котором он
+  // лежит: «В работе» на карточке из среза «На изучении» звучало как третье
+  // состояние.
+  'mstatus.backlog': { ru: 'В бэклоге', en: 'In the backlog' },
+  'mstatus.active': { ru: 'На изучении', en: 'Studying' },
+  'mstatus.done': { ru: 'Изучено', en: 'Studied' },
 
   'studying.empty': {
-    ru: 'Ничего не изучается. Возьми что-нибудь из бэклога.',
-    en: 'Nothing in progress. Take something from the backlog.',
+    // Связка после дефиса: рукописная строка узкая, и «что-» без «нибудь»
+    // повисало бы на конце строки.
+    ru: 'Ничего не изучается — возьми что-\u2060нибудь из бэклога',
+    en: 'Nothing in progress — take something from the backlog',
   },
   /* Бейдж, а не действие: фокус на карточке отмечают, а переключают его на
      странице материала — там видно, что именно меняешь, и есть чем отменить. */
@@ -281,24 +326,18 @@ export const LEARNING = {
   'mview.done': { ru: 'Изучены', en: 'Studied' },
   'materials.filters': { ru: 'Фильтры материалов', en: 'Material filters' },
   'materials.emptyBacklog': {
-    ru: 'Бэклог пуст. Всё разобрано.',
-    en: 'The backlog is empty. All sorted.',
+    ru: 'Бэклог пуст — всё разобрано',
+    en: 'The backlog is empty, all sorted',
   },
-  'materials.emptyDone': {
-    ru: 'Пройденного пока нет.',
-    en: 'Nothing finished yet.',
-  },
-  'materials.emptyAll': {
-    ru: 'В этом потоке пока нет материалов.',
-    en: 'No materials in this stream yet.',
+  'materials.emptyDone': { ru: 'Изученного пока нет', en: 'Nothing studied yet' },
+  'materials.emptyAll': { ru: 'В потоке пока пусто', en: 'Nothing in this stream yet' },
+  'materials.emptyAllBody': {
+    ru: 'Материал — это книга, курс, статья или ролик. Прогресс потока считается по ним.',
+    en: 'A material is a book, a course, an article or a video. The stream counts its progress by them.',
   },
 
-  'backlog.take': { ru: 'Взять в работу', en: 'Take it on' },
+  'backlog.take': { ru: 'Взять на изучение', en: 'Start studying' },
 
-  // Чем подписан лист, которому нечем подписаться: ни главы, ни заголовка.
-  // Звался «Новым конспектом» — от кнопки, которой больше нет, и годовалая
-  // запись в ленте выглядела свежей.
-  'note.untitled': { ru: 'Без названия', en: 'Untitled' },
   'note.part': { ru: 'Глава или часть', en: 'Chapter or part' },
   'note.partPlaceholder': { ru: 'Глава 1. Название', en: 'Chapter 1. Title' },
   'note.body': { ru: 'Конспект', en: 'Note' },
@@ -313,6 +352,7 @@ export const LEARNING = {
   'note.mark': { ru: 'Маркер', en: 'Marker' },
   'note.edit': { ru: 'Править', en: 'Edit' },
   'note.empty': { ru: 'Лист пока пустой.', en: 'The sheet is still empty.' },
+  'note.blankChip': { ru: 'пустой', en: 'empty' },
   'note.delete': { ru: 'Удалить конспект', en: 'Delete note' },
   'note.confirmDelete': { ru: 'Удалить этот конспект?', en: 'Delete this note?' },
   'note.prev': { ru: 'Предыдущий лист', en: 'Previous sheet' },
@@ -323,9 +363,4 @@ export const LEARNING = {
   },
   // Короткая форма для строки-сводки дашборда: рядом со счётчиком, не отдельным предложением.
   'note.last': { ru: 'последний {date}', en: 'last {date}' },
-  'notes.empty': {
-    ru: 'Конспектов пока нет — первый заводится кнопкой справа.',
-    en: 'No notes yet — the button on the right starts the first one.',
-  },
-  'notes.allTags': { ru: 'Все', en: 'All' },
 } satisfies Dict

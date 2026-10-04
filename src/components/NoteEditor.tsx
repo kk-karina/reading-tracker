@@ -74,11 +74,14 @@ export function NoteEditor({
   tags,
   onBody,
   onTags,
+  autoFocus,
 }: {
   body: string
   tags?: NoteTag[]
   onBody: (next: string) => void
   onTags?: (next: NoteTag[]) => void
+  /** Курсор сюда при появлении: карточку только что добавили, чтобы писать. */
+  autoFocus?: boolean
 }) {
   const { t } = useLocale()
   const ref = useRef<HTMLDivElement>(null)
@@ -97,6 +100,13 @@ export function NoteEditor({
    * каретку и отправит её в начало. Поэтому собственное эхо узнаётся и
    * пропускается.
    */
+  // Только при появлении: карточку, добавленную в лист, сразу пишут. Позже
+  // курсор сюда не возвращается — это значило бы отнимать его у соседнего поля.
+  const focusOnMount = useRef(autoFocus)
+  useEffect(() => {
+    if (focusOnMount.current) ref.current?.focus()
+  }, [])
+
   useEffect(() => {
     const el = ref.current
     if (!el || body === mine.current) return
@@ -243,6 +253,7 @@ export function NoteEditor({
            Без этого Tab перепрыгивал бы через конспект, а на краю списка
            заворачивался бы мимо него. */
         tabIndex={0}
+        data-autofocus={autoFocus || undefined}
         role="textbox"
         aria-multiline
         aria-label={t('note.body')}

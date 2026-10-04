@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { coverCrop, coverFrame, dataUrlBytes } from './imageCover'
-import type { MaterialKind } from './types'
+import type { MaterialKind } from '../learning/types'
 
 /** Только арифметика: canvas и createImageBitmap в jsdom не живут. */
 describe('coverFrame', () => {

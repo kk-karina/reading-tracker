@@ -9,7 +9,7 @@ import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
 import { CursorDot } from './fun'
 import { Icon } from './Icon'
-import { Jelly, Segmented } from './ui'
+import { Jelly, Segmented, inkSlide } from './ui'
 
 /** Разделов ровно два. Настройки — инструмент, а не третье место. */
 const SECTIONS: { to: string; key: DictKey }[] = [
@@ -60,7 +60,7 @@ export function Shell() {
                       <motion.span
                         layoutId="nav-pill"
                         className="nav-pill"
-                        transition={{ type: 'spring', stiffness: 380, damping: 24 }}
+                        transition={inkSlide}
                       />
                     )}
                     <span className="nav-label">{t(l.key)}</span>
@@ -86,14 +86,26 @@ export function Shell() {
         </div>
       </header>
 
-      {/* Keyed by route: a plain fade-in on mount, no exit animation to wait for. */}
-      <motion.main
-        key={location.pathname}
-        className="page"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-      >
+      {/*
+        Страница не проявляется и не перемонтируется по адресу.
+
+        Раньше здесь стоял `key={location.pathname}` с проявлением от нуля, и
+        это било дважды. Во-первых, видимо: на каждой смене адреса — а по
+        вкладкам и подразделам щёлкают постоянно — всё содержимое гасло в ноль
+        и разгоралось обратно. Переход между двумя почти одинаковыми экранами
+        выглядел морганием, и чем чаще переключаешься, тем хуже.
+
+        Во-вторых, незаметно: ключ выбрасывал и пересобирал всё поддерево на
+        каждый переход. Поэтому смена потока начинала счётчики с нуля вместо
+        того, чтобы доводить их от прежних значений, а полоса потоков не могла
+        доехать до новых мест — ей нечего было сравнивать, она рождалась
+        заново. Всё, что должно меняться на месте, менялось перерождением.
+
+        Теперь `main` живёт всё время, а маршрутизатор подменяет под ним ровно
+        то, что действительно другое. О переходе говорят чернила под
+        подразделом и заголовок потока; содержимое просто становится другим.
+      */}
+      <main className="page">
         {/* A broken backend configuration is not a passing error: it stays on
             screen until it is fixed, because the app silently ran local instead. */}
         {configError && (
@@ -116,7 +128,7 @@ export function Shell() {
         ) : (
           <Outlet />
         )}
-      </motion.main>
+      </main>
     </div>
   )
 }

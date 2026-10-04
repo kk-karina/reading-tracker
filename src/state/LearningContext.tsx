@@ -14,6 +14,7 @@ import {
   type NewMaterialPart,
   type NewStream,
   type NewStudyNote,
+  type NewStudySession,
 } from '../lib/learning/store'
 import { carried, carryOver, markCarried, worthCarrying } from '../lib/learning/store/carry'
 import { localLearning } from '../lib/learning/store/local'
@@ -26,6 +27,7 @@ import {
   type MaterialPart,
   type Stream,
   type StudyNote,
+  type StudySession,
 } from '../lib/learning/types'
 import { supabase } from '../lib/supabase'
 import { useAuth } from './AuthContext'
@@ -59,6 +61,10 @@ interface LearningValue extends LearningSnapshot {
   updatePart(id: string, patch: Partial<MaterialPart>): Promise<void>
   deletePart(id: string): Promise<void>
 
+  addSession(item: NewStudySession): Promise<StudySession | undefined>
+  updateSession(id: string, patch: Partial<StudySession>): Promise<void>
+  deleteSession(id: string): Promise<void>
+
   addNote(item: NewStudyNote): Promise<StudyNote | undefined>
   updateNote(id: string, patch: Partial<StudyNote>): Promise<void>
   deleteNote(id: string): Promise<void>
@@ -77,7 +83,7 @@ const now = () => new Date().toISOString()
 
 /** Сколько строк в снимке — число для строки в настройках. */
 const size = (s: LearningSnapshot) =>
-  s.streams.length + s.materials.length + s.parts.length + s.notes.length
+  s.streams.length + s.materials.length + s.parts.length + s.sessions.length + s.notes.length
 
 export function LearningProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
@@ -202,7 +208,8 @@ export function LearningProvider({ children }: { children: ReactNode }) {
       ...snap,
       // Статус материала не хранится, а считается из сделанного — и считается
       // здесь, один раз на весь экран. См. `withStatus`.
-      materials: withStatus(snap.materials, snap.parts, snap.notes),
+      // Занятие без конспекта — тоже «садилась»: материал уходит в работу.
+      materials: withStatus(snap.materials, snap.parts, [...snap.notes, ...snap.sessions]),
       loading,
       error,
       pending,
@@ -242,6 +249,18 @@ export function LearningProvider({ children }: { children: ReactNode }) {
         change(
           (s) => rules.removePart(s, id),
           () => learningStore.deletePart(id),
+        ),
+
+      addSession: (x) => add('sessions', () => learningStore.addSession(x)),
+      updateSession: (id, p) =>
+        change(
+          (s) => rules.updateSession(s, id, p),
+          () => learningStore.updateSession(id, p),
+        ),
+      deleteSession: (id) =>
+        change(
+          (s) => rules.removeSession(s, id),
+          () => learningStore.deleteSession(id),
         ),
 
       addNote: (n) => add('notes', () => learningStore.addNote(n)),

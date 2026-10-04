@@ -13,7 +13,8 @@ export type NewBook = Pick<
   | 'started_at'
   | 'finished_at'
   | 'sort'
->
+> &
+  Partial<Pick<Book, 'url'>>
 export type NewSession = Pick<
   Session,
   'book_id' | 'date' | 'page_from' | 'page_to' | 'minutes' | 'rating'

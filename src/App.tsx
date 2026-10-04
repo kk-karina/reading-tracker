@@ -1,19 +1,23 @@
-import { HashRouter, Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { MotionConfig } from 'motion/react'
+import { HashRouter, matchPath, Navigate, Route, Routes, useLocation, useParams } from 'react-router-dom'
+import { NoteOverlay } from './components/learning/NoteOverlay'
+import type { NoteLinkState } from './components/learning/noteLink'
 import { Shell } from './components/Shell'
 import { Book } from './pages/Book'
-import { Journal } from './pages/Journal'
 import { LearningIndex } from './pages/learning/LearningIndex'
 import { Material } from './pages/learning/Material'
 import { Materials } from './pages/learning/Materials'
 import { Notes } from './pages/learning/Notes'
+import { StudySessions } from './pages/learning/Sessions'
 import { StreamDashboard } from './pages/learning/StreamDashboard'
 import { StreamLayout } from './pages/learning/StreamLayout'
-import { StudyNote } from './pages/learning/StudyNote'
 import { Login } from './pages/Login'
 import { Progress } from './pages/Progress'
 import { ReadingLayout } from './pages/ReadingLayout'
 import { Settings } from './pages/Settings'
+import { Sessions } from './pages/Sessions'
 import { Shelf } from './pages/Shelf'
+import { Thoughts } from './pages/Thoughts'
 import { AuthProvider, useAuth } from './state/AuthContext'
 import { DataProvider } from './state/DataContext'
 import { LearningProvider, useLearning } from './state/LearningContext'
@@ -52,6 +56,11 @@ function LegacyView({ view }: { view: 'active' | 'backlog' }) {
   return <Navigate to={`/learning/${slug}/materials?view=${view}`} replace />
 }
 
+function LegacyJournal() {
+  const { slug } = useParams()
+  return <Navigate to={`/learning/${slug}/sessions`} replace />
+}
+
 function Gate() {
   const { ready, user } = useAuth()
   if (!ready) return null
@@ -59,14 +68,41 @@ function Gate() {
   return (
     <DataProvider>
       <LearningProvider>
-        <Routes>
+        <Screens />
+      </LearningProvider>
+    </DataProvider>
+  )
+}
+
+/**
+ * Экраны и лист конспекта поверх них.
+ *
+ * Конспект не страница, а лист поверх экрана, с которого его открыли: тот
+ * экран остаётся смонтированным под ним — с фильтром, группировкой и
+ * прокруткой, — а маршрутизатор рисует его по адресу «фона» из состояния
+ * ссылки. Открытый прямой ссылкой, лист ложится поверх «Конспектов» потока.
+ */
+function Screens() {
+  const location = useLocation()
+  const note = matchPath('/learning/:slug/n/:id', location.pathname)
+  const background =
+    (location.state as NoteLinkState | null)?.background ??
+    (note ? { ...location, pathname: `/learning/${note.params.slug}/notes`, state: null } : null)
+
+  return (
+    <>
+        <Routes location={background ?? location}>
           <Route element={<Shell />}>
             <Route index element={<Navigate to="/reading" replace />} />
 
             <Route path="reading" element={<ReadingLayout />}>
               <Route index element={<Progress />} />
               <Route path="shelf" element={<Shelf />} />
-              <Route path="journal" element={<Journal />} />
+              <Route path="sessions" element={<Sessions />} />
+              <Route path="thoughts" element={<Thoughts />} />
+              {/* Дневник, где сессии и мысли шли одной лентой, разошёлся на
+                  две вкладки; закладки на него ведут в журнал сессий. */}
+              <Route path="journal" element={<Navigate to="/reading/sessions" replace />} />
             </Route>
             {/* Третий уровень вне layout: вместо полосы подразделов у него крошка. */}
             <Route path="reading/book/:id" element={<Book />} />
@@ -77,13 +113,16 @@ function Gate() {
             <Route path="learning/:slug" element={<StreamLayout />}>
               <Route index element={<StreamDashboard />} />
               <Route path="materials" element={<Materials />} />
+              <Route path="sessions" element={<StudySessions />} />
               <Route path="notes" element={<Notes />} />
+              {/* Здесь коротко жил Дневник, где занятия и конспекты шли одной
+                  лентой. Его адрес ведёт в журнал занятий. */}
+              <Route path="journal" element={<LegacyJournal />} />
             </Route>
             {/* Третий и четвёртый уровни вне layout: у них крошка вместо полосы,
                 но поток им всё равно нужен, поэтому оболочка оборачивает их тоже. */}
             <Route path="learning/:slug" element={<StreamLayout bare />}>
               <Route path="m/:id" element={<Material />} />
-              <Route path="n/:id" element={<StudyNote />} />
             </Route>
 
             {/* «Изучаю» и «Бэклог» стали срезами «Материалов». Адреса
@@ -105,26 +144,35 @@ function Gate() {
 
             {/* Адреса до перестройки. Роуты хэшевые и уже разошлись по закладкам. */}
             <Route path="shelf" element={<Navigate to="/reading/shelf" replace />} />
-            <Route path="journal" element={<Navigate to="/reading/journal" replace />} />
+            <Route path="journal" element={<Navigate to="/reading/sessions" replace />} />
             <Route path="book/:id" element={<LegacyBook />} />
 
             <Route path="*" element={<Navigate to="/reading" replace />} />
           </Route>
         </Routes>
-      </LearningProvider>
-    </DataProvider>
+        {note?.params.slug && note.params.id && (
+          <NoteOverlay slug={note.params.slug} id={note.params.id} />
+        )}
+    </>
   )
 }
 
+
 export default function App() {
   return (
-    <HashRouter>
-      {/* Locale wraps auth so the login screen is translated too. */}
-      <LocaleProvider>
-        <AuthProvider>
-          <Gate />
-        </AuthProvider>
-      </LocaleProvider>
-    </HashRouter>
+    // `reducedMotion="user"` — одно место на все анимации `motion`, вместо
+    // `useReducedMotion` в каждом компоненте. Глобальное правило в CSS гасит
+    // только переходы и ключевые кадры; скользящие чернила вкладок и счётчики
+    // считаются в JS и мимо него проходили.
+    <MotionConfig reducedMotion="user">
+      <HashRouter>
+        {/* Locale wraps auth so the login screen is translated too. */}
+        <LocaleProvider>
+          <AuthProvider>
+            <Gate />
+          </AuthProvider>
+        </LocaleProvider>
+      </HashRouter>
+    </MotionConfig>
   )
 }

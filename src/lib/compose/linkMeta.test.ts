@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { sourceName, sourceOf } from './cover'
+import { sourceName, sourceOf } from './linkMeta'
 
 describe('sourceName', () => {
   it('роняет зону: на плитке в списке её негде показывать', () => {

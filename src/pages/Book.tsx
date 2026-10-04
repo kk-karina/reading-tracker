@@ -1,13 +1,18 @@
 import { motion } from 'motion/react'
 import { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
 import { BookForm } from '../components/BookForm'
 import { Crumbs } from '../components/Crumbs'
 import { Icon } from '../components/Icon'
 import { Review } from '../components/Review'
 import { SessionSheet } from '../components/SessionSheet'
-import { Jelly, Tip } from '../components/ui'
+import { LogRow } from '../components/log/LogRow'
+import { PagesStrip } from '../components/log/ProgressStrip'
+import { ThoughtCard } from '../components/ThoughtCard'
+import { ThoughtSheet } from '../components/ThoughtSheet'
+import { Empty, inkSlide, Jelly, Tip } from '../components/ui'
+import { sourceOf } from '../lib/compose/linkMeta'
 import { fmtDate, fmtMinutes } from '../lib/format'
 import { face } from '../lib/rating'
 import {
@@ -18,6 +23,7 @@ import {
   remainingMinutes,
   spentOn,
 } from '../lib/reading'
+import { timeOf } from '../lib/log'
 import type { NoteTag, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useLocale } from '../state/LocaleContext'
@@ -42,13 +48,28 @@ export function Book() {
   const { books, sessions, notes, loading, deleteBook, setFocus } = useData()
   const [editing, setEditing] = useState(false)
   const [logging, setLogging] = useState(false)
+  const [thinking, setThinking] = useState(false)
+  const [openSession, setOpenSession] = useState<string | null>(null)
   const [editingSession, setEditingSession] = useState<Session | null>(null)
   const [tagFilter, setTagFilter] = useState<NoteTag | 'all'>('all')
   const [tab, setTab] = useState<Tab>('reflection')
 
   if (loading) return null
   const book = books.find((b) => b.id === id)
-  if (!book) return <div className="empty">{t('book.notFound')}</div>
+  if (!book)
+    return (
+      <Empty
+        art="signpost"
+        hint={t('book.notFoundBody')}
+        action={
+          <Link to="/reading/shelf">
+            <Jelly className="btn ghost sm">{t('book.back')}</Jelly>
+          </Link>
+        }
+      >
+        {t('book.notFound')}
+      </Empty>
+    )
 
   const { page, percent } = progressOf(book.id, sessions, book.pages)
   const read = pagesRead(book.id, sessions)
@@ -200,6 +221,16 @@ export function Book() {
             {last ? t('book.lastRead', { date: fmtDate(last, locale) }) : t('book.notOpened')}
           </p>
           {pace === null && <p className="small faint hint-line">{t('book.noTimeHint')}</p>}
+
+          {/* Ссылка там же и так же, как у материала: книга на полке — тот же
+              материал вида «книга». */}
+          {book.url && (
+            <p className="small hint-line">
+              <a className="link-btn" href={book.url} target="_blank" rel="noopener noreferrer">
+                {sourceOf(book.url) ?? t('material.url')} ↗
+              </a>
+            </p>
+          )}
         </div>
       </div>
 
@@ -218,16 +249,16 @@ export function Book() {
               className={`tab${on ? ' on' : ''}`}
               onClick={() => setTab(id)}
             >
-              {t(TAB_KEY[id])}
+              {/* Имя несёт своё имя ещё и атрибутом: по нему `.tab-label`
+                  держит ширину жирного начертания всегда — см. `index.css`. */}
+              <span className="tab-label" data-label={t(TAB_KEY[id])}>
+                {t(TAB_KEY[id])}
+              </span>
               {counts[id] !== null && counts[id] > 0 && (
                 <span className="tab-n">{counts[id]}</span>
               )}
               {on && (
-                <motion.span
-                  layoutId="book-tab"
-                  className="tab-line"
-                  transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-                />
+                <motion.span layoutId="book-tab" className="tab-line" transition={inkSlide} />
               )}
             </button>
           )
@@ -236,35 +267,52 @@ export function Book() {
 
       {current === 'reflection' && (
         <div className="tab-body">
-          <div className="chips">
-            {(['all', ...TAGS] as const).map((tag) => (
-              <button
-                key={tag}
-                type="button"
-                className={`chip${tagFilter === tag ? ' on' : ''}`}
-                aria-pressed={tagFilter === tag}
-                onClick={() => setTagFilter(tag)}
-              >
-                {tag === 'all' ? t('book.allTags') : t(`tag.${tag}`)}
-              </button>
-            ))}
-          </div>
-          {myNotes.length === 0 ? (
-            <div className="empty small">
-              {bookNotes.length === 0 ? t('book.reflectionEmpty') : t('journal.emptyHere')}
+          {/* Та же строка, что над листами у материала: чипы среза слева,
+              дверь справа. Мысль приходит и не за чтением — для неё своя
+              дверь, а не «Записать сессию». Пока мыслей нет, срезать нечего:
+              строки нет, дверь стоит в пустоте ниже. */}
+          {bookNotes.length > 0 && (
+            <div className="panel-head">
+              <div className="chips">
+                {(['all', ...TAGS] as const).map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={`chip${tagFilter === tag ? ' on' : ''}`}
+                    aria-pressed={tagFilter === tag}
+                    onClick={() => setTagFilter(tag)}
+                  >
+                    {tag === 'all' ? t('book.allTags') : t(`tag.${tag}`)}
+                  </button>
+                ))}
+              </div>
+              <Jelly className="btn sm" onClick={() => setThinking(true)}>
+                {t('thought.add')}
+              </Jelly>
             </div>
+          )}
+          {myNotes.length === 0 ? (
+            /* Рисунок только у настоящей пустоты: ниже этого же места
+               «под фильтр ничего не попало» остаётся строкой. */
+            bookNotes.length === 0 ? (
+              <Empty
+                size="sm"
+                art="writing"
+                action={
+                  <Jelly className="btn ghost sm" onClick={() => setThinking(true)}>
+                    {t('thought.add')}
+                  </Jelly>
+                }
+              >
+                {t('book.reflectionEmpty')}
+              </Empty>
+            ) : (
+              <Empty size="sm">{t('journal.emptyHere')}</Empty>
+            )
           ) : (
             <div className="thought-cards">
               {myNotes.map((n) => (
-                <article key={n.id} className="thought-card" data-tag={n.tag}>
-                  <span className="label thought-tag">{t(`tag.${n.tag}`)}</span>
-                  <p className="thought-body">{n.body}</p>
-                  {n.page !== null && (
-                    <span className="small faint mono thought-foot">
-                      {t('session.noteOnPage', { n: n.page })}
-                    </span>
-                  )}
-                </article>
+                <ThoughtCard key={n.id} note={n} />
               ))}
             </div>
           )}
@@ -274,31 +322,61 @@ export function Book() {
       {current === 'sessions' && (
         <div className="tab-body">
           {mySessions.length === 0 ? (
-            <div className="empty small">{t('book.sessionsEmpty')}</div>
+            <Empty
+              size="sm"
+              art="reading"
+              action={
+                <Jelly className="btn ghost sm" onClick={() => setLogging(true)}>
+                  {t('session.log')}
+                </Jelly>
+              }
+            >
+              {t('book.sessionsEmpty')}
+            </Empty>
           ) : (
             <>
-              <div className="recent">
-                {mySessions.map((s) => (
-                  <div key={s.id} className="recent-row with-acts">
-                    <span className="t">{fmtDate(s.date, locale)}</span>
-                    <span className="mono small">
-                      {s.page_from}–{s.page_to}
-                    </span>
-                    <span className="mono small muted">
-                      {face(s.rating) && <span className="face-sm">{face(s.rating)}</span>}
-                      {s.minutes ? fmtMinutes(s.minutes, locale) : '·'}
-                    </span>
-                    <div className="acts">
-                      <button
-                        type="button"
-                        className="link-btn"
-                        onClick={() => setEditingSession(s)}
-                      >
-                        {t('book.edit')}
-                      </button>
-                    </div>
-                  </div>
-                ))}
+              {/* Та же строка журнала, что во вкладке «Сессии» раздела: шаг
+                  крупно, мысли значком с числом. Книги в строке нет — мы на
+                  её странице. */}
+              <div className="log">
+                {mySessions.map((s) => {
+                  const thoughts = bookNotes
+                    .filter((n) => n.session_id === s.id)
+                    .sort((a, b) => a.created_at.localeCompare(b.created_at))
+                  return (
+                    <LogRow
+                      key={s.id}
+                      step={`+${s.page_to - s.page_from}`}
+                      unit={t('unit.pages')}
+                      detail={
+                        <span className="mono">
+                          {s.page_from} → {s.page_to}
+                        </span>
+                      }
+                      when={[
+                        fmtDate(s.date, locale),
+                        timeOf(s.date, s.created_at),
+                        s.minutes && fmtMinutes(s.minutes, locale),
+                        face(s.rating),
+                      ]}
+                      meter={
+                        book.pages ? (
+                          <PagesStrip from={s.page_from} to={s.page_to} total={book.pages} />
+                        ) : undefined
+                      }
+                      written={thoughts.length}
+                      open={openSession === s.id}
+                      onToggle={() => setOpenSession(openSession === s.id ? null : s.id)}
+                      onEdit={() => setEditingSession(s)}
+                    >
+                      <div className="store-grid">
+                        {thoughts.map((n) => (
+                          <ThoughtCard key={n.id} note={n} flat />
+                        ))}
+                      </div>
+                    </LogRow>
+                  )
+                })}
               </div>
               {read > 0 && (
                 <p className="small faint" style={{ margin: '14px 0 0' }}>
@@ -316,8 +394,11 @@ export function Book() {
         </div>
       )}
 
-      {editing && <BookForm book={book} onClose={() => setEditing(false)} />}
+      {editing && (
+        <BookForm book={book} onClose={() => setEditing(false)} onDeleted={() => nav('/reading/shelf')} />
+      )}
       {logging && <SessionSheet book={book} sessions={sessions} onClose={() => setLogging(false)} />}
+      {thinking && <ThoughtSheet book={book} onClose={() => setThinking(false)} />}
       {editingSession && (
         <SessionSheet
           book={book}

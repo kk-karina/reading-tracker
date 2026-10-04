@@ -25,11 +25,14 @@ import { useLocale } from '../../state/LocaleContext'
 export function NoteSheet({
   note,
   stream,
+  lead,
   actions,
   children,
 }: {
   note: StudyNote
   stream: Stream
+  /** Перед подписью листа, слева: листание. Подальше от действий справа. */
+  lead?: ReactNode
   actions?: ReactNode
   children?: ReactNode
 }) {
@@ -45,9 +48,12 @@ export function NoteSheet({
   return (
     <article className="sheet-page" data-accent={stream.accent ?? undefined}>
       <div className="sheet-head-line">
-        <span className="label">
-          {stream.accent && <i className="sheet-dot" data-accent={stream.accent} />}
-          {stream.name} · {fmtDate(note.date, locale)}
+        <span className="sheet-head-lead">
+          {lead}
+          <span className="label">
+            {stream.accent && <i className="stream-dot" data-accent={stream.accent} />}
+            {stream.name} · {fmtDate(note.date, locale)}
+          </span>
         </span>
         {actions}
       </div>

@@ -271,7 +271,7 @@ function ReelBook({ book, sessions }: { book: Book; sessions: Session[] }) {
 
   return (
     <Link
-      to={`/book/${book.id}`}
+      to={`/reading/book/${book.id}`}
       className="reel-item"
       style={
         {

@@ -1,6 +1,7 @@
 import { weekNotes } from '../../lib/learning/metrics'
 import { studyStreak } from '../../lib/learning/rhythm'
-import type { StudyNote } from '../../lib/learning/types'
+import { activityDates } from '../../lib/learning/sessions'
+import type { StudyNote, StudySession } from '../../lib/learning/types'
 import { useLocale } from '../../state/LocaleContext'
 import { Counter } from '../ui'
 
@@ -18,13 +19,17 @@ import { Counter } from '../ui'
 export function StreamStats({
   streamNotes,
   allNotes,
+  allSessions,
 }: {
   streamNotes: StudyNote[]
   allNotes: StudyNote[]
+  allSessions: StudySession[]
 }) {
   const { t } = useLocale()
   const week = weekNotes(streamNotes)
-  const streak = studyStreak(allNotes.map((n) => n.date))
+  // День, в который только отметила главы, — тоже день: занятие без текста
+  // страйк не рвёт.
+  const streak = studyStreak(activityDates(allSessions, allNotes))
 
   return (
     <div className="readings">

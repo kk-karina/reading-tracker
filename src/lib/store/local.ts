@@ -29,6 +29,7 @@ export const localStore: DataStore = {
     const snap = read()
     const book: Book = {
       ...item,
+      url: item.url ?? null,
       id: uid(),
       is_focus: false,
       rating: null,

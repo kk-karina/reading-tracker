@@ -19,6 +19,7 @@ import type {
   MaterialPart,
   Stream,
   StudyNote,
+  StudySession,
 } from '../types'
 
 /** Коллекции снимка, в которые можно положить созданную строку. */
@@ -26,6 +27,7 @@ export interface Rows {
   streams: Stream
   materials: Material
   parts: MaterialPart
+  sessions: StudySession
   notes: StudyNote
 }
 
@@ -81,6 +83,7 @@ export function removeStream(snap: LearningSnapshot, id: string): LearningSnapsh
       ),
     materials: snap.materials.filter((m) => m.stream_id !== id),
     parts: snap.parts.filter((p) => !gone.has(p.material_id)),
+    sessions: snap.sessions.filter((x) => !gone.has(x.material_id)),
     notes: snap.notes.filter((n) => !gone.has(n.material_id)),
   }
 }
@@ -165,6 +168,11 @@ export function updateMaterial(
     ),
     materials: snap.materials.map((m) => (m.id === id ? { ...m, ...patch, updated_at: now } : m)),
     parts: snap.parts.filter((p) => !cut.has(p.id)),
+    // Ушедшая часть уходит и из занятий, которые её отметили: иначе откат
+    // занятия пытался бы снять отметку с того, чего нет.
+    sessions: cut.size
+      ? snap.sessions.map((x) => ({ ...x, part_ids: x.part_ids.filter((p) => !cut.has(p)) }))
+      : snap.sessions,
     notes: snap.notes,
   }
 }
@@ -176,6 +184,7 @@ export function removeMaterial(snap: LearningSnapshot, id: string): LearningSnap
     ),
     materials: snap.materials.filter((m) => m.id !== id),
     parts: snap.parts.filter((p) => p.material_id !== id),
+    sessions: snap.sessions.filter((x) => x.material_id !== id),
     notes: snap.notes.filter((n) => n.material_id !== id),
   }
 }
@@ -197,7 +206,34 @@ export function removePart(snap: LearningSnapshot, id: string): LearningSnapshot
   return {
     ...snap,
     parts: snap.parts.filter((p) => p.id !== id),
+    sessions: snap.sessions.map((x) =>
+      x.part_ids.includes(id) ? { ...x, part_ids: x.part_ids.filter((p) => p !== id) } : x,
+    ),
     notes: snap.notes.map((n) => (n.part_id === id ? { ...n, part_id: null } : n)),
+  }
+}
+
+export function updateSession(
+  snap: LearningSnapshot,
+  id: string,
+  patch: Partial<StudySession>,
+): LearningSnapshot {
+  return {
+    ...snap,
+    sessions: snap.sessions.map((x) => (x.id === id ? { ...x, ...patch } : x)),
+  }
+}
+
+/**
+ * Удалённое занятие не уносит своих конспектов: написанное за ним остаётся
+ * написанным, просто уже ни к какому заходу не привязано. То же делает
+ * `on delete set null` в базе и `deleteSession` в чтении.
+ */
+export function removeSession(snap: LearningSnapshot, id: string): LearningSnapshot {
+  return {
+    ...snap,
+    sessions: snap.sessions.filter((x) => x.id !== id),
+    notes: snap.notes.map((n) => (n.session_id === id ? { ...n, session_id: null } : n)),
   }
 }
 

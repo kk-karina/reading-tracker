@@ -11,7 +11,10 @@ const BASE = {
 
   'nav.progress': { ru: 'Прогресс', en: 'Progress' },
   'nav.shelf': { ru: 'Полка', en: 'Shelf' },
-  'nav.journal': { ru: 'Дневник', en: 'Journal' },
+  // Сессии и мысли — разные вкладки раздела, как у самой книги: журнал того,
+  // как шло чтение, и хранилище того, что от него осталось.
+  'nav.sessions': { ru: 'Сессии', en: 'Sessions' },
+  'nav.thoughts': { ru: 'Мысли', en: 'Thoughts' },
   'nav.settings': { ru: 'Настройки', en: 'Settings' },
 
   'locale.label': { ru: 'Язык интерфейса', en: 'Interface language' },
@@ -36,9 +39,11 @@ const BASE = {
     ru: { one: '{n} сессия', few: '{n} сессии', many: '{n} сессий' },
     en: { one: '{n} session', other: '{n} sessions' },
   },
+  // Записи о книге в чтении везде зовутся мыслями — и во вкладке, и в
+  // фильтре дневника. «Заметки» оставались только в счётчике.
   'count.notes': {
-    ru: { one: '{n} заметка', few: '{n} заметки', many: '{n} заметок' },
-    en: { one: '{n} note', other: '{n} notes' },
+    ru: { one: '{n} мысль', few: '{n} мысли', many: '{n} мыслей' },
+    en: { one: '{n} thought', other: '{n} thoughts' },
   },
   'count.pages': {
     ru: { one: '{n} страница', few: '{n} страницы', many: '{n} страниц' },
@@ -122,12 +127,12 @@ const BASE = {
   'status.finished': { ru: 'Прочитано', en: 'Finished' },
 
   'shelf.add': { ru: 'Добавить книгу', en: 'Add a book' },
-  'shelf.empty': { ru: 'Полка пока пустая.', en: 'The shelf is empty.' },
-  'shelf.loadSample': { ru: 'Загрузить пример', en: 'Load a sample shelf' },
-  'shelf.sampleHint': {
-    ru: 'Четыре книги с обложками — посмотреть, как всё выглядит.',
-    en: 'Four books with covers, to see how it all looks.',
+  'shelf.empty': { ru: 'Полка пока пустая', en: 'The shelf is empty' },
+  'shelf.emptyBody': {
+    ru: 'Добавь книгу — дальше прогресс, темп и остаток считаются сами, из сессий.',
+    en: 'Add a book — progress, pace and what is left all count themselves from your sessions.',
   },
+  'shelf.loadSample': { ru: 'Загрузить пример', en: 'Load a sample shelf' },
   'shelf.view': { ru: 'Вид полки', en: 'Shelf view' },
   'shelf.viewGrid': { ru: 'Сетка', en: 'Grid' },
   'shelf.viewReel': { ru: 'Лента', en: 'Reel' },
@@ -156,15 +161,21 @@ const BASE = {
   'book.pagesUnknown': { ru: 'страниц не указано', en: 'page count not set' },
   'book.notOpened': { ru: 'Ещё не открыта', en: 'Not opened yet' },
   'book.lastRead': { ru: 'Последний раз {date}', en: 'Last read {date}' },
-  'book.makeFocus': { ru: 'Сделать главной', en: 'Make it the focus' },
-  'book.isFocus': { ru: 'Главная книга', en: 'In focus' },
+  // «Фокус», как и в обучении: понятие одно, и в одном разделе оно не может
+  // зваться «главной книгой», а в соседнем — фокусом потока.
+  'book.makeFocus': { ru: 'Сделать фокусом', en: 'Make it the focus' },
+  'book.isFocus': { ru: 'В фокусе', en: 'In focus' },
   'book.edit': { ru: 'Изменить', en: 'Edit' },
   'book.delete': { ru: 'Удалить', en: 'Delete' },
   'book.confirmDelete': {
-    ru: 'Удалить книгу вместе с её сессиями и заметками?',
-    en: 'Delete the book together with its sessions and notes?',
+    ru: 'Удалить книгу вместе с её сессиями и мыслями?',
+    en: 'Delete the book together with its sessions and thoughts?',
   },
-  'book.notFound': { ru: 'Такой книги нет.', en: 'No such book.' },
+  'book.notFound': { ru: 'Такой книги нет', en: 'No such book' },
+  'book.notFoundBody': {
+    ru: 'Её могли удалить — или ссылка пришла из прошлой жизни полки.',
+    en: 'It may have been deleted, or the link is from an older life of the shelf.',
+  },
   'book.sessionsSoon': {
     ru: 'Сессии и мысли появятся на третьей фазе.',
     en: 'Sessions and thoughts arrive in phase three.',
@@ -173,20 +184,72 @@ const BASE = {
   'form.title': { ru: 'Название', en: 'Title' },
   'form.author': { ru: 'Автор', en: 'Author' },
   'form.pages': { ru: 'Страниц', en: 'Pages' },
-  'form.cover': { ru: 'Ссылка на обложку', en: 'Cover image URL' },
-  'form.coverHint': {
-    ru: 'Необязательно. Без неё обложка рисуется из названия.',
-    en: 'Optional. Without it the cover is drawn from the title.',
-  },
-  'form.genre': { ru: 'Жанр', en: 'Genre' },
-  'form.language': { ru: 'Язык книги', en: 'Book language' },
   'form.save': { ru: 'Сохранить', en: 'Save' },
-  'form.cancel': { ru: 'Отмена', en: 'Cancel' },
-  'form.titleRequired': { ru: 'Без названия не сохранить.', en: 'A title is required.' },
 
-  'search.label': { ru: 'Найти по названию', en: 'Search by title' },
-  'search.action': { ru: 'Найти', en: 'Search' },
-  'search.busy': { ru: 'Ищу…', en: 'Searching…' },
+  // Лист: закрыть, и вопрос, когда закрывают набранное.
+  'sheet.close': { ru: 'Закрыть', en: 'Close' },
+  'sheet.unsaved': { ru: 'Не сохранено', en: 'Not saved' },
+  'sheet.discard': { ru: 'Закрыть всё равно', en: 'Close anyway' },
+
+  // Композер — одна форма заведения книги и материала.
+  'compose.capture': { ru: 'Ссылка или название', en: 'A link or a title' },
+  'compose.captureHint': {
+    ru: 'По ссылке заполню карточку сама. По названию найду книгу в Open Library.',
+    en: 'A link fills the card in from the page. A title looks the book up in Open Library.',
+  },
+  'compose.search': { ru: 'Найти книгу', en: 'Look the book up' },
+  'compose.manual': { ru: 'Заполнить вручную', en: 'Fill in by hand' },
+  'compose.found': { ru: 'Найденные книги', en: 'Books found' },
+  'compose.pagesShort': { ru: '{n} стр.', en: '{n} p.' },
+  'compose.asIs': { ru: 'Без поиска: «{title}»', en: 'Without search: “{title}”' },
+  'compose.untitled': { ru: 'Без названия', en: 'Untitled' },
+  'compose.editLink': { ru: 'Изменить', en: 'Edit' },
+  'compose.addLink': { ru: 'Добавить ссылку', en: 'Add a link' },
+  'compose.linkPlaceholder': { ru: 'Ссылка на страницу, https://…', en: 'Link to the page, https://…' },
+  'compose.titlePlaceholder': { ru: 'Название', en: 'Title' },
+  'compose.authorPlaceholder': { ru: 'Автор', en: 'Author' },
+  'compose.coverFile': {
+    ru: 'Загрузить картинку — можно и перетащить, и вставить',
+    en: 'Upload an image — or drop it, or paste it',
+  },
+  'compose.coverUrl': { ru: 'Картинка по ссылке', en: 'Image from a link' },
+  'compose.coverUrlPlaceholder': { ru: 'Адрес картинки, Enter', en: 'Image address, Enter' },
+  'compose.coverClear': { ru: 'Убрать обложку', en: 'Remove the cover' },
+  'compose.open': { ru: 'Открыть', en: 'Open' },
+  'compose.blockHint': {
+    ru: 'Вторую такую же не завести — открой ту, что есть.',
+    en: 'A second one cannot be added — open the one you have.',
+  },
+  'compose.copyHint': {
+    ru: 'Добавится копия со всем, что там уже заполнено. Прогресс у неё будет свой.',
+    en: 'A copy is added with everything already filled in there. Its progress is its own.',
+  },
+  'compose.blockShelf': { ru: 'Такая книга уже стоит на полке', en: 'This book is already on the shelf' },
+  'compose.blockStream': { ru: 'Это уже есть в этом потоке', en: 'This is already in the stream' },
+  'compose.onShelf': { ru: 'Эта книга есть на полке', en: 'This book is on the shelf' },
+  'compose.inStream': { ru: 'Это есть в потоке «{stream}»', en: 'This is in “{stream}”' },
+  'compose.copyToMaterials': { ru: 'Продублировать книгу в материалы', en: 'Copy the book to materials' },
+  'compose.copyToStream': { ru: 'Продублировать в этот поток', en: 'Copy into this stream' },
+  'compose.copyToShelf': { ru: 'Продублировать книгу на полку', en: 'Copy the book to the shelf' },
+  'compose.own': { ru: 'Твои книги', en: 'Your books' },
+  'compose.ownShelf': { ru: 'на полке', en: 'on the shelf' },
+  'compose.ownStream': { ru: 'в потоке «{stream}»', en: 'in “{stream}”' },
+  // Единица после числа, согласованная с ним: «1 глава», «3 главы», «12 глав».
+  'compose.unitPages': {
+    ru: { one: 'страница', few: 'страницы', many: 'страниц' },
+    en: { one: 'page', other: 'pages' },
+  },
+  'compose.unitChapters': {
+    ru: { one: 'глава', few: 'главы', many: 'глав' },
+    en: { one: 'chapter', other: 'chapters' },
+  },
+  'compose.unitLectures': {
+    ru: { one: 'лекция', few: 'лекции', many: 'лекций' },
+    en: { one: 'lecture', other: 'lectures' },
+  },
+  'compose.delete': { ru: 'Удалить', en: 'Delete' },
+  'compose.add': { ru: 'Добавить', en: 'Add' },
+
   'search.none': {
     ru: 'Ничего не нашлось — заполни поля руками, это нормально.',
     en: 'Nothing found — fill the fields in by hand, that is fine.',
@@ -204,42 +267,37 @@ const BASE = {
   'chart.weekdays': { ru: 'Пн Ср Пт', en: 'M W F' },
   'chart.rest': { ru: 'Отдых', en: 'Rest' },
   'chart.nothing': { ru: 'Ничего', en: 'Nothing' },
+  'chart.weeksEmpty': {
+    ru: 'Стопки начнут расти с первой сессии',
+    en: 'The piles start growing with your first session',
+  },
   'chart.now': { ru: 'сейчас', en: 'now' },
   'chart.avg': { ru: 'в среднем {n}', en: 'avg {n}' },
 
-  'shares.title': { ru: 'Из чего состоит полка', en: 'What the shelf is made of' },
-  'shares.other': { ru: 'Прочее', en: 'Other' },
-  'shares.empty': {
-    ru: 'Проставь жанр или язык у книг, и разбивка появится.',
-    en: 'Set a genre or a language on your books and the split appears.',
-  },
-  'lang.ru': { ru: 'Русский', en: 'Russian' },
-  'lang.en': { ru: 'Английский', en: 'English' },
 
-  'progress.noBooks': { ru: 'Пока ни одной книги.', en: 'No books yet.' },
+  'progress.noBooks': { ru: 'Пока ни одной книги', en: 'No books yet' },
+  'progress.noBooksBody': {
+    ru: 'Полка — начало всего: ритм, темп и итоги года считаются из того, что на ней стоит.',
+    en: 'The shelf starts everything: rhythm, pace and the year all count from what stands on it.',
+  },
   'progress.toShelf': { ru: 'На полку', en: 'To the shelf' },
-  'progress.pickFocus': {
-    ru: 'Выбери главную книгу — она будет стоять здесь.',
-    en: 'Pick a focus book and it will stand here.',
+  'progress.pickFocus': { ru: 'Книга в фокусе не выбрана', en: 'No focus book picked' },
+  'progress.pickFocusBody': {
+    ru: 'Открой ту, которую читаешь сейчас, и сделай её фокусом — она встанет сюда.',
+    en: 'Open the one you are reading now and make it the focus — it will stand here.',
   },
   'progress.alsoReading': { ru: 'Ещё читаю', en: 'Also reading' },
   'progress.week': { ru: 'За 7 дней', en: 'Last 7 days' },
   'progress.streak': { ru: 'Подряд', en: 'Streak' },
   'progress.finishedYear': { ru: 'Прочитано за год', en: 'Finished this year' },
   'progress.yearInBooks': { ru: 'Год в книгах', en: 'The year in books' },
-  'progress.yearEmpty': {
-    ru: 'Дочитанные книги встанут сюда обложками.',
-    en: 'Finished books will stand here, covers out.',
-  },
+  'progress.yearEmpty': { ru: 'Год ещё пустой', en: 'The year is still empty' },
   'progress.recentNotes': { ru: 'Последние мысли', en: 'Latest thoughts' },
-  'progress.notesEmpty': {
-    ru: 'Мысли из сессий будут появляться здесь — чтобы не забывались.',
-    en: 'Thoughts from your sessions will surface here, so they are not lost.',
-  },
-  'progress.toJournal': { ru: 'Весь дневник', en: 'The whole journal' },
+  'progress.notesEmpty': { ru: 'Мыслей пока нет', en: 'No thoughts yet' },
+  'progress.toJournal': { ru: 'Все мысли', en: 'All thoughts' },
   'progress.stuck': { ru: 'Застряли', en: 'Gone quiet' },
   'progress.stuckHint': { ru: 'Читаю, но больше двух недель без сессий', en: 'Being read, but untouched for over two weeks' },
-  'progress.stuckEmpty': { ru: 'Ничего не простаивает.', en: 'Nothing is stalling.' },
+  'progress.stuckEmpty': { ru: 'Ничего не простаивает', en: 'Nothing is stalling' },
   'progress.rhythmHint': { ru: 'Точка на день. Крупнее — больше страниц.', en: 'One dot per day. Bigger is more pages.' },
   'progress.weeksHint': { ru: 'Последние 12 недель', en: 'Last 12 weeks' },
   'progress.noSessions': { ru: 'Сессий пока нет', en: 'No sessions yet' },  'progress.ofTotal': { ru: 'из {n}', en: 'of {n}' },
@@ -248,21 +306,9 @@ const BASE = {
     ru: { one: 'день', few: 'дня', many: 'дней' },
     en: { one: 'day', other: 'days' },
   },
-  'journal.lead': {
-    ru: 'Каждая сессия и каждая мысль — по дням, сверху свежее.',
-    en: 'Every session and every thought, by day, the newest on top.',
-  },
-  'journal.show': { ru: 'Показывать', en: 'Show' },
-  'journal.all': { ru: 'Всё', en: 'Everything' },
-  'journal.sessions': { ru: 'Сессии', en: 'Sessions' },
-  'journal.notes': { ru: 'Мысли', en: 'Thoughts' },
   'journal.book': { ru: 'Книга', en: 'Book' },
   'journal.allBooks': { ru: 'Все книги', en: 'All books' },
-  'journal.empty': {
-    ru: 'Пока пусто. Запиши сессию на странице книги — она появится здесь.',
-    en: 'Empty so far. Log a session on a book page and it shows up here.',
-  },
-  'journal.emptyHere': { ru: 'Под этот фильтр ничего не попало.', en: 'Nothing matches this filter.' },
+  'journal.emptyHere': { ru: 'Под этот фильтр ничего не попало', en: 'Nothing matches this filter' },
 
   'book.back': { ru: 'Полка', en: 'Shelf' },
   'book.progress': { ru: 'Прогресс', en: 'Progress' },
@@ -279,9 +325,8 @@ const BASE = {
   'book.approx': { ru: 'часть времени оценена по твоему темпу', en: 'part of this is estimated from your pace' },
   'book.perPage': { ru: '{n} мин/стр', en: '{n} min/page' },
   // Единственный вопрос про статус, на который прочитанное не отвечает само.
-  'form.alreadyRead': { ru: 'Уже прочитана', en: 'Already read' },
   'book.sessions': { ru: 'Сессии', en: 'Sessions' },
-  'book.sessionsEmpty': { ru: 'Пока ни одной сессии.', en: 'No sessions yet.' },
+  'book.sessionsEmpty': { ru: 'Пока ни одной сессии', en: 'No sessions yet' },
   'book.notes': { ru: 'Мысли', en: 'Thoughts' },
   'book.notesEmpty': {
     ru: 'Здесь будет всё, что ты вынесла из этой книги.',
@@ -289,17 +334,16 @@ const BASE = {
   },
   'book.allTags': { ru: 'Все', en: 'All' },
 
-  'book.tabReflection': { ru: 'Рефлексия', en: 'Reflection' },
-  'book.tabSessions': { ru: 'Лог сессий', en: 'Session log' },
+  // Вкладки книги — теми же словами, что фильтр дневника: там «Сессии» и
+  // «Мысли», и одна и та же запись не должна менять имя по дороге.
+  'book.tabReflection': { ru: 'Мысли', en: 'Thoughts' },
+  'book.tabSessions': { ru: 'Сессии', en: 'Sessions' },
   'book.tabReview': { ru: 'Рецензия', en: 'Review' },
   'book.reviewLocked': {
     ru: 'Откроется, когда книга будет дочитана',
     en: 'Opens once the book is finished',
   },
-  'book.reflectionEmpty': {
-    ru: 'Пока ни одной мысли. Они пишутся вместе с сессией — и остаются здесь.',
-    en: 'No thoughts yet. They are written with a session, and they stay here.',
-  },
+  'book.reflectionEmpty': { ru: 'Пока ни одной мысли', en: 'No thoughts yet' },
 
   'review.lead': {
     ru: 'Пишется один раз, после последней страницы: это то, что ты вспомнишь о книге через год.',
@@ -315,7 +359,11 @@ const BASE = {
   'review.finishedOn': { ru: 'Дочитано {date}', en: 'Finished {date}' },
 
   'session.log': { ru: 'Записать сессию', en: 'Log a session' },
-  'session.title': { ru: 'Сессия чтения', en: 'Reading session' },
+  'session.book': { ru: 'Книга', en: 'Book' },
+  'session.noBooks': {
+    ru: 'На полке пока нет книг — сессия пишется по книге, так что сначала добавь её.',
+    en: 'The shelf has no books yet — a session is about a book, so add one first.',
+  },
   'session.date': { ru: 'Дата', en: 'Date' },
   'session.from': { ru: 'От страницы', en: 'From page' },
   'session.to': { ru: 'До страницы', en: 'To page' },
@@ -325,7 +373,6 @@ const BASE = {
     en: 'Optional, but they unlock the pace and the estimate.',
   },
   'session.how': { ru: 'Как пошло', en: 'How it went' },
-  'session.pagesRead': { ru: 'Прочитано за сессию: {n}', en: 'Read this session: {n}' },
   'session.toMustGrow': {
     ru: 'Страница «до» не может быть меньше страницы «от».',
     en: 'The page you stopped at cannot be before the page you started from.',
@@ -336,9 +383,44 @@ const BASE = {
     ru: 'Удалить эту сессию? Мысли из неё останутся.',
     en: 'Delete this session? The thoughts from it stay.',
   },
-  'session.addNote': { ru: '+ мысль', en: '+ a thought' },
   'session.removeNote': { ru: 'Убрать', en: 'Remove' },
   'session.noteOnPage': { ru: 'стр. {n}', en: 'p. {n}' },
+
+  // Мысль без сессии — своя дверь. «Добавить», а не «Записать»: мысль заводят,
+  // а записывают сессию.
+  'group.byDay': { ru: 'По дням', en: 'By day' },
+  'group.byBook': { ru: 'По книгам', en: 'By book' },
+  'sessions.empty': { ru: 'Сессий пока нет', en: 'No sessions yet' },
+  'sessions.emptyBody': {
+    ru: 'Запиши, докуда дочитала, — сессии встанут сюда строками, по дням или по книгам.',
+    en: 'Log how far you read — sessions line up here, by day or by book.',
+  },
+  'thoughts.empty': { ru: 'Мыслей пока нет', en: 'No thoughts yet' },
+  'thoughts.emptyBody': {
+    ru: 'Всё, что осталось в голове от чтения, соберётся здесь — с сессией или без.',
+    en: 'Whatever stays with you from reading collects here — with a session or without.',
+  },
+  // Сколько мыслей или конспектов записано за сессией: значок и число в строке.
+  'log.notesOpen': { ru: 'Показать написанное ({n})', en: 'Show what was written ({n})' },
+  'log.notesClose': { ru: 'Скрыть написанное', en: 'Hide what was written' },
+  'unit.pages': { ru: 'стр.', en: 'pp.' },
+  'thought.add': { ru: 'Добавить мысль', en: 'Add a thought' },
+  'thought.editTitle': { ru: 'Правка мысли', en: 'Edit the thought' },
+  'thought.delete': { ru: 'Удалить мысль', en: 'Delete thought' },
+  'thought.confirmDelete': { ru: 'Удалить эту мысль?', en: 'Delete this thought?' },
+  'thought.noBooks': {
+    ru: 'На полке пока нет книг — мысль пишется о книге, так что сначала добавь её.',
+    en: 'The shelf has no books yet — a thought is about a book, so add one first.',
+  },
+
+  // Детали листов записи — общие для чтения и обучения.
+  'step.pagesPlus': { ru: '+{n} стр.', en: '+{n} pp.' },
+  'step.min': { ru: 'мин', en: 'min' },
+  'step.pageShort': { ru: 'стр.', en: 'p.' },
+  'step.pageOf': { ru: 'Страница, к которой мысль', en: 'Page the thought is about' },
+  'draft.addThought': { ru: 'Мысль', en: 'Thought' },
+  'draft.removed': { ru: 'Убрано', en: 'Removed' },
+  'draft.undo': { ru: 'Вернуть', en: 'Undo' },
 
   'tag.quote': { ru: 'Цитата', en: 'Quote' },
   'tag.idea': { ru: 'Идея', en: 'Idea' },

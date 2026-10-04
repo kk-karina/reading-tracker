@@ -1,5 +1,7 @@
 import { animate, motion, useMotionValue, useTransform, type HTMLMotionProps } from 'motion/react'
 import { useEffect, useState, type CSSProperties, type ReactNode } from 'react'
+import { EmptyArt, type EmptyArtName, type EmptyArtSize } from './EmptyArt'
+import { Icon, type IconName } from './Icon'
 
 /** Number that counts up to its value on mount and on change, with a little bounce on change. */
 export function Counter({ value, format }: { value: number; format?: (n: number) => string }) {
@@ -24,7 +26,12 @@ export function Counter({ value, format }: { value: number; format?: (n: number)
 
 interface SegProps<T extends string> {
   value: T
-  options: { value: T; label: string }[]
+  /**
+   * `icon` — значок перед словом. Там, где деления — разные предметы (виды
+   * материала), а не значения одной шкалы: значок узнаётся боковым зрением
+   * раньше, чем прочитано слово.
+   */
+  options: { value: T; label: string; icon?: IconName }[]
   onChange: (v: T) => void
   name: string
   className?: string
@@ -56,9 +63,10 @@ export function Segmented<T extends string>({ value, options, onChange, name, cl
               <motion.span
                 layoutId={`seg-${name}`}
                 className="seg-ink"
-                transition={{ type: 'spring', stiffness: 420, damping: 26 }}
+                transition={inkSlide}
               />
             )}
+            {o.icon && <Icon name={o.icon} size={16} />}
             {o.label}
           </motion.button>
         )
@@ -134,6 +142,24 @@ export function Tip({ text, children }: { text: string; children: ReactNode }) {
     </span>
   )
 }
+
+/**
+ * Чем едет отметка выбранного — пилюля в верхней полосе, чернила подразделов,
+ * полоска под вкладкой, заливка переключателя.
+ *
+ * Одно значение на все пять, потому что жест один: метка переезжает к тому,
+ * на что нажали. Раньше у каждой было своё — 380/24 у пилюли и подразделов,
+ * 420/26 у переключателя, 420/30 у вкладок, — и одно и то же движение на
+ * трёх этажах экрана ехало по-разному.
+ *
+ * Пружина, а не кривая: по вкладкам и фильтрам щёлкают туда-обратно, и
+ * пружина подхватывает скорость с полпути, тогда как кривая начала бы заново.
+ * Отскок почти снят: при старом затухании (0.6 от критического) полоска
+ * перелетала цель и возвращалась — вблизи это читается не живостью, а
+ * промахом. Четверть секунды — по верхнему краю для рейки фильтров, по
+ * которой щёлкают чаще всего.
+ */
+export const inkSlide = { type: 'spring' as const, duration: 0.26, bounce: 0.12 }
 
 export const listItem = {
   initial: { opacity: 0, y: 6, scale: 0.98 },
@@ -218,5 +244,62 @@ export function ChipButton({
     >
       {children}
     </motion.button>
+  )
+}
+
+/**
+ * Пустое место, у которого есть причина.
+ *
+ * До сих пор оно писалось руками — `<div className="empty small">` с одной
+ * строкой внутри, — и этого хватало, пока пустота означала «ты сюда ещё не
+ * дошла». Там, где она означает «и не обязана», одной серой строки мало:
+ * человек читает её как поломку и ищет, что он сделал не так.
+ *
+ * Громкость внутри блока убывает сверху вниз, и это главное правило: рисунок
+ * держит всё место, строка под ним набрана рукой и читается подписью к
+ * рисунку, кнопка мелкая и приглушённая. Здесь не на что нажимать срочно, и
+ * яркая кнопка спорила бы с рисунком за то же внимание.
+ *
+ * `art` — рисунок из пака (см. `EmptyArt`). Он есть там, где пустота —
+ * состояние, и его нет там, где пустота — промах: «под этот фильтр ничего не
+ * попало» рисовать нечего, и картинка сделала бы из промаха событие. Срез по
+ * состоянию — не промах: «ничего не изучаю» и «очередь разобрана» говорят о
+ * человеке, и рисунок у такого среза есть (см. «Материалы»).
+ *
+ * `hint` — пояснение обычным шрифтом, и его берут только пустые разделы. У
+ * пустой вкладки внутри материала объяснять нечего: там это вторичное место,
+ * и одной строки достаточно.
+ *
+ * `action` — кладётся внутрь вместо того, что стояло над списком, а не в
+ * придачу к нему. Две одинаковые кнопки сразу — это два места для одного
+ * жеста, поэтому экран, передающий действие сюда, свою полосу на это время
+ * убирает.
+ */
+export function Empty({
+  art,
+  hint,
+  action,
+  children,
+  size = 'md',
+}: {
+  /** Рисунок над строкой. Есть — блок встаёт по центру и дышит шире. */
+  art?: EmptyArtName
+  /** Пояснение под рукописной строкой. Только у пустых разделов. */
+  hint?: string
+  /** Единственное, что здесь можно сделать. Наверху в это время его нет. */
+  action?: ReactNode
+  /** Чего здесь нет — одной строкой, рукой. */
+  children: ReactNode
+  /** `sm` — пустота зоны внутри экрана, `md` — пустой экран целиком. */
+  size?: EmptyArtSize
+}) {
+  const wide = !!(art || hint || action)
+  return (
+    <div className={`empty${wide ? ' empty-art' : ''}${size === 'sm' ? ' sm' : ''}`}>
+      {art && <EmptyArt name={art} size={size} />}
+      <p className="empty-text">{children}</p>
+      {hint && <p className="empty-hint">{hint}</p>}
+      {action && <div className="empty-act">{action}</div>}
+    </div>
   )
 }

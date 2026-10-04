@@ -1,36 +1,35 @@
 import { useState } from 'react'
 import { todayISO } from '../lib/format'
-import { FACES } from '../lib/rating'
 import { progressOf } from '../lib/reading'
-import type { Book, Note, NoteTag, Session } from '../lib/types'
+import type { Book, Session } from '../lib/types'
 import { useData } from '../state/DataContext'
 import { useT } from '../state/LocaleContext'
+import { DraftStack } from './log/DraftStack'
+import { PagesStep } from './log/PagesStep'
+import { SubjectPick } from './log/SubjectPick'
+import { bookCover, pickOrder } from './log/subjects'
+import { thoughtBlank, thoughtDraft, thoughtDrafts, type ThoughtDraft } from './log/drafts'
+import { ThoughtFields } from './log/ThoughtFields'
+import { WhenLine } from './log/WhenLine'
 import { Sheet } from './Sheet'
-import { FormStack, Jelly, Segmented } from './ui'
-
-const TAGS: NoteTag[] = ['quote', 'idea', 'question', 'disagree', 'feeling']
-
-interface Draft {
-  key: number
-  /** Set on a thought that is already saved; absent on one being typed now. */
-  id?: string
-  tag: NoteTag
-  body: string
-}
-
-const draftsFrom = (notes: Note[]): Draft[] =>
-  notes.map((n, i) => ({ key: i, id: n.id, tag: n.tag, body: n.body }))
+import { FormStack, Jelly } from './ui'
 
 /**
- * One session, and the thoughts that came with it.
+ * Сессия: докуда дочитала и что осталось в голове.
  *
- * The page you started from is filled in from the furthest page reached, so the
- * only number normally typed is the one you read up to. Minutes stay optional —
- * asking for them every time is what makes people stop keeping a log — but the
- * form says what they buy, since nothing else can produce a pace.
+ * Лист выглядит как строка дневника, которой он станет: обложка, шаг по
+ * страницам крупно, тихая строка «когда · сколько · как», под ней мысли той
+ * же бумагой, что в ленте. Мыслей по умолчанию ноль — сессия это прогресс, а
+ * не текст, — и сколько угодно по «+ мысль». Мысль без сессии заводится
+ * другой дверью, `ThoughtSheet`.
  *
- * With `session` given the same sheet edits that entry instead: nothing about a
- * log is worth keeping if a mistyped page has to stand forever.
+ * «От» подставляется из прочитанного, так что обычно набирают одно число.
+ * Минуты необязательны: спрашивать их каждый раз — то, от чего бросают вести
+ * журнал.
+ *
+ * С `session` тот же лист правит запись: ошибка в странице не должна стоять
+ * вечно. `book` необязателен — со страницы книги она известна, из дневника и
+ * с дашборда выбирается в шапке, преднабранная фокусом.
  */
 export function SessionSheet({
   book,
@@ -38,45 +37,79 @@ export function SessionSheet({
   session,
   onClose,
 }: {
-  book: Book
+  /** Известная книга. Без неё лист спрашивает её сам. */
+  book?: Book | null
   sessions: Session[]
   session?: Session
   onClose: () => void
 }) {
   const t = useT()
-  const { notes, addSession, updateSession, deleteSession, addNote, updateNote, deleteNote, updateBook } =
-    useData()
-  const { page } = progressOf(book.id, sessions, book.pages)
-  const mine = session ? notes.filter((n) => n.session_id === session.id) : []
+  const {
+    books,
+    notes,
+    addSession,
+    updateSession,
+    deleteSession,
+    addNote,
+    updateNote,
+    deleteNote,
+    updateBook,
+  } = useData()
+  const options = book || session ? [] : pickOrder(books)
+  const [pickedId, setPickedId] = useState(() => book?.id ?? session?.book_id ?? options[0]?.id ?? '')
+  const subject = book ?? books.find((b) => b.id === pickedId) ?? null
+  // Правится сессия — «от» считается без неё самой, иначе она подпирала бы
+  // собственное начало.
+  const others = session ? sessions.filter((s) => s.id !== session.id) : sessions
+  const reached = (b: Book | null) => (b ? progressOf(b.id, others, b.pages).page : 0)
 
   const [date, setDate] = useState(session?.date ?? todayISO())
-  const [from, setFrom] = useState(String(session?.page_from ?? page))
+  const [from, setFrom] = useState(String(session?.page_from ?? reached(subject)))
   const [to, setTo] = useState(session ? String(session.page_to) : '')
   const [minutes, setMinutes] = useState(session?.minutes ? String(session.minutes) : '')
   const [rating, setRating] = useState<number | null>(session?.rating ?? null)
-  const [drafts, setDrafts] = useState<Draft[]>(() => draftsFrom(mine))
-  // Thoughts dropped from the list are deleted on save, not on the click, so
-  // closing the sheet without saving leaves the entry exactly as it was.
-  const [dropped, setDropped] = useState<string[]>([])
-  const [error, setError] = useState<string | null>(null)
+  const [drafts, setDrafts] = useState<ThoughtDraft[]>(() =>
+    thoughtDrafts(session ? notes.filter((n) => n.session_id === session.id) : []),
+  )
   const [busy, setBusy] = useState(false)
+  // Снимок того, с чего лист начал: «есть несохранённое» — это отличие от него.
+  const [start] = useState(() => JSON.stringify({ date, from, to, minutes, rating, drafts }))
+
+  // Смена книги пересчитывает только «от страницы»: она и зависит от книги.
+  const pick = (id: string) => {
+    setPickedId(id)
+    setFrom(String(reached(books.find((b) => b.id === id) ?? null)))
+  }
+
+  const title = t(session ? 'session.editTitle' : 'session.log')
+
+  // Сессия пишется по книге. Пустой полке лист говорит это прямо, а не
+  // показывает пустой список.
+  if (!subject) {
+    return (
+      <Sheet title={title} onClose={onClose}>
+        <p className="small faint">{t('session.noBooks')}</p>
+      </Sheet>
+    )
+  }
 
   const fromNum = Number(from) || 0
   const toNum = to.trim() ? Number(to) : null
-  const read = toNum === null ? null : toNum - fromNum
+  const backwards = toNum !== null && toNum < fromNum
+  const ready = toNum !== null && !backwards
+  const dirty = JSON.stringify({ date, from, to, minutes, rating, drafts }) !== start
 
-  async function save() {
-    if (toNum === null || read === null || read < 0) {
-      setError(t('session.toMustGrow'))
-      return
-    }
+  /** Стрелочная: объявление поднимается выше проверки на `subject`, и
+      сужение типа внутрь него не доходит. */
+  const save = async () => {
+    if (!ready || busy) return
     setBusy(true)
     const fields = {
-      book_id: book.id,
+      book_id: subject.id,
       date,
       page_from: fromNum,
       page_to: toNum,
-      // Zero and below are "not recorded", not a reading time the database would take.
+      // Ноль и меньше — «не записано», а не время, которое приняла бы база.
       minutes: Number(minutes) > 0 ? Number(minutes) : null,
       rating,
     }
@@ -84,178 +117,98 @@ export function SessionSheet({
     if (session) await updateSession(session.id, fields)
     else sessionId = (await addSession(fields))?.id
 
-    for (const id of dropped) await deleteNote(id)
     for (const d of drafts) {
       const body = d.body.trim()
+      const page = d.page ? Number(d.page) : null
       if (d.id) {
-        if (body) await updateNote(d.id, { tag: d.tag, body })
-        else await deleteNote(d.id)
-      } else if (body) {
-        await addNote({
-          book_id: book.id,
-          session_id: sessionId ?? null,
-          page: toNum,
-          tag: d.tag,
-          body,
-        })
+        // Убранная и стёртая до пустоты — одно и то же: мысли больше нет.
+        if (d.removed || !body) await deleteNote(d.id)
+        else await updateNote(d.id, { tag: d.tag, body, page })
+      } else if (!d.removed && body) {
+        await addNote({ book_id: subject.id, session_id: sessionId ?? null, page, tag: d.tag, body })
       }
     }
 
     /*
-     * Статус книги сессия больше не переключает — он считается из прочитанного
-     * (см. `statusOf`). Но даты подсчётом не получить: «начата» и «дочитана» —
-     * это дни, а не страницы, и записать их может только та запись, которая
-     * через эти пороги книгу и перевела.
-     *
-     * Вопроса «дочитана?» тут тоже больше нет. Он спрашивал о том, что уже
-     * сказано страницей: дошла до последней — значит дочитала. А ответ «нет»
-     * расходился бы с подсчётом, то есть возвращал бы ровно то двоевластие,
-     * ради устранения которого переключатель и убрали. Нашлось послесловие —
-     * поправь число страниц у книги, там этому и место.
+     * Статус книги сессия не переключает — он считается из прочитанного (см.
+     * `statusOf`). Но даты подсчётом не получить: «начата» и «дочитана» — это
+     * дни, а не страницы, и записать их может только та запись, которая через
+     * эти пороги книгу и перевела.
      */
     const dates: Partial<Book> = {}
-    if (!book.started_at) dates.started_at = date
-    if (book.pages && toNum >= book.pages && !book.finished_at) {
+    if (!subject.started_at) dates.started_at = date
+    if (subject.pages && toNum >= subject.pages && !subject.finished_at) {
       dates.status = 'finished'
       dates.finished_at = date
     }
-    if (Object.keys(dates).length > 0) await updateBook(book.id, dates)
+    if (Object.keys(dates).length > 0) await updateBook(subject.id, dates)
 
     setBusy(false)
     onClose()
   }
 
-  async function remove() {
+  const remove = async () => {
     if (!session || !confirm(t('session.confirmDelete'))) return
     setBusy(true)
     await deleteSession(session.id)
     onClose()
   }
 
+  const head = (
+    <SubjectPick
+      value={subject}
+      options={options}
+      onPick={pick}
+      cover={bookCover}
+      title={(b) => b.title}
+      author={(b) => b.author}
+      label={t('session.book')}
+    />
+  )
+
   return (
-    <Sheet title={t(session ? 'session.editTitle' : 'session.title')} onClose={onClose}>
+    <Sheet title={title} head={head} onClose={onClose} dirty={dirty} onSubmit={() => void save()}>
       <FormStack>
-        <div className="field-row">
-          <label className="field">
-            <span className="label">{t('session.date')}</span>
-            <input className="input" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-          </label>
-          <label className="field">
-            <span className="label">{t('session.from')}</span>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              value={from}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-          </label>
-          <label className="field">
-            <span className="label">{t('session.to')}</span>
-            <input
-              className="input"
-              type="number"
-              min="0"
-              value={to}
-              autoFocus
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </label>
-        </div>
+        <PagesStep
+          from={from}
+          to={to}
+          total={subject.pages}
+          onFrom={setFrom}
+          onTo={setTo}
+          backwards={backwards}
+        />
 
-        {read !== null && read >= 0 && (
-          <p className="small muted" style={{ margin: '-6px 0 0' }}>
-            {t('session.pagesRead', { n: read })}
-          </p>
-        )}
+        <WhenLine
+          date={date}
+          onDate={setDate}
+          minutes={minutes}
+          onMinutes={setMinutes}
+          rating={rating}
+          onRating={setRating}
+        />
 
-        <label className="field">
-          <span className="label">{t('session.minutes')}</span>
-          <input
-            className="input"
-            type="number"
-            min="1"
-            value={minutes}
-            onChange={(e) => setMinutes(e.target.value)}
-          />
-          <span className="small faint">{t('session.minutesHint')}</span>
-        </label>
+        <DraftStack
+          drafts={drafts}
+          onDrafts={setDrafts}
+          // Мысль пришла там, где остановилась: страница — «до» этой сессии.
+          make={() => thoughtDraft(to)}
+          tagOf={(d) => d.tag}
+          isBlank={thoughtBlank}
+          addLabel={t('draft.addThought')}
+          render={(d, patch, fresh) => (
+            <ThoughtFields draft={d} patch={patch} fresh={fresh} index={drafts.indexOf(d)} />
+          )}
+        />
 
-        <div className="field">
-          <span className="label">{t('session.how')}</span>
-          <div className="faces">
-            {FACES.map((f, i) => (
-              <button
-                key={f}
-                type="button"
-                className={`face-btn${rating === i + 1 ? ' on' : ''}`}
-                aria-label={t(`face.${(i + 1) as 1 | 2 | 3 | 4 | 5}`)}
-                title={t(`face.${(i + 1) as 1 | 2 | 3 | 4 | 5}`)}
-                onClick={() => setRating(rating === i + 1 ? null : i + 1)}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="field">
-          <span className="label">{t('book.notes')}</span>
-          {drafts.map((d, i) => (
-            <div key={d.key} className="note-draft">
-              {/* The tag is chosen first, and it changes the prompt in the field. */}
-              <Segmented
-                name={`${t('book.notes')} ${i + 1}`}
-                value={d.tag}
-                options={TAGS.map((tag) => ({ value: tag, label: t(`tag.${tag}`) }))}
-                onChange={(tag) =>
-                  setDrafts((list) => list.map((x) => (x.key === d.key ? { ...x, tag } : x)))
-                }
-                className="sm"
-              />
-              <textarea
-                className="textarea"
-                rows={3}
-                placeholder={t(`tagHint.${d.tag}`)}
-                value={d.body}
-                onChange={(e) =>
-                  setDrafts((list) =>
-                    list.map((x) => (x.key === d.key ? { ...x, body: e.target.value } : x)),
-                  )
-                }
-              />
-              <button
-                type="button"
-                className="link-btn"
-                onClick={() => {
-                  if (d.id) setDropped((list) => [...list, d.id as string])
-                  setDrafts((list) => list.filter((x) => x.key !== d.key))
-                }}
-              >
-                {t('session.removeNote')}
-              </button>
-            </div>
-          ))}
-          <button
-            type="button"
-            className="btn ghost sm"
-            style={{ alignSelf: 'flex-start' }}
-            onClick={() => setDrafts((list) => [...list, { key: Date.now(), tag: 'idea', body: '' }])}
-          >
-            {t('session.addNote')}
-          </button>
-        </div>
-
-        {error && <div className="error">{error}</div>}
-        <div className="row-tight" style={{ alignSelf: 'flex-start' }}>
-          <Jelly className="btn" onClick={save} disabled={busy}>
-            {t('form.save')}
-          </Jelly>
+        <div className="sheet-foot">
           {session && (
-            <button type="button" className="btn ghost" onClick={remove} disabled={busy}>
+            <button type="button" className="link-btn danger" onClick={remove} disabled={busy}>
               {t('session.delete')}
             </button>
           )}
+          <Jelly className="btn" onClick={() => void save()} disabled={!ready || busy}>
+            {t('form.save')}
+          </Jelly>
         </div>
       </FormStack>
     </Sheet>

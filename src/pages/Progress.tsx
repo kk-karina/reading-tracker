@@ -1,8 +1,16 @@
 import { motion } from 'motion/react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
+import { BookCredit } from '../components/BookCredit'
+import { BookForm } from '../components/BookForm'
 import { pagesByDate, Rhythm, WeeklyBars } from '../components/Charts'
-import { Counter, Jelly } from '../components/ui'
+import { Icon } from '../components/Icon'
+import { SessionSheet } from '../components/SessionSheet'
+import { ThoughtCard } from '../components/ThoughtCard'
+import { ThoughtSheet } from '../components/ThoughtSheet'
+import { Counter, Empty, Jelly, Tip } from '../components/ui'
+import { Zone } from '../components/Zone'
 import { daysAgoISO, fmtDate, todayISO } from '../lib/format'
 import { finishedInYear, lastSessionDate, progressOf, streakDays, stuckBooks } from '../lib/reading'
 import type { Book, Session } from '../lib/types'
@@ -11,9 +19,26 @@ import { useLocale } from '../state/LocaleContext'
 
 const STUCK_AFTER_DAYS = 14
 
+/**
+ * Дашборд чтения — по тем же правилам, что дашборд потока в обучении.
+ *
+ * Наверху то, за что сесть, с плюсом у полосы прогресса. Ниже — показания и
+ * графики в панелях: у графика своя рамка, это его плоскость. Списки — мысли,
+ * застрявшие, год — стоят зонами, без подложки: имя над линией, под ним
+ * содержимое, а пустота, если она есть, — прямо на странице. Раньше мысли
+ * стояли голыми, а застрявшие и год — в панелях, и одна и та же пустота
+ * выглядела то карточкой, то строкой.
+ *
+ * Плюс есть у тех зон, в которые можно дописать. Застрявшие и год — выводы из
+ * прочитанного, а не то, что заводят руками, поэтому у них плюса нет.
+ */
 export function Progress() {
   const { t, locale } = useLocale()
   const { books, sessions, notes, loading } = useData()
+  const [adding, setAdding] = useState(false)
+  /** Книга, по которой пишут сессию. `null` — лист спросит её сам. */
+  const [logging, setLogging] = useState<Book | null | false>(false)
+  const [thinking, setThinking] = useState(false)
 
   if (loading) return null
 
@@ -36,18 +61,39 @@ export function Progress() {
     <>
       <section className="hero">
         {focus ? (
-          <FocusBook book={focus} sessions={sessions} others={others} />
+          <FocusBook
+            book={focus}
+            sessions={sessions}
+            others={others}
+            onLog={() => setLogging(focus)}
+          />
         ) : reading.length > 0 ? (
-          <div className="hero-empty">
-            <p className="muted">{t('progress.pickFocus')}</p>
-          </div>
+          /* Книги есть, главная не выбрана — это развилка, а не пустота. */
+          <Empty
+            art="signpost"
+            hint={t('progress.pickFocusBody')}
+            action={
+              <Link to="/reading/shelf">
+                <Jelly className="btn ghost sm">{t('progress.toShelf')}</Jelly>
+              </Link>
+            }
+          >
+            {t('progress.pickFocus')}
+          </Empty>
         ) : (
-          <div className="hero-empty">
-            <p className="muted">{t('progress.noBooks')}</p>
-            <Link to="/shelf">
-              <Jelly className="btn">{t('progress.toShelf')}</Jelly>
-            </Link>
-          </div>
+          /* Книги заводятся прямо отсюда, как первый материал на дашборде
+             потока: уходить на полку ради одной кнопки незачем. */
+          <Empty
+            art="reading"
+            hint={t('progress.noBooksBody')}
+            action={
+              <Jelly className="btn ghost sm" onClick={() => setAdding(true)}>
+                {t('shelf.add')}
+              </Jelly>
+            }
+          >
+            {t('progress.noBooks')}
+          </Empty>
         )}
 
       </section>
@@ -76,111 +122,105 @@ export function Progress() {
         </div>
       </div>
 
-      <div className="dash-stack">
-        {/* The log first: what you did, then how it adds up, then what it left you. */}
-        <section className="panel">
-          <div className="panel-head">
-            <div className="label">{t('chart.rhythm')}</div>
-            <span className="small faint">{t('progress.rhythmHint')}</span>
-          </div>
-          <Rhythm
-            byDate={pagesByDate(sessions)}
-            label={t('chart.rhythm')}
-            unit={(n) => t('count.pages', { n })}
-          />
-        </section>
-
-        <section className="panel">
-          <div className="panel-head">
-            <div className="label">{t('chart.weeks')}</div>
-            <span className="small faint">{t('progress.weeksHint')}</span>
-          </div>
-          <WeeklyBars sessions={sessions} />
-        </section>
-
-        {/* Thoughts are not a chart and not a list in a box: each one is a card,
-            and a row of cards settles to one height on its own. */}
-        <section>
-          <div className="panel-head">
-            <div className="label">{t('progress.recentNotes')}</div>
-            <Link to="/journal" className="link-btn">
-              {t('progress.toJournal')}
-            </Link>
-          </div>
-          {recentNotes.length === 0 ? (
-            <div className="empty small">{t('progress.notesEmpty')}</div>
-          ) : (
-            <div className="thought-cards">
-              {recentNotes.map((n) => {
-                const b = books.find((x) => x.id === n.book_id)
-                return (
-                  <article key={n.id} className="thought-card" data-tag={n.tag}>
-                    <span className="label thought-tag">{t(`tag.${n.tag}`)}</span>
-                    <p className="thought-body">{n.body}</p>
-                    {b && (
-                      <Link
-                        to={`/book/${b.id}`}
-                        className="thought-book"
-                        title={b.author ? `${b.title} — ${b.author}` : b.title}
-                      >
-                        <BookCover book={b} size="xs" />
-                        <span className="thought-book-text">
-                          <span className="thought-book-title">{b.title}</span>
-                          {b.author && <span className="thought-book-author">{b.author}</span>}
-                        </span>
-                      </Link>
-                    )}
-                  </article>
-                )
-              })}
+      {/* Графики — одной зоной без шапки: каждая панель называет себя сама. */}
+      <Zone>
+        <div className="dash-stack">
+          <section className="panel">
+            <div className="panel-head">
+              <div className="label">{t('chart.rhythm')}</div>
+              <span className="small faint">{t('progress.rhythmHint')}</span>
             </div>
-          )}
-        </section>
+            <Rhythm
+              byDate={pagesByDate(sessions)}
+              label={t('chart.rhythm')}
+              unit={(n) => t('count.pages', { n })}
+            />
+          </section>
 
-        <section className="panel">
-          <div className="panel-head">
-            <div className="label">{t('progress.stuck')}</div>
-            <span className="small faint">{t('progress.stuckHint')}</span>
-          </div>
-          {stuck.length === 0 ? (
-            <div className="empty small">{t('progress.stuckEmpty')}</div>
-          ) : (
-            <div className="stuck-row">
-              {stuck.map((b) => {
-                const last = lastSessionDate(b.id, sessions)
-                return (
-                  <Link key={b.id} to={`/book/${b.id}`} className="stuck-book">
-                    <BookCover book={b} size="sm" />
-                    <span className="small muted">
-                      {last ? t('book.lastRead', { date: fmtDate(last, locale) }) : t('book.notOpened')}
-                    </span>
-                  </Link>
-                )
-              })}
+          <section className="panel">
+            <div className="panel-head">
+              <div className="label">{t('chart.weeks')}</div>
+              <span className="small faint">{t('progress.weeksHint')}</span>
             </div>
-          )}
-        </section>
+            <WeeklyBars sessions={sessions} />
+          </section>
+        </div>
+      </Zone>
 
-        {/* Last, and across the full width: the shelf of what is already done. */}
-        <section className="panel">
-          <div className="panel-head">
-            <div className="label">{t('progress.yearInBooks')}</div>
-            <span className="small faint mono">{today.slice(0, 4)}</span>
+      {/* Плюс зоны мыслей добавляет мысль, а не сессию: та же дверь, что во
+          вкладке «Мысли». Каждая мысль — карточка, и ряд карточек сам
+          выравнивается по высоте; книга — подписью внизу, мелко. */}
+      <Zone
+        title={t('progress.recentNotes')}
+        link={{ to: '/reading/thoughts', label: t('progress.toJournal') }}
+        add={{ label: t('thought.add'), onClick: () => setThinking(true) }}
+      >
+        {recentNotes.length === 0 ? (
+          <Empty size="sm" art="writing">
+            {t('progress.notesEmpty')}
+          </Empty>
+        ) : (
+          <div className="thought-cards">
+            {recentNotes.map((n) => {
+              const b = books.find((x) => x.id === n.book_id)
+              return (
+                <ThoughtCard
+                  key={n.id}
+                  note={n}
+                  credit={b && <BookCredit book={b} />}
+                />
+              )
+            })}
           </div>
-          {finished.length === 0 ? (
-            <div className="empty small">{t('progress.yearEmpty')}</div>
-          ) : (
-            <div className="year-grid">
-              {finished.map((b) => (
-                <Link key={b.id} to={`/book/${b.id}`}>
+        )}
+      </Zone>
+
+      <Zone title={t('progress.stuck')} hint={t('progress.stuckHint')}>
+        {stuck.length === 0 ? (
+          /* Хорошая пустота: здесь ничего не надо делать, поэтому и кнопки
+             нет, а герой на рисунке спокойно читает. */
+          <Empty size="sm" art="reading">
+            {t('progress.stuckEmpty')}
+          </Empty>
+        ) : (
+          <div className="stuck-row">
+            {stuck.map((b) => {
+              const last = lastSessionDate(b.id, sessions)
+              return (
+                <Link key={b.id} to={`/reading/book/${b.id}`} className="stuck-book">
                   <BookCover book={b} size="sm" />
+                  <span className="small muted">
+                    {last ? t('book.lastRead', { date: fmtDate(last, locale) }) : t('book.notOpened')}
+                  </span>
                 </Link>
-              ))}
-            </div>
-          )}
-        </section>
-      </div>
+              )
+            })}
+          </div>
+        )}
+      </Zone>
 
+      {/* Последней — полка того, что уже дочитано. */}
+      <Zone title={t('progress.yearInBooks')} hint={today.slice(0, 4)}>
+        {finished.length === 0 ? (
+          <Empty size="sm" art="pile">
+            {t('progress.yearEmpty')}
+          </Empty>
+        ) : (
+          <div className="year-grid">
+            {finished.map((b) => (
+              <Link key={b.id} to={`/reading/book/${b.id}`}>
+                <BookCover book={b} size="sm" />
+              </Link>
+            ))}
+          </div>
+        )}
+      </Zone>
+
+      {adding && <BookForm onClose={() => setAdding(false)} />}
+      {thinking && <ThoughtSheet onClose={() => setThinking(false)} />}
+      {logging !== false && (
+        <SessionSheet book={logging} sessions={sessions} onClose={() => setLogging(false)} />
+      )}
     </>
   )
 }
@@ -189,22 +229,24 @@ function FocusBook({
   book,
   sessions,
   others,
+  onLog,
 }: {
   book: Book
   sessions: Session[]
   others: Book[]
+  onLog: () => void
 }) {
   const { t } = useLocale()
   const { page, percent } = progressOf(book.id, sessions, book.pages)
 
   return (
     <div className="focus">
-      <Link to={`/book/${book.id}`} className="focus-cover">
+      <Link to={`/reading/book/${book.id}`} className="focus-cover">
         <BookCover book={book} size="lg" />
       </Link>
       <div className="focus-info">
         <div className="label">{t('book.isFocus')}</div>
-        <h1 className="display focus-title">{book.title}</h1>
+        <h2 className="display focus-title">{book.title}</h2>
         {book.author && <p className="muted" style={{ margin: '8px 0 0' }}>{book.author}</p>}
 
         <div className="book-numbers">
@@ -217,9 +259,18 @@ function FocusBook({
           </span>
           {percent !== null && <span className="small faint">· {percent}%</span>}
         </div>
-        <motion.div className="meter big" aria-hidden>
-          <span style={{ width: `${percent ?? (page > 0 ? 8 : 0)}%` }} />
-        </motion.div>
+        {/* Плюс вплотную к полосе — тот же ряд, что на странице книги и у
+            фокуса потока: записать сессию значит сдвинуть именно эту полосу. */}
+        <div className="prog-row">
+          <motion.div className="meter big" aria-hidden>
+            <span style={{ width: `${percent ?? (page > 0 ? 8 : 0)}%` }} />
+          </motion.div>
+          <Tip text={t('session.log')}>
+            <Jelly className="log-dot" onClick={onLog} aria-label={t('session.log')}>
+              <Icon name="plus" size={15} />
+            </Jelly>
+          </Tip>
+        </div>
 
         {others.length > 0 && (
           <div className="hero-others">
@@ -231,7 +282,7 @@ function FocusBook({
                 stray click, silently, with nothing to undo it. */}
             <div className="spines">
               {others.map((b) => (
-                <Link key={b.id} to={`/book/${b.id}`} className="spine" title={b.title}>
+                <Link key={b.id} to={`/reading/book/${b.id}`} className="spine" title={b.title}>
                   <BookCover book={b} size="sm" />
                 </Link>
               ))}

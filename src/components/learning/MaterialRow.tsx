@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { sourceOf } from '../../lib/learning/cover'
+import { sourceOf } from '../../lib/compose/linkMeta'
 import type { Material } from '../../lib/learning/types'
 import { useLocale } from '../../state/LocaleContext'
 import { MaterialCover } from './MaterialCover'
@@ -14,7 +14,7 @@ export interface From {
 /**
  * Карточка материала.
  *
- * Одна на все списки: очередь на дашборде, бэклог, пройденное и «изучаю».
+ * Одна на все списки: бэклог на дашборде и три среза «Материалов».
  * Раньше один и тот же материал был подписанной обложкой на дашборде,
  * бесплотной строкой в бэклоге и карточкой без обложки в «изучаю» — три
  * непохожих предмета вместо одного, и узнавать его приходилось заново в

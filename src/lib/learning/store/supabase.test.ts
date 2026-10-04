@@ -88,7 +88,7 @@ const aMaterial = {
 }
 
 describe('загрузка', () => {
-  it('читает четыре таблицы', async () => {
+  it('читает пять таблиц', async () => {
     const { sb, calls } = fakeClient()
     const snap = await createSupabaseLearningStore(sb).load()
 
@@ -97,8 +97,9 @@ describe('загрузка', () => {
       'materials',
       'streams',
       'study_notes',
+      'study_sessions',
     ])
-    expect(snap).toEqual({ streams: [], materials: [], parts: [], notes: [] })
+    expect(snap).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [] })
   })
 
   it('отказ одной таблицы не оставляет соседние отказы без ожидающего', async () => {
@@ -204,7 +205,6 @@ describe('адрес нового потока', () => {
 
     const stream = await createSupabaseLearningStore(sb).addStream({
       name: 'Рост',
-      icon: 'compass',
       accent: null,
       outline: null,
       sort: 0,
@@ -228,7 +228,6 @@ describe('адрес нового потока', () => {
     await expect(
       createSupabaseLearningStore(sb).addStream({
         name: 'Рост',
-        icon: 'compass',
         accent: null,
         outline: null,
         sort: 0,
@@ -245,5 +244,33 @@ describe('адрес потока не меняется', () => {
 
     expect(calls[0].payload).toMatchObject({ name: 'Новое' })
     expect(calls[0].payload).not.toHaveProperty('slug')
+  })
+})
+
+describe('занятия до миграции 007', () => {
+  it('нет таблицы занятий — раздел открывается без них', async () => {
+    const { sb } = fakeClient((call) =>
+      call.table === 'study_sessions'
+        ? { data: null, error: { code: 'PGRST205', message: 'Could not find the table' } }
+        : empty,
+    )
+    expect((await createSupabaseLearningStore(sb).load()).sessions).toEqual([])
+  })
+
+  it('конспект без занятия пишется без ключа session_id', async () => {
+    const { sb, calls } = fakeClient(() => ({ data: { id: 'n1' }, error: null }))
+    const made = await createSupabaseLearningStore(sb).addNote({
+      material_id: 'm1',
+      session_id: null,
+      part_id: null,
+      part: null,
+      title: null,
+      body: 'текст',
+      tags: [],
+      date: '2026-10-03',
+      sort: 0,
+    })
+    expect(calls[0].payload).not.toHaveProperty('session_id')
+    expect(made.session_id).toBeNull()
   })
 })

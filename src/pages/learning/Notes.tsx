@@ -1,94 +1,152 @@
+import { AnimatePresence, motion } from 'motion/react'
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { StudySheet } from '../../components/learning/StudySheet'
-import { Jelly, Segmented } from '../../components/ui'
+import { GroupSubject } from '../../components/GroupSubject'
+import { MaterialCover } from '../../components/learning/MaterialCover'
+import { NoteAddSheet } from '../../components/learning/NoteAddSheet'
+import { StudyNoteCard } from '../../components/learning/StudyNoteCard'
+import { Empty, Jelly, Segmented, listItem } from '../../components/ui'
 import { fmtDate } from '../../lib/format'
-import { notesOfStream } from '../../lib/learning/notes'
-import type { NoteTag } from '../../lib/types'
+import { sourceOrder } from '../../lib/learning/buckets'
+import { isBlankNote, notesOfStream } from '../../lib/learning/notes'
+import { groupItems, timeOf } from '../../lib/log'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 import { useStream } from './StreamLayout'
 
-const TAGS: NoteTag[] = ['quote', 'idea', 'question', 'disagree', 'feeling']
-type Filter = NoteTag | 'all'
+type By = 'day' | 'material'
 
-/** Лента конспектов потока. Форма Дневника, применённая к обучению. */
+/**
+ * Хранилище конспектов потока — та же страница, что мысли в чтении
+ * (`pages/Thoughts.tsx`): плиткой, каждый конспект на своём листе, главное —
+ * написанное, когда и о каком материале — подписью внизу.
+ *
+ * Пустые листы сюда не попадают: «Лист пока пустой» среди написанного
+ * читался как поломка. Сами они остаются у материала, где их можно дописать
+ * или удалить.
+ */
 export function Notes() {
   const { t, locale } = useLocale()
   const stream = useStream()
-  const { materials, notes } = useLearning()
-  const [filter, setFilter] = useState<Filter>('all')
+  const { materials, parts, notes } = useLearning()
+  const [by, setBy] = useState<By>('day')
+  const [materialId, setMaterialId] = useState('')
   const [adding, setAdding] = useState(false)
 
-  const mine = materials.filter((m) => m.stream_id === stream.id)
-  const byId = new Map(mine.map((m) => [m.id, m]))
-  const all = notesOfStream(materials, notes, stream.id).sort(
-    (a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at),
+  const options = sourceOrder(materials, stream.id, stream.focus_material_id)
+  const picked = options.some((m) => m.id === materialId) ? materialId : ''
+  const byId = new Map(materials.map((m) => [m.id, m]))
+  const mine = notesOfStream(materials, notes, stream.id).filter(
+    (n) => !isBlankNote(n.body, stream.outline),
+  )
+  const shown = picked ? mine.filter((n) => n.material_id === picked) : mine
+  const groups = groupItems(
+    shown,
+    (n) => (by === 'day' ? n.date : n.material_id),
+    (n) => `${n.date}|${n.created_at}`,
   )
 
-  // Предлагаются только теги, которые в потоке действительно встречаются:
-  // фильтр не должен уметь опустошить экран.
-  const present = TAGS.filter((g) => all.some((n) => n.tags.includes(g)))
-  const active: Filter = filter !== 'all' && present.includes(filter) ? filter : 'all'
-  const shown = active === 'all' ? all : all.filter((n) => n.tags.includes(active))
-  const from = { to: `/learning/${stream.slug}/notes`, label: t('nav.notes') }
+  const add = (className: string) => (
+    <Jelly className={className} onClick={() => setAdding(true)}>
+      {t('note.add')}
+    </Jelly>
+  )
 
   return (
     <>
-      {/* Та же полоса, что на Полке и в Дневнике: срез слева, действие справа.
-          Конспект заводят и отсюда — раздел, который показывает написанное,
-          обязан уметь и дописать; к чему относится запись, спрашивает лист. */}
-      <div className="filter-bar">
-        <div className="row-tight">
-          {present.length > 1 && (
+      {mine.length > 0 && (
+        <div className="filter-bar">
+          <div className="row-tight">
             <Segmented
               name={t('nav.notes')}
-              value={active}
+              value={by}
               options={[
-                { value: 'all' as Filter, label: t('notes.allTags') },
-                ...present.map((g) => ({ value: g as Filter, label: t(`tag.${g}`) })),
+                { value: 'day' as By, label: t('group.byDay') },
+                { value: 'material' as By, label: t('group.byMaterial') },
               ]}
-              onChange={setFilter}
+              onChange={setBy}
               className="sm"
             />
-          )}
-        </div>
-        <div className="row-tight">
-          <Jelly className="btn" onClick={() => setAdding(true)}>
-            {t('note.add')}
-          </Jelly>
-        </div>
-      </div>
-
-      {all.length === 0 && <div className="empty small">{t('notes.empty')}</div>}
-
-      <ul className="note-stack">
-        {shown.map((n) => {
-          const material = byId.get(n.material_id)
-          return (
-            <li key={n.id}>
-              <Link
-                to={`/learning/${stream.slug}/n/${n.id}`}
-                className="note-row"
-                state={{ from }}
+            {options.length > 1 && (
+              <select
+                className="select sm"
+                value={picked}
+                aria-label={t('sjournal.material')}
+                onChange={(e) => setMaterialId(e.target.value)}
               >
-                <span className="note-row-main">
-                  <span className="note-row-title">
-                    {n.part ?? n.title ?? t('note.untitled')}
-                  </span>
-                  <span className="small faint">
-                    {fmtDate(n.date, locale)}
-                    {material ? ` · ${material.title}` : ''}
-                    {n.tags.length > 0 && ` · ${n.tags.map((g) => t(`tag.${g}`)).join(', ')}`}
-                  </span>
-                </span>
-              </Link>
-            </li>
-          )
-        })}
-      </ul>
+                <option value="">{t('sjournal.allMaterials')}</option>
+                {options.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.title}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
+          <div className="row-tight">{add('btn')}</div>
+        </div>
+      )}
 
-      {adding && <StudySheet stream={stream} notes={notes} onClose={() => setAdding(false)} />}
+      {mine.length === 0 ? (
+        <Empty art="writing" hint={t('notes.emptyBody')} action={add('btn ghost sm')}>
+          {t('notes.empty')}
+        </Empty>
+      ) : groups.length === 0 ? (
+        <Empty size="sm">{t('journal.emptyHere')}</Empty>
+      ) : (
+        groups.map((g) => {
+          const material = by === 'material' ? byId.get(g.key) : undefined
+          return (
+            <section key={g.key} className="day">
+              <div className="day-head">
+                {by === 'day' ? (
+                  <span className="h3">{fmtDate(g.key, locale)}</span>
+                ) : (
+                  <GroupSubject
+                    cover={material && <MaterialCover material={material} size="sm" />}
+                    title={material?.title ?? t('material.notFound')}
+                    author={material?.author}
+                    to={material ? `/learning/${stream.slug}/m/${material.id}` : undefined}
+                  />
+                )}
+                <span className="mono small muted">{t('note.count', { n: g.items.length })}</span>
+              </div>
+              <div className="store-grid">
+                <AnimatePresence initial={false}>
+                  {g.items.map((n) => {
+                    const m = byId.get(n.material_id)
+                    return (
+                      <motion.div key={n.id} layout="position" {...listItem}>
+                        <StudyNoteCard
+                          note={n}
+                          material={m}
+                          parts={parts}
+                          slug={stream.slug}
+                          siblings={g.items.map((x) => x.id)}
+                          meta={[
+                            by === 'material' && fmtDate(n.date, locale),
+                            timeOf(n.date, n.created_at),
+                          ]}
+                          // Материал подписью — как на дашборде; в группе «по
+                          // материалам» он уже в шапке.
+                          credit={by === 'day'}
+                        />
+                      </motion.div>
+                    )
+                  })}
+                </AnimatePresence>
+              </div>
+            </section>
+          )
+        })
+      )}
+
+      {adding && (
+        <NoteAddSheet
+          stream={stream}
+          material={picked ? byId.get(picked) : null}
+          onClose={() => setAdding(false)}
+        />
+      )}
     </>
   )
 }

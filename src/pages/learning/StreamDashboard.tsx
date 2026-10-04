@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Rhythm } from '../../components/Charts'
-import { Icon } from '../../components/Icon'
 import { BacklogPanel } from '../../components/learning/BacklogPanel'
 import { RecentStudyNotes } from '../../components/learning/RecentStudyNotes'
 import { StreamFocus } from '../../components/learning/StreamFocus'
 import { StreamGoal } from '../../components/learning/StreamGoal'
 import { StreamStats } from '../../components/learning/StreamStats'
+import { NoteAddSheet } from '../../components/learning/NoteAddSheet'
 import { StudySheet } from '../../components/learning/StudySheet'
-import { Zone } from '../../components/learning/Zone'
+import { Zone } from '../../components/Zone'
 import { MaterialForm } from '../../components/MaterialForm'
 import { StreamForm } from '../../components/StreamForm'
 import { focusOf } from '../../lib/learning/buckets'
@@ -35,7 +35,7 @@ import { useStream } from './StreamLayout'
  *      графиком, который их объясняет. Имени у зоны нет: панель называет
  *      себя сама.
  *   3. Что осталось — лента последних конспектов, каждый своим отрывком;
- *      она же и вход в раздел. И отдельно очередь.
+ *      она же и вход в раздел. И отдельно бэклог.
  *
  * Строк-ссылок в подразделы здесь нет намеренно. Они вели ровно туда же, куда
  * полоса подразделов прямо над ними; теперь ссылка живёт в шапке зоны.
@@ -47,7 +47,7 @@ const NOTES_FOR_FULL_DOT = 3
 export function StreamDashboard() {
   const { t } = useLocale()
   const stream = useStream()
-  const { materials, parts, notes } = useLearning()
+  const { materials, parts, notes, sessions } = useLearning()
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
   /**
@@ -60,7 +60,9 @@ export function StreamDashboard() {
   const [logging, setLogging] = useState<'log' | 'note' | null>(null)
 
   const mine = notesOfStream(materials, notes, stream.id)
-  const dates = mine.map((n) => n.date)
+  // Ритм — по всему, что было: занятие без конспекта тоже живой день. Вес
+  // кружка — сколько записей в нём, занятий и конспектов вместе.
+  const entries = [...notesOfStream(materials, sessions, stream.id), ...mine].map((r) => r.date)
   const focus = focusOf(materials, stream.focus_material_id)
 
   return (
@@ -84,6 +86,7 @@ export function StreamDashboard() {
           materials={materials}
           notes={notes}
           onLog={() => setLogging('log')}
+          onAdd={() => setAdding(true)}
         />
       </section>
 
@@ -93,15 +96,15 @@ export function StreamDashboard() {
         <div className="panel rhythm-panel">
           {/* Страйк берёт все конспекты, а не только этого потока: училась
               вчера другому — день не пропал. */}
-          <StreamStats streamNotes={mine} allNotes={notes} />
+          <StreamStats streamNotes={mine} allNotes={notes} allSessions={sessions} />
           <div className="rhythm-plot">
             <Rhythm
-              byDate={notesByDate(dates)}
+              byDate={notesByDate(entries)}
               label={t('chart.studyRhythm')}
-              unit={(n) => t('note.count', { n })}
+              unit={(n) => t('study.entries', { n })}
               full={NOTES_FOR_FULL_DOT}
             />
-            <p className="rhythm-cap">{t('stream.activeWeeks', { n: activeWeeks(dates) })}</p>
+            <p className="rhythm-cap">{t('stream.activeWeeks', { n: activeWeeks(entries) })}</p>
           </div>
         </div>
       </Zone>
@@ -112,37 +115,19 @@ export function StreamDashboard() {
       <Zone
         title={t('stream.zoneThinking')}
         link={{ to: `/learning/${stream.slug}/notes`, label: t('stream.notesAll') }}
-        action={
-          <Jelly
-            className="btn ghost sm icon-btn"
-            onClick={() => setLogging('note')}
-            title={t('note.add')}
-            aria-label={t('note.add')}
-          >
-            <Icon name="plus" size={15} />
-          </Jelly>
-        }
+        add={{ label: t('note.add'), onClick: () => setLogging('note') }}
       >
         <RecentStudyNotes stream={stream} materials={materials} parts={parts} notes={mine} />
       </Zone>
 
-      {/* Добавить можно отсюда: очередь пополняют чаще, чем разбирают, и
+      {/* Добавить можно отсюда: бэклог пополняют чаще, чем разбирают, и
           ради одной ссылки уходить на отдельный экран незачем. Плюсом, как и
           конспект зоной выше: обе шапки предлагают дописать в то, что показывают,
           и обе делают это одинаково — иначе жест пришлось бы учить дважды. */}
       <Zone
-        title={t('stream.zoneQueue')}
-        link={{ to: `/learning/${stream.slug}/materials?view=backlog`, label: t('nav.materials') }}
-        action={
-          <Jelly
-            className="btn ghost sm icon-btn"
-            onClick={() => setAdding(true)}
-            title={t('learning.newMaterial')}
-            aria-label={t('learning.newMaterial')}
-          >
-            <Icon name="plus" size={15} />
-          </Jelly>
-        }
+        title={t('stream.zoneBacklog')}
+        link={{ to: `/learning/${stream.slug}/materials?view=backlog`, label: t('stream.backlogAll') }}
+        add={{ label: t('learning.newMaterial'), onClick: () => setAdding(true) }}
       >
         <BacklogPanel stream={stream} materials={materials} />
       </Zone>
@@ -153,15 +138,10 @@ export function StreamDashboard() {
         </button>
       </div>
 
-      {logging && (
-        <StudySheet
-          stream={stream}
-          material={logging === 'log' ? focus : null}
-          notes={notes}
-          title={t(logging === 'log' ? 'study.log' : 'note.add')}
-          onClose={() => setLogging(null)}
-        />
+      {logging === 'log' && (
+        <StudySheet stream={stream} material={focus} onClose={() => setLogging(null)} />
       )}
+      {logging === 'note' && <NoteAddSheet stream={stream} onClose={() => setLogging(null)} />}
       {editing && <StreamForm stream={stream} onClose={() => setEditing(false)} />}
       {adding && <MaterialForm streamId={stream.id} onClose={() => setAdding(false)} />}
     </>

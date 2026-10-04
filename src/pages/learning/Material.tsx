@@ -1,35 +1,50 @@
 import { motion } from 'motion/react'
 import { useState } from 'react'
-import { Link, Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Crumbs } from '../../components/Crumbs'
 import { Icon } from '../../components/Icon'
 import { MaterialCover } from '../../components/learning/MaterialCover'
 import { NoteSheet } from '../../components/learning/NoteSheet'
+import { SheetFlip } from '../../components/learning/SheetFlip'
 import { PartDots } from '../../components/learning/PartDots'
 import { PartNames } from '../../components/learning/PartNames'
 import { useProgressText } from '../../components/learning/Progress'
+import { NoteAddSheet } from '../../components/learning/NoteAddSheet'
+import { noteLinkState } from '../../components/learning/noteLink'
 import { StudySheet } from '../../components/learning/StudySheet'
+import { StudyNoteCard } from '../../components/learning/StudyNoteCard'
+import { useStudyLine } from '../../components/learning/studyStep'
+import { LogRow } from '../../components/log/LogRow'
 import { MaterialForm } from '../../components/MaterialForm'
-import { Jelly, Tip } from '../../components/ui'
-import { fmtDate } from '../../lib/format'
+import { Empty, inkSlide, Jelly, Tip } from '../../components/ui'
+import { fmtDate, fmtMinutes } from '../../lib/format'
 import { focusOf } from '../../lib/learning/buckets'
-import { sourceOf } from '../../lib/learning/cover'
-import { barWidth, lastNoteDate, materialProgress, remainingOf } from '../../lib/learning/metrics'
-import { noteHeading } from '../../lib/learning/notes'
+import { sourceOf } from '../../lib/compose/linkMeta'
+import { barWidth, materialProgress, remainingOf } from '../../lib/learning/metrics'
+import { lastTouched } from '../../lib/learning/sessions'
+import { face } from '../../lib/rating'
+import { isBlankNote, noteHeading } from '../../lib/learning/notes'
+import { timeOf } from '../../lib/log'
 import { hasParts, partLabel, partWord, partsOf } from '../../lib/learning/parts'
-import type { MaterialPart } from '../../lib/learning/types'
+import type { MaterialPart, StudySession } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 import { useStream } from './StreamLayout'
 
-/* Те же две вкладки, что у книги в чтении: что написано и по чему пройдено.
-   Написанное идёт первым — страницы и лекции средство, конспект результат. */
-const TABS = ['notes', 'parts'] as const
+/* Те же вкладки, что у книги в чтении: что написано и когда садилась.
+   Написанное идёт первым — страницы и лекции средство, конспект результат.
+
+   Вкладки «Главы» больше нет: состояние глав показывает ряд точек под
+   названием, имя главы дают в листе занятия, число глав — в карточке
+   материала. Единственное, чего нигде больше не было, — вписать названия
+   списком, — открывается из ячейки «Пройдено». */
+const TABS = ['notes', 'sessions'] as const
 type Tab = (typeof TABS)[number]
 
 export function Material() {
   const { id } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { t, locale } = useLocale()
   const stream = useStream()
   const progressText = useProgressText()
@@ -37,10 +52,9 @@ export function Material() {
     materials,
     parts,
     notes,
+    sessions,
     loading,
-    addPart,
     updatePart,
-    deletePart,
     deleteMaterial,
     updateStream,
     updateMaterial,
@@ -50,14 +64,13 @@ export function Material() {
      прогресса записывает занятие, кнопка над листами добавляет конспект.
      Состояние помнит, какая открыла, — лист представляется её словами. */
   const [logging, setLogging] = useState<'log' | 'note' | null>(null)
+  const [editingSession, setEditingSession] = useState<StudySession | null>(null)
+  const line = useStudyLine()
+  const [openSession, setOpenSession] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('notes')
   /* Лист имён списком — вторая дверь к переименованию, для тех случаев, когда
      частей тридцать и наводить на каждую мышь не работа, а отказ от неё. */
   const [naming, setNaming] = useState(false)
-  /* Только что заведённая часть: её поле имени получает курсор само. Иначе
-     «Добавить» даёт ещё одну «Лекцию 12», и то, что её можно назвать, не
-     сказано ничем — а это ровно то, чего от списка и ждут. */
-  const [fresh, setFresh] = useState<string | null>(null)
   /* Открытый лист помнится по id, а не по номеру: номера сдвигаются, когда
      лист удаляют или дописывают новый, и запомненный номер показал бы соседа. */
   const [openNote, setOpenNote] = useState<string | null>(null)
@@ -83,7 +96,10 @@ export function Material() {
   const started = new Set(mine.map((n) => n.part_id).filter((id): id is string => id !== null))
   const p = materialProgress(material, parts)
   const left = remainingOf(p)
-  const last = lastNoteDate(material.id, notes)
+  const last = lastTouched(material.id, sessions, notes)
+  const mySessions = sessions
+    .filter((x) => x.material_id === material.id)
+    .sort((a, b) => b.date.localeCompare(a.date) || b.created_at.localeCompare(a.created_at))
   const word = partWord(material.kind)
   const withParts = hasParts(material)
   const done = material.status === 'done'
@@ -94,8 +110,11 @@ export function Material() {
 
   // Вкладка глав у статьи и книги по страницам заперта — как рецензия у
   // недочитанной книги: рама страницы одна на все материалы.
-  const current: Tab = tab === 'parts' && !withParts ? 'notes' : tab
-  const counts: Record<Tab, number> = { notes: mine.length, parts: chapters.length }
+  const current: Tab = tab
+  const counts: Record<Tab, number> = {
+    notes: mine.length,
+    sessions: mySessions.length,
+  }
 
   const label = (part: MaterialPart, i: number) =>
     partLabel(part, i, (n) => t(word === 'lecture' ? 'part.lecture' : 'part.chapter', { n }))
@@ -128,16 +147,6 @@ export function Material() {
     const n = Number(value.replace(/\D/g, ''))
     const capped = material.pages_total ? Math.min(n, material.pages_total) : n
     void updateMaterial(material.id, { page_current: capped > 0 ? capped : null })
-  }
-
-  const addChapter = async () => {
-    const made = await addPart({
-      material_id: material.id,
-      title: '',
-      done: false,
-      sort: chapters.length,
-    })
-    if (made) setFresh(made.id)
   }
 
   const dash = <span className="faint">{t('book.unknown')}</span>
@@ -264,7 +273,23 @@ export function Material() {
           <dl className="facts">
             <div>
               <dt>{t('material.factDone')}</dt>
-              <dd className="mono">{doneCell ?? dash}</dd>
+              <dd className="mono">
+                {/* У материала по частям ячейка открывает лист глав: вписать
+                    названия списком, вставкой оглавления. Отдельной вкладки
+                    ради одного этого больше нет. */}
+                {withParts ? (
+                  <button
+                    type="button"
+                    className="link-btn fact-link"
+                    title={t(word === 'lecture' ? 'part.lectures' : 'part.chapters')}
+                    onClick={() => setNaming(true)}
+                  >
+                    {chapters.length > 0 ? (doneCell ?? dash) : t('part.paste')}
+                  </button>
+                ) : (
+                  (doneCell ?? dash)
+                )}
+              </dd>
             </div>
             <div>
               <dt>{t('material.factLeft')}</dt>
@@ -302,28 +327,28 @@ export function Material() {
 
       <div className="tabs" role="tablist" aria-label={material.title}>
         {TABS.map((key) => {
-          const locked = key === 'parts' && !withParts
           const on = current === key
+          const name = key === 'notes' ? t('nav.notes') : t('material.tabSessions')
           return (
             <button
               key={key}
               type="button"
               role="tab"
               aria-selected={on}
-              disabled={locked}
-              title={locked ? t('material.partsLocked') : undefined}
               className={`tab${on ? ' on' : ''}`}
               onClick={() => setTab(key)}
             >
-              {key === 'notes'
-                ? t('nav.notes')
-                : t(word === 'lecture' ? 'part.lectures' : 'part.chapters')}
+              {/* Имя несёт своё имя ещё и атрибутом: по нему `.tab-label`
+                  держит ширину жирного начертания всегда — см. `index.css`. */}
+              <span className="tab-label" data-label={name}>
+                {name}
+              </span>
               {counts[key] > 0 && <span className="tab-n">{counts[key]}</span>}
               {on && (
                 <motion.span
                   layoutId="material-tab"
                   className="tab-line"
-                  transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                  transition={inkSlide}
                 />
               )}
             </button>
@@ -331,66 +356,79 @@ export function Material() {
         })}
       </div>
 
+      {/* Тело вкладки меняется в кадре. Гасить его — значит проводить всю
+          страницу через пустоту: см. тот же разбор в `StreamLayout`. О
+          переключении говорит полоска под вкладкой, и этого достаточно. */}
       {current === 'notes' && (
         <div className="tab-body">
           {/* Навигация по листам тем же рядом чипов, каким в чтении отбирают
-              мысли по тегу: один жест, выученный на соседнем экране. */}
-          <div className="panel-head">
-            <div className="chips">
-              {mine.map((n, i) => (
-                <button
-                  key={n.id}
-                  type="button"
-                  className={`chip${i === at ? ' on' : ''}`}
-                  aria-pressed={i === at}
-                  onClick={() => setOpenNote(n.id)}
-                >
-                  {noteHeading(n, parts, label) ?? fmtDate(n.date, locale)}
-                </button>
-              ))}
+              мысли по тегу: один жест, выученный на соседнем экране. Пока
+              листов нет, навигации нет тоже — а с ней и полосы: ряд чипов
+              пуст, и кнопка в ней осталась бы висеть над пустотой одна. */}
+          {shown !== null && (
+            <div className="panel-head">
+              <div className="chips">
+                {mine.map((n, i) => {
+                  // Пустой лист не выдаёт себя за конспект: тихий чип с
+                  // пометкой — открыть, дописать или удалить.
+                  const blank = isBlankNote(n.body, stream.outline)
+                  return (
+                    <button
+                      key={n.id}
+                      type="button"
+                      className={`chip${i === at ? ' on' : ''}${blank ? ' blank' : ''}`}
+                      aria-pressed={i === at}
+                      onClick={() => setOpenNote(n.id)}
+                    >
+                      {noteHeading(n, parts, label) ?? fmtDate(n.date, locale)}
+                      {blank && <span className="chip-note">{t('note.blankChip')}</span>}
+                    </button>
+                  )
+                })}
+              </div>
+              <Jelly className="btn sm" onClick={() => setLogging('note')}>
+                {t('note.add')}
+              </Jelly>
             </div>
-            <Jelly className="btn sm" onClick={() => setLogging('note')}>
-              {t('note.add')}
-            </Jelly>
-          </div>
+          )}
 
           {shown === null ? (
-            <div className="empty small">{t('material.notesEmpty')}</div>
+            <Empty
+              size="sm"
+              art="writing"
+              action={
+                <Jelly className="btn ghost sm" onClick={() => setLogging('note')}>
+                  {t('note.add')}
+                </Jelly>
+              }
+            >
+              {t('material.notesEmpty')}
+            </Empty>
           ) : (
             <NoteSheet
               note={shown}
               stream={stream}
+              lead={
+                <SheetFlip
+                  at={at}
+                  count={mine.length}
+                  onPrev={() => setOpenNote(mine[at - 1].id)}
+                  onNext={() => setOpenNote(mine[at + 1].id)}
+                />
+              }
               actions={
-                <div className="row-tight sheet-flip">
-                  <button
-                    type="button"
-                    className="link-btn"
-                    disabled={at === 0}
-                    aria-label={t('note.prev')}
-                    onClick={() => setOpenNote(mine[at - 1].id)}
-                  >
-                    ‹
-                  </button>
-                  <span className="small faint mono">
-                    {at + 1}/{mine.length}
-                  </span>
-                  <button
-                    type="button"
-                    className="link-btn"
-                    disabled={at === mine.length - 1}
-                    aria-label={t('note.next')}
-                    onClick={() => setOpenNote(mine[at + 1].id)}
-                  >
-                    ›
-                  </button>
+                <div className="row-tight">
                   <Link
                     className="link-btn"
                     to={`/learning/${stream.slug}/n/${shown.id}`}
+                    // Лист ложится поверх материала и сразу на правку — ссылка
+                    // так и называется.
                     state={{
-                      from: {
-                        to: `/learning/${stream.slug}/m/${material.id}`,
-                        label: material.title,
-                      },
+                      ...noteLinkState(
+                        location,
+                        mine.map((n) => n.id),
+                      ),
+                      edit: true,
                     }}
                   >
                     {t('note.edit')}
@@ -402,87 +440,63 @@ export function Material() {
         </div>
       )}
 
-      {current === 'parts' && (
+      {/* Занятия — строками в линейку, как «Сессии» у книги: событие, не вещь,
+          и подложки ему не положено. */}
+      {current === 'sessions' && (
         <div className="tab-body">
-          <div className="panel-head">
-            <span className="label">
-              {t(word === 'lecture' ? 'part.lectures' : 'part.chapters')}
-            </span>
-            <div className="row-tight">
-              <button className="link-btn" type="button" onClick={() => setNaming(true)}>
-                {t('part.names')}
-              </button>
-              <button className="link-btn" type="button" onClick={() => void addChapter()}>
-                {t('part.add')}
-              </button>
-            </div>
-          </div>
-
-          {chapters.length === 0 ? (
-            <div className="empty small">{t('material.partsEmpty')}</div>
+          {mySessions.length === 0 ? (
+            <Empty
+              size="sm"
+              art="reading"
+              action={
+                <Jelly className="btn ghost sm" onClick={() => setLogging('log')}>
+                  {t('study.log')}
+                </Jelly>
+              }
+            >
+              {t('material.sessionsEmpty')}
+            </Empty>
           ) : (
-            <ul className="part-list">
-              {chapters.map((part, i) => (
-                <li
-                  key={part.id}
-                  className={`part-row${part.done ? ' done' : ''}${
-                    !part.done && started.has(part.id) ? ' started' : ''
-                  }`}
-                >
-                  <label className="part-check">
-                    <input
-                      type="checkbox"
-                      checked={part.done}
-                      onChange={() => void updatePart(part.id, { done: !part.done })}
-                    />
-                    <span className="visually-hidden">
-                      {label(part, i)}
-                      {!part.done && started.has(part.id) ? ` — ${t('part.started')}` : ''}
-                    </span>
-                  </label>
-                  {/* Имя правится на месте. Пустое остаётся пустым — тогда часть
-                      зовётся своим номером и перенумеровывается сама.
-
-                      Поле выглядит полем: до сих пор оно было неотличимо от
-                      строки текста, пока на него не наведёшь, и «Лекцию 12»
-                      принимали за имя, выданное навсегда. Теперь номер написан
-                      в полную силу — он имя, а не подсказка, — а перо под
-                      курсором говорит, что его правят.
-
-                      Enter — то же, что уход из поля; Esc возвращает прежнее
-                      имя, потому что набранное сюда ещё никуда не записано. */}
-                  <span className="part-edit">
-                    <input
-                      className="part-name"
-                      defaultValue={part.title}
-                      placeholder={label(part, i)}
-                      aria-label={t('part.rename')}
-                      autoFocus={part.id === fresh}
-                      onBlur={(e) => {
-                        if (e.target.value !== part.title) {
-                          void updatePart(part.id, { title: e.target.value })
-                        }
-                      }}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') e.currentTarget.blur()
-                        if (e.key === 'Escape') {
-                          e.currentTarget.value = part.title
-                          e.currentTarget.blur()
-                        }
-                      }}
-                    />
-                    <Icon className="part-pen" name="pen" size={14} aria-hidden />
-                  </span>
-                  <button
-                    className="link-btn"
-                    type="button"
-                    onClick={() => void deletePart(part.id)}
+            <div className="log">
+              {mySessions.map((x) => {
+                const l = line(x, material, parts)
+                const written = mine.filter(
+                  (n) => n.session_id === x.id && !isBlankNote(n.body, stream.outline),
+                )
+                return (
+                  <LogRow
+                    key={x.id}
+                    step={l.step}
+                    unit={l.unit}
+                    detail={l.detail}
+                    meter={l.meter}
+                    when={[
+                      fmtDate(x.date, locale),
+                      timeOf(x.date, x.created_at),
+                      x.minutes && l.unit ? fmtMinutes(x.minutes, locale) : null,
+                      face(x.rating),
+                    ]}
+                    written={written.length}
+                    open={openSession === x.id}
+                    onToggle={() => setOpenSession(openSession === x.id ? null : x.id)}
+                    onEdit={() => setEditingSession(x)}
                   >
-                    {t('part.remove')}
-                  </button>
-                </li>
-              ))}
-            </ul>
+                    <div className="store-grid">
+                      {written.map((n) => (
+                        <StudyNoteCard
+                          key={n.id}
+                          note={n}
+                          material={material}
+                          parts={parts}
+                          slug={stream.slug}
+                          siblings={written.map((w) => w.id)}
+                        />
+                      ))}
+                    </div>
+                  </LogRow>
+                )
+              })}
+            </div>
           )}
         </div>
       )}
@@ -491,12 +505,9 @@ export function Material() {
         <MaterialForm
           streamId={material.stream_id}
           material={material}
-          onClose={() => {
-            setEditing(false)
-            // Форма умеет удалять материал: если его больше нет, страница пуста.
-            if (!materials.some((m) => m.id === material.id))
-              navigate(`/learning/${stream.slug}/materials?view=backlog`)
-          }}
+          onClose={() => setEditing(false)}
+          // Форма умеет удалять материал: его страница после этого пуста.
+          onDeleted={() => navigate(`/learning/${stream.slug}/materials?view=backlog`)}
         />
       )}
 
@@ -504,19 +515,29 @@ export function Material() {
         <PartNames
           material={material}
           parts={chapters}
+          started={started}
           word={word}
           onClose={() => setNaming(false)}
         />
       )}
 
-      {logging && (
+      {logging === 'log' && (
+        <StudySheet stream={stream} material={material} onClose={() => setLogging(null)} />
+      )}
+      {logging === 'note' && (
+        <NoteAddSheet
+          stream={stream}
+          material={material}
+          onClose={() => setLogging(null)}
+          onSaved={(made) => setOpenNote(made.id)}
+        />
+      )}
+      {editingSession && (
         <StudySheet
           stream={stream}
           material={material}
-          notes={notes}
-          title={t(logging === 'log' ? 'study.log' : 'note.add')}
-          onClose={() => setLogging(null)}
-          onSaved={(made) => setOpenNote(made.id)}
+          session={editingSession}
+          onClose={() => setEditingSession(null)}
         />
       )}
     </>

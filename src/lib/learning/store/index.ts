@@ -18,4 +18,5 @@ export type {
   NewMaterialPart,
   NewStream,
   NewStudyNote,
+  NewStudySession,
 } from './types'

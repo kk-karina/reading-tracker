@@ -1,21 +1,11 @@
 import { useState } from 'react'
+import { funnyGoal } from '../lib/learning/goals'
 import { ACCENTS, type Accent, type Stream } from '../lib/learning/types'
 import { useLearning } from '../state/LearningContext'
 import { useLocale } from '../state/LocaleContext'
-import { Icon, type IconName } from './Icon'
+import { GoalRoll } from './learning/GoalRoll'
 import { Sheet } from './Sheet'
 import { Field, FormStack, Jelly } from './ui'
-
-const PICKABLE: IconName[] = [
-  'compass',
-  'book',
-  'bulb',
-  'car',
-  'chat',
-  'headphones',
-  'chart-bar',
-  'trending-up',
-]
 
 export function StreamForm({
   stream,
@@ -27,14 +17,32 @@ export function StreamForm({
   /** Заведённый поток отдаётся наружу: экран создания не всегда тот, на котором его видно. */
   onCreated?: (made: Stream) => void
 }) {
-  const { t } = useLocale()
+  const { t, locale } = useLocale()
   const { addStream, updateStream, deleteStream, streams } = useLearning()
 
   const [name, setName] = useState(stream?.name ?? '')
-  const [icon, setIcon] = useState<IconName>(stream?.icon ?? 'compass')
-  const [accent, setAccent] = useState<Accent | null>(stream?.accent ?? null)
+  /**
+   * Новому потоку цвет достаётся сразу, по счёту заведённых.
+   *
+   * Раньше он начинался с «никакого»: цвет был украшением шапки дашборда, и
+   * без него поток просто выглядел скромнее. Теперь это его метка в полосе
+   * переключения, и поток без цвета — поток без метки; просить выбрать её
+   * руками значит просить решить про поток раньше, чем в нём что-то есть.
+   * Снять цвет по-прежнему можно, нажав на выбранный кружок второй раз.
+   */
+  const [accent, setAccent] = useState<Accent | null>(
+    stream?.accent ?? ACCENTS[streams.length % ACCENTS.length],
+  )
   const [outline, setOutline] = useState(stream?.outline ?? '')
   const [goal, setGoal] = useState(stream?.goal ?? '')
+  /**
+   * Пока цель не трогали руками, она придумывается из имени и меняется вместе
+   * с ним: назвала поток «Driving» — цель уже про парковку. Первая же правка
+   * поля делает цель своей, и дальше имя её не переписывает.
+   */
+  const [goalTouched, setGoalTouched] = useState(!!stream?.goal)
+  const [roll, setRoll] = useState(0)
+  const shownGoal = goalTouched ? goal : funnyGoal(name, locale, roll)
   const [busy, setBusy] = useState(false)
 
   async function save() {
@@ -42,16 +50,15 @@ export function StreamForm({
     setBusy(true)
     const patch = {
       name: name.trim(),
-      icon,
       accent,
       outline: outline.trim() || null,
-      goal: goal.trim() || null,
+      goal: shownGoal.trim() || null,
     }
     if (stream) await updateStream(stream.id, patch)
     else {
       // `addStream` цель не принимает — она проставляется отдельным
       // `updateStream` сразу после создания.
-      const made = await addStream({ name: patch.name, icon, accent, outline: patch.outline, sort: streams.length })
+      const made = await addStream({ name: patch.name, accent, outline: patch.outline, sort: streams.length })
       if (made && patch.goal) await updateStream(made.id, { goal: patch.goal })
       if (made) onCreated?.(made)
     }
@@ -75,27 +82,21 @@ export function StreamForm({
       <Field label={t('stream.goal')}>
         <input
           className="input"
-          value={goal}
+          value={shownGoal}
           placeholder={t('stream.goalEmpty')}
-          onChange={(e) => setGoal(e.target.value)}
+          onChange={(e) => {
+            setGoal(e.target.value)
+            setGoalTouched(true)
+          }}
         />
-      </Field>
-
-      <Field label={t('stream.icon')} group>
-        <div className="icon-pick">
-          {PICKABLE.map((n) => (
-            <button
-              key={n}
-              type="button"
-              className={`icon-opt${icon === n ? ' on' : ''}`}
-              aria-label={n}
-              aria-pressed={icon === n}
-              onClick={() => setIcon(n)}
-            >
-              <Icon name={n} />
-            </button>
-          ))}
-        </div>
+        {name.trim() && (
+          <GoalRoll
+            onClick={() => {
+              setRoll((r) => r + 1)
+              setGoalTouched(false)
+            }}
+          />
+        )}
       </Field>
 
       <Field label={t('stream.accent')} group>

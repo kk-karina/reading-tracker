@@ -13,6 +13,7 @@ const shelved = (over: Partial<Book>): Book => ({
   genre: null,
   language: null,
   status: 'want',
+  url: null,
   is_focus: false,
   rating: null,
   review: null,

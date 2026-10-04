@@ -14,6 +14,9 @@ create table if not exists public.books (
   author text,
   pages integer,
   cover_url text,
+  -- Where the book lives online: a shop, a publisher, Goodreads. Added by
+  -- migrations/006_book_url.sql.
+  url text,
   external_id text,
   genre text,
   language text,
@@ -122,9 +125,6 @@ create table if not exists public.streams (
   -- so nothing updates this column after the insert.
   slug text not null,
   name text not null,
-  -- The icon is stored without a check: the set of icons changes more often
-  -- than it is worth a migration, and it is picked from a list, never typed.
-  icon text not null,
   accent text check (accent is null or accent in
     ('lemon','sage','clay','slate','plum','sky','sand','rose')),
   goal text,
@@ -192,10 +192,28 @@ create table if not exists public.material_parts (
   sort integer not null default 0
 );
 
+-- A sitting with a material: the step it took, so deleting it can take the
+-- step back. See migrations/007_study_sessions.sql.
+create table if not exists public.study_sessions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  material_id uuid not null references public.materials(id) on delete cascade,
+  date date not null,
+  page_from integer,
+  page_to integer,
+  part_ids uuid[] not null default '{}',
+  completed boolean not null default false,
+  minutes integer check (minutes is null or minutes > 0),
+  rating smallint check (rating is null or rating between 1 and 5),
+  created_at timestamptz not null default now()
+);
+
 create table if not exists public.study_notes (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   material_id uuid not null references public.materials(id) on delete cascade,
+  -- Notes outlive the session they were written in.
+  session_id uuid references public.study_sessions(id) on delete set null,
   -- A note outlives the chapter it was written about, so the pointer goes to
   -- null rather than taking the note with it.
   part_id uuid references public.material_parts(id) on delete set null,
@@ -216,6 +234,7 @@ create table if not exists public.study_notes (
 alter table public.streams enable row level security;
 alter table public.materials enable row level security;
 alter table public.material_parts enable row level security;
+alter table public.study_sessions enable row level security;
 alter table public.study_notes enable row level security;
 
 -- Policies have no "if not exists", so they are dropped first: running this
@@ -229,6 +248,9 @@ create policy "own materials" on public.materials
 drop policy if exists "own material parts" on public.material_parts;
 create policy "own material parts" on public.material_parts
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own study sessions" on public.study_sessions;
+create policy "own study sessions" on public.study_sessions
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 drop policy if exists "own study notes" on public.study_notes;
 create policy "own study notes" on public.study_notes
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
@@ -236,4 +258,6 @@ create policy "own study notes" on public.study_notes
 create index if not exists streams_user_sort on public.streams (user_id, sort);
 create index if not exists materials_stream on public.materials (user_id, stream_id, sort);
 create index if not exists material_parts_material on public.material_parts (material_id, sort);
+create index if not exists study_sessions_material on public.study_sessions (material_id, date desc);
 create index if not exists study_notes_material on public.study_notes (material_id, date desc);
+create index if not exists study_notes_session on public.study_notes (session_id);

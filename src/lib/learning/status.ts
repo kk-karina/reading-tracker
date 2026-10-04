@@ -21,7 +21,8 @@ import type { Material, MaterialPart, MaterialStatus, StudyNote } from './types'
 export function statusOf(
   material: Material,
   parts: MaterialPart[],
-  notes: StudyNote[],
+  /** Конспекты и занятия: «за материал садились» говорит любое из двух. */
+  notes: Pick<StudyNote, 'material_id'>[],
 ): MaterialStatus {
   // Отметка сильнее подсчёта: книгу без числа страниц и статью иначе не
   // закрыть, а закрытое подсчётом она не отменяет — закрытое и так закрыто.
@@ -58,5 +59,5 @@ export function statusOf(
 export const withStatus = (
   materials: Material[],
   parts: MaterialPart[],
-  notes: StudyNote[],
+  notes: Pick<StudyNote, 'material_id'>[],
 ): Material[] => materials.map((m) => ({ ...m, status: statusOf(m, parts, notes) }))

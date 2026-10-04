@@ -36,6 +36,14 @@
 
   --font: 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --mono: 'Geist Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+  /* Рука. Пока на ней только строка пустого места — там, где на экране
+     остались рисунок и одно предложение, и это предложение должно быть
+     подписью к рисунку, а не ещё одним элементом интерфейса. Нарочно
+     токеном, а не шрифтом внутри `.empty-text`: когда понадобится второе
+     такое место, брать будут отсюда. Caveat — потому что нужна кириллица,
+     а у большинства рукописных её нет. Размер задаётся с запасом: у руки
+     строчные мельче, чем у Geist, при той же кегельной. */
+  --font-hand: 'Caveat', 'Segoe Script', cursive;
 
   --r-sm: 8px;
   --r-md: 12px;
@@ -462,6 +470,14 @@ button {
 .seg button.on {
   color: var(--ink);
 }
+/* Деление со значком: значок и слово — одна строка, значок на оптической
+   середине строчных. */
+.seg button:has(> .icon) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
 .seg .seg-ink {
   position: absolute;
   inset: 0;
@@ -511,6 +527,23 @@ button.chip:hover {
 }
 button.chip:active {
   transform: scale(0.9);
+}
+/* Пустой лист в ряду листов материала: пунктиром и тише — он есть, но
+   конспектом ещё не стал. */
+.chip.blank {
+  border-style: dashed;
+  color: var(--ink-3);
+}
+.chip-note {
+  margin-left: 8px;
+  font-size: 0.85em;
+  opacity: 0.75;
+}
+/* Ячейка «Пройдено» у материала по частям — дверь к листу глав. */
+.fact-link {
+  font: inherit;
+  text-decoration: underline dotted;
+  text-underline-offset: 4px;
 }
 .chip.on {
   background: var(--brand);
@@ -709,6 +742,96 @@ button.chip:active {
   color: var(--ink-2);
   padding: 32px 0;
 }
+.empty-text {
+  margin: 0;
+}
+
+/* Собранная пустота — рисунок, одна строка, тихое действие. Строго в этом
+   порядке по громкости: рисунок крупный и держит весь блок, строка под ним
+   набрана рукой и читается подписью к нему, кнопка — мелкая и приглушённая,
+   потому что здесь не на что нажимать срочно.
+
+   Голая `.empty` остаётся ровно тем, чем была, — строкой в потоке страницы.
+   Такой она стоит там, где пусто по вине фильтра, а не по сути. */
+.empty-art {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 44px 0 52px;
+  text-align: center;
+}
+.empty-art.sm {
+  padding: 24px 0 28px;
+}
+
+/* Рисунок меряется высотой: в паке герои разной ширины, и по ширине они
+   встали бы разного роста. */
+.empty-pic {
+  display: block;
+  height: 168px;
+  width: auto;
+  margin-bottom: 18px;
+}
+.empty-pic.sm {
+  height: 104px;
+  margin-bottom: 12px;
+}
+
+/* Рука — на любой пустоте, и с рисунком, и без.
+
+   Кегль вдвое выше обычной мелкой строки, и это не щедрость: у Caveat низкий
+   рост строчных, и в 20 пикселей она выходит мельче четырнадцатого Geist под
+   собой — то есть подпись к рисунку оказывается тише собственной сноски. */
+.empty-text {
+  font-family: var(--font-hand);
+  font-size: 30px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: 0.005em;
+  color: var(--ink-2);
+  max-width: 22ch;
+  text-wrap: balance;
+}
+.empty.sm .empty-text {
+  font-size: 24px;
+}
+
+/* Пояснение — обычным шрифтом и тише руки: это не вторая реплика, а сноска
+   к ней. Стоит только на пустых разделах. Внутри материала, где пустая
+   вкладка — вещь вторичная, хватает одной строки: объяснять там нечего,
+   а третий ярус текста в карточке читается как ошибка. */
+.empty-hint {
+  margin: 10px 0 0;
+  max-width: 44ch;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  text-wrap: balance;
+}
+
+.empty-act {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+.empty.sm .empty-act {
+  margin-top: 12px;
+}
+
+@media (max-width: 640px) {
+  .empty-pic {
+    height: 132px;
+  }
+  .empty-text {
+    font-size: 26px;
+  }
+  .empty.sm .empty-text {
+    font-size: 22px;
+  }
+}
 
 /* ---------- login ---------- */
 
@@ -888,25 +1011,6 @@ button.chip:active {
   margin-bottom: 6px;
 }
 
-.recent {
-  display: flex;
-  flex-direction: column;
-}
-.recent-row {
-  display: grid;
-  grid-template-columns: 84px 1fr auto;
-  gap: 16px;
-  padding: 12px 0;
-  border-top: 1px solid var(--line);
-  align-items: baseline;
-}
-.recent-row:first-child {
-  border-top: 0;
-}
-.recent-row .t {
-  color: var(--ink-2);
-  font-size: 13px;
-}
 
 /* ---------- charts ---------- */
 
@@ -948,15 +1052,13 @@ button.chip:active {
   color: rgba(255, 255, 255, 0.65);
 }
 
-/* ---------- weeks: a week is a pile of books ---------- */
+/* ---------- weeks: pages per week as bars ---------- */
 
 .wk-plot {
   position: relative;
   display: grid;
   align-items: end;
-  /* The books drop in from above the plot, so the box is also the clip — and
-     the border is the shelf they come to rest on, painted behind them. */
-  overflow: hidden;
+  /* The border is the baseline the bars stand on. */
   border-bottom: 1px solid var(--line-2);
 }
 .wk-col {
@@ -966,48 +1068,32 @@ button.chip:active {
   align-items: flex-end;
   justify-content: center;
   /* Grid tracks default to their content's minimum width; without this a phone
-     gets twelve 46px columns and the chart runs off the panel. */
+     gets twelve fixed columns and the chart runs off the panel. */
   min-width: 0;
 }
-/* A week with nothing in it: a dot on the shelf, not a gap in the row. */
+/* A week with nothing in it: a dot on the baseline, not a gap in the row. */
 .wk-none {
   width: 4px;
   height: 4px;
   border-radius: 50%;
   background: var(--line-2);
 }
-/* Width comes from the component: it is the same number the book thickness is
-   derived from, so the proportions cannot drift apart. */
-.wk-stack {
-  position: relative;
-  height: 100%;
+/* Lemon, the one active colour, as a solid fill: a bar is wide enough to carry
+   it where a thin mark is not (see --brand-strong). On a white panel lemon has
+   almost no edge, so a hairline of ink inside the bar draws its outline
+   without darkening the fill. */
+.wk-bar {
+  width: 64%;
+  max-width: 46px;
+  border-radius: 6px 6px 2px 2px;
+  background: var(--brand);
+  box-shadow: inset 0 0 0 1px rgba(14, 16, 18, 0.08);
+  transition: background-color 0.15s ease;
 }
-/* A book lying flat, seen spine-on: a slab of bright cloth catching the light
-   along its top edge and shading under. Width and left edge come from the
-   component — no two books in a pile are the same size or quite squared up. */
-.wk-book {
-  position: absolute;
-  background-image:
-    /* The lit top edge and the shaded underside, both a fixed height, so a
-       two-page book and a two-hundred-page one are lit the same way. */
-    linear-gradient(
-      180deg,
-      rgba(255, 255, 255, 0.3) 0 1px,
-      rgba(255, 255, 255, 0.12) 1px 3px,
-      rgba(255, 255, 255, 0.02) 3px 7px,
-      rgba(0, 0, 0, 0) 7px calc(100% - 6px),
-      rgba(0, 0, 0, 0.16) calc(100% - 2px),
-      rgba(0, 0, 0, 0.28) calc(100% - 1px)
-    ),
-    /* Head and tail caps, where the cloth turns the corner. */
-    linear-gradient(
-      90deg,
-      rgba(0, 0, 0, 0.22),
-      rgba(0, 0, 0, 0) 9%,
-      rgba(0, 0, 0, 0) 91%,
-      rgba(0, 0, 0, 0.22)
-    );
-  box-shadow: 0 1px 2px rgba(14, 16, 18, 0.16);
+@media (hover: hover) and (pointer: fine) {
+  .wk-col:hover .wk-bar {
+    background: var(--brand-2);
+  }
 }
 .wk-avg {
   position: absolute;
@@ -1097,6 +1183,53 @@ button.chip:active {
   margin-top: 24px;
   align-items: start;
 }
+/* ---------- зона ----------
+   Уровень, которого на экране не было. Имя зоны набрано текстом и стоит над
+   линией: три такие строки складываются в оглавление экрана. */
+.zone {
+  margin: 0 0 56px;
+}
+.zone-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 0 0 24px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--line-2);
+}
+.zone-title {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.005em;
+  color: var(--ink);
+}
+.zone-link {
+  font-size: 13px;
+  color: var(--ink-3);
+  transition: color 0.2s ease;
+}
+.zone-link:hover {
+  color: var(--ink);
+}
+.zone-hint {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.zone-acts {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+}
+@media (max-width: 860px) {
+  .zone {
+    margin-bottom: 40px;
+  }
+}
+
 .panel-head {
   display: flex;
   align-items: baseline;
@@ -1452,10 +1585,6 @@ button.chip:active {
   margin: 0 6px;
   vertical-align: -1px;
 }
-.entry .m .face-sm {
-  margin: 0 0 0 8px;
-}
-
 .day {
   margin-bottom: 28px;
 }
@@ -1467,62 +1596,415 @@ button.chip:active {
   border-bottom: 1px solid var(--ink);
   margin-bottom: 4px;
 }
-.entry {
-  display: grid;
-  grid-template-columns: 72px 1fr auto;
-  gap: 16px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--line);
-  align-items: start;
-}
-.entry .m {
-  font-family: var(--mono);
-  font-size: 14px;
-}
-.entry .cat {
-  background: none;
-  border: 0;
-  padding: 0;
-  font-weight: 500;
-}
-.entry .topic-name {
-  color: var(--ink-2);
-}
-.entry .note {
-  color: var(--ink-2);
-  margin-top: 2px;
-  font-size: 14px;
-}
-.entry .acts {
-  display: flex;
-  gap: 10px;
+/* Правка мысли из ленты — в углу её карточки, видна под курсором, как
+   правка у строки сессии. */
+.thought-edit {
+  position: absolute;
+  top: 12px;
+  right: 14px;
   opacity: 0;
   transition: opacity 0.2s;
 }
-.entry:hover .acts,
-.entry:focus-within .acts {
+.thought-card:hover .thought-edit,
+.thought-card:focus-within .thought-edit {
   opacity: 1;
 }
-
-.entry a.cat:hover {
-  text-decoration: underline;
+@media (hover: none) {
+  .thought-edit {
+    opacity: 1;
+  }
 }
-.day:last-of-type .entry:last-of-type {
+/* ---------- журнал: сессии и занятия ----------
+   Событие — на линейке, без подложки. Строка — два блока, а не таблица во
+   всю ширину: слева шаг, крупно и моноширинным, — он ведёт и стоит
+   столбиком от строки к строке, чтобы шаги сравнивались взглядом сверху
+   вниз; справа от него контекст в две строки — маячок книги сверху,
+   подробность шага и время снизу, мелко. У правого края — перо и правка.
+
+   Шесть колонок во всю ширину разносили четыре факта по краям: диапазон
+   страниц стоял отдельно от шага, который говорит то же, между ними зияла
+   дыра, а название книги резалось в узкой колонке. */
+.log-row {
+  border-bottom: 1px solid var(--line);
+}
+.day:last-of-type .log-row:last-of-type,
+.log .log-row:last-of-type {
   border-bottom: 0;
 }
-
-.entry-main {
+.log-line {
+  display: grid;
+  /* Правый край — постоянной ширины: с пером и без строки иначе разной
+     ширины, и полосы прогресса разъезжались бы от строки к строке. */
+  grid-template-columns: 128px minmax(0, 1fr) 136px;
+  align-items: start;
+  column-gap: 20px;
+  padding: 14px 0 15px;
+}
+.log-step {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  white-space: nowrap;
+}
+.log-num {
+  font-family: var(--mono);
+  font-size: 24px;
+  font-weight: 500;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.log-num .icon {
+  vertical-align: -3px;
+}
+.log-unit {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+/* Контекст: обложка ростом в две строки, рядом название и под ним
+   подробность и время, у правого края — полоса «было → стало». Полоса —
+   колонкой постоянной ширины: полосы всех строк встают столбиком и
+   сравниваются взглядом сверху вниз, как шаги. */
+.log-ctx {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) 168px;
+  grid-template-areas:
+    'cover top meter'
+    'cover sub meter';
+  column-gap: 14px;
+  row-gap: 3px;
+  align-items: center;
+  min-width: 0;
+}
+/* Без книги в строке (группа «по книгам», страница самой книги) колонки
+   обложки нет, остальное на своих местах. */
+.log-ctx.bare {
+  grid-template-columns: minmax(0, 1fr) 168px;
+  grid-template-areas:
+    'top meter'
+    'sub meter';
+}
+.log-cover {
+  grid-area: cover;
   display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  /* Одна ячейка на любую обложку: книга узкая, курс широкий, и названия
+     рядом не должны съезжать от строки к строке. */
+  width: 40px;
+  height: 39px;
+}
+/* Обложка — опознавательный знак, а не плитка: ростом ровно с две строки
+   контекста. Материал вписан в ту же высоту, подписи внутри не читаются. */
+.log-cover .cover-xs {
+  width: 26px;
+}
+.log-cover .mcover {
+  height: 39px;
+  max-width: 40px;
+  border-radius: 3px;
+}
+.log-cover .mcover-title,
+.log-cover .mcover-foot {
+  display: none;
+}
+.log-top {
+  grid-area: top;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+.log-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+}
+a.log-title:hover {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.log-sub {
+  grid-area: sub;
+}
+.log-meter {
+  grid-area: meter;
+  justify-self: stretch;
+}
+
+/* Полоса «было → стало»: густое — до сессии, бледное — что прибавила. Та
+   же, что в листе записи, только тоньше. Обе части растут `scaleX`. */
+.strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
   min-width: 0;
 }
-.entry-main .cover {
-  margin-top: 1px;
+.strip-bar {
+  position: relative;
+  flex: 1;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
 }
-.entry-text {
+.strip-bar span {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  transform-origin: left center;
+}
+.strip-was {
+  background: var(--ink);
+}
+.strip-will {
+  background: var(--ink-3);
+  opacity: 0.55;
+}
+.strip-label {
+  flex: none;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+}
+/* Ряд точек у материала по частям: этого занятия — чернилами, пройденные
+   раньше — бледно, остальные — контуром. */
+.strip-dots {
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.strip-dots i {
+  width: var(--strip-dot, 6px);
+  height: var(--strip-dot, 6px);
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 1px var(--line-2);
+}
+.strip-dots i.done {
+  background: var(--line-2);
+  box-shadow: none;
+}
+.strip-dots i.now {
+  background: var(--ink);
+  box-shadow: none;
+}
+/* Обычной гарнитурой с табличными цифрами: здесь и названия глав, и время, а
+   моноширинный делал «Типографика, Лекция 4» похожей на код. Моноширинным
+   остаётся только диапазон страниц — он мера (`.mono` в разметке). */
+.log-sub {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  row-gap: 2px;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+.log-sub-part + .log-sub-part::before {
+  content: '·';
+  margin: 0 8px;
+  color: var(--line-2);
+}
+.log-side {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 14px;
+  padding-top: 2px;
+}
+.log-pen {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--line-2);
+  border-radius: 6px;
+  background: var(--paper);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition:
+    border-color 0.2s,
+    color 0.2s,
+    background 0.2s;
+}
+.log-pen:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+.log-pen[aria-expanded='true'] {
+  background: var(--ink);
+  border-color: var(--ink);
+  color: var(--paper);
+}
+.log-edit {
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.log-row:hover .log-edit,
+.log-row:focus-within .log-edit {
+  opacity: 1;
+}
+@media (hover: none) {
+  .log-edit {
+    opacity: 1;
+  }
+}
+/* Раскрытое написанное — под строкой, с отступом по колонке контекста: глаз
+   идёт от строки вниз к тому, что осталось от этой сессии. */
+.log-things {
+  overflow: hidden;
+}
+.log-things-inner {
+  padding: 0 0 18px 148px;
+}
+
+/* Телефон: шаг уже, правка и перо — под контекстом, а не третьей колонкой,
+   которая отнимала бы ширину у названия. */
+@media (max-width: 640px) {
+  .log-ctx {
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'cover top'
+      'cover sub'
+      'cover meter';
+  }
+  .log-ctx.bare {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'top'
+      'sub'
+      'meter';
+  }
+  .log-meter {
+    max-width: 220px;
+    padding-top: 4px;
+  }
+  .log-line {
+    grid-template-columns: 84px minmax(0, 1fr);
+    column-gap: 12px;
+    row-gap: 8px;
+  }
+  .log-num {
+    font-size: 20px;
+  }
+  .log-side {
+    grid-column: 2;
+  }
+  .log-things-inner {
+    padding-left: 0;
+  }
+}
+
+/* ---------- хранилище: мысли и конспекты ----------
+   Вещь — на бумаге, каждая на своей. Плиткой по высоте своего текста. */
+.store-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(290px, 100%), 1fr));
+  gap: 16px;
+  padding-top: 14px;
+}
+/* Ряд — одной высоты, как на дашборде: подпись книги прижата к низу каждой
+   карточки и стоит на одной линии с соседней, а не скачет вслед за длиной
+   мысли. Обёртка движения тянется вместе с рядом и отдаёт высоту карточке. */
+.store-grid > * {
+  display: flex;
+  flex-direction: column;
+}
+.store-grid > * > .thought-card,
+.store-grid > * > .sheet-page.slip {
+  flex: 1;
+}
+.log-things .store-grid {
+  padding-top: 0;
+}
+
+/* Шапка группы «по книгам»: обложка, справа название и автор — та же
+   подпись, что у мысли на дашборде, на ступень крупнее. Сводка справа встаёт
+   по середине обложки. */
+.day-head:has(.group-subject) {
+  align-items: center;
+}
+.group-subject {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+.group-subject .cover-xs {
+  width: 34px;
+}
+.group-subject .mcover {
+  height: 44px;
+  border-radius: 3px;
+}
+.group-subject .mcover-title,
+.group-subject .mcover-foot {
+  display: none;
+}
+.group-subject-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
   min-width: 0;
 }
+.group-subject-title {
+  font-size: 17px;
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+}
+.group-subject-author {
+  font-size: 13px;
+  color: var(--ink-3);
+}
+a.group-subject:hover .group-subject-title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Подпись под написанным: когда и о чём. В одну строку: при переносе
+   разделитель оставался висеть в начале второй строки перед книгой. Не
+   влезает — сжимается название книги, с многоточием, а не строка. */
+.note-meta {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  min-width: 0;
+  margin-top: auto;
+  padding-top: 4px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.note-meta-part {
+  display: inline-flex;
+  flex: none;
+  align-items: center;
+  min-width: 0;
+  white-space: nowrap;
+}
+.note-meta-part + .note-meta-part::before {
+  content: '·';
+  margin: 0 7px;
+  color: var(--line-2);
+}
+/* Под подписью книги черта и так отделяет её от мысли — отступ от строки
+   страницы меньше обычного. */
+.note-meta + .thought-book {
+  margin-top: 10px;
+}
+
 .select.sm {
   width: auto;
   max-width: 280px;
@@ -1530,28 +2012,6 @@ button.chip:active {
   font-size: 14px;
   padding: 0 30px 0 10px;
   background-position: right 10px center;
-}
-
-/* Editing an entry is a second thought: the handles wait until you go near it. */
-.recent-row.with-acts {
-  grid-template-columns: 84px 1fr auto auto;
-}
-.recent-row .acts {
-  display: flex;
-  gap: 10px;
-  opacity: 0;
-  transition: opacity 0.2s;
-}
-.recent-row:hover .acts,
-.recent-row:focus-within .acts {
-  opacity: 1;
-}
-/* Nothing hovers on a touch screen, so there they stay out in the open. */
-@media (hover: none) {
-  .entry .acts,
-  .recent-row .acts {
-    opacity: 1;
-  }
 }
 
 /* ---------- book tabs ---------- */
@@ -1584,8 +2044,12 @@ button.chip:active {
 .tabs > .tab:first-child {
   padding-left: 0;
 }
+/* Чернила выходят за текст на восемь пикселей с каждой стороны. Слева первой
+   выйти некуда — значит, и справа не выходят: иначе полоска висит под пустотой
+   за счётчиком и читается как съехавшая. */
 .tabs > .tab:first-child .tab-line {
   left: 0;
+  right: 16px;
 }
 .tab:hover:not(:disabled) {
   color: var(--ink);
@@ -1593,6 +2057,29 @@ button.chip:active {
 .tab.on {
   color: var(--ink);
   font-weight: 500;
+}
+/* Ширина имени считается по жирному начертанию всегда, а не по текущему.
+   Иначе выбранная вкладка становится шире в тот же кадр, в котором чернила
+   только отправились к ней: полоска едет к цели, а цель уезжает — отсюда и
+   бралось «странно ощущается». Невидимая копия имени в 500-м весе занимает
+   место заранее, а нулевая высота не даёт ей занять строку. */
+/* Колонка, а не `inline-block`: базовая линия inline-block берётся с последней
+   строки внутри, а последняя здесь — невидимая копия под именем. Имя от этого
+   поднималось на строку над счётчиком. У колонки базовая линия — первая
+   строка, то есть само имя. */
+.tab-label {
+  display: inline-flex;
+  flex-direction: column;
+}
+.tab-label::after {
+  content: attr(data-label);
+  display: block;
+  height: 0;
+  overflow: hidden;
+  font-weight: 500;
+  /* `visibility` — чтобы копию не прочитал диктор: иначе имя вкладки
+     объявляется дважды. */
+  visibility: hidden;
 }
 .tab:disabled {
   color: var(--line-2);
@@ -1940,6 +2427,11 @@ button.chip:active {
   flex: 1 1 auto;
   margin: 0;
 }
+/* На герое чтения над полосой стоят её же числа — одна группа, и отступ
+   внутри неё тот же, что был у голой полосы. */
+.book-numbers + .prog-row {
+  margin-top: 14px;
+}
 
 /* Тихая кнопка: обводка, а не заливка. Лимон появляется только под курсором. */
 .log-dot {
@@ -2067,10 +2559,11 @@ button.chip:active {
    кнопки и растёт влево, внутрь полосы, где место есть: влево ничего не
    вылезает, туда страница не прокручивается.
 
-   Два места, и оба — конец ряда: значки действий у названия и плюс у полосы
-   прогресса. */
+   Три места, и все — конец ряда: значки действий у названия, плюс у полосы
+   прогресса и плюс в шапке зоны. */
 .head-actions .tip::after,
-.prog-row .tip::after {
+.prog-row .tip::after,
+.zone-acts .tip::after {
   left: auto;
   right: 0;
   transform: translateY(-4px) scale(0.96);
@@ -2079,7 +2572,9 @@ button.chip:active {
 .head-actions .tip:hover::after,
 .head-actions .tip:has(:focus-visible)::after,
 .prog-row .tip:hover::after,
-.prog-row .tip:has(:focus-visible)::after {
+.prog-row .tip:has(:focus-visible)::after,
+.zone-acts .tip:hover::after,
+.zone-acts .tip:has(:focus-visible)::after {
   transform: translateY(0) scale(1);
 }
 
@@ -2146,7 +2641,8 @@ button.chip:active {
 
 .sheet {
   width: min(620px, 100%);
-  padding: 26px 28px 30px;
+  /* Сверху меньше: лист начинается с полосы крестика (.sheet-bar). */
+  padding: 14px 28px 30px;
   border-radius: var(--r-lg);
   background: var(--paper);
   box-shadow: 0 24px 60px -20px rgba(22, 25, 28, 0.26);
@@ -2155,12 +2651,72 @@ button.chip:active {
 .sheet-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
+  min-width: 0;
   margin-bottom: 22px;
 }
 
 .sheet-title { font-size: 24px; margin: 0; }
+
+/* Полоса над содержимым листа: крестик справа, вопрос «закрыть без
+   сохранения» — слева от него. Высота задана, а вопрос в одну строку и не
+   переносится: появился он или нет, ниже полосы ничего не двигается. */
+.sheet-bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  height: 32px;
+  margin: 0 -14px 6px 0;
+}
+/* Лист без своей рамки: бумагой служит содержимое — лист конспекта поверх
+   экрана. Ширина — та же, что у листа на своей странице; прокручивается
+   подложка, а не окно внутри окна. Полоса крестика встаёт в угол бумаги,
+   а верхнее поле листа чуть глубже, чтобы она не легла на его служебную
+   строку. */
+.sheet.sheet-bare {
+  position: relative;
+  width: min(820px, 100%);
+  padding: 0;
+  border-radius: 6px;
+  background: none;
+  box-shadow: none;
+}
+.sheet-bare > .sheet-bar {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 14px;
+  left: 14px;
+  margin: 0;
+}
+.sheet-bare > .sheet-page {
+  padding-top: 64px;
+}
+@media (max-width: 720px) {
+  .sheet-bare > .sheet-page {
+    padding-top: 56px;
+  }
+  /* Служебная строка листа на телефоне: подпись потока сверху, действия —
+     строкой ниже, а не столбиком в половину ширины. */
+  .sheet-head-line {
+    flex-wrap: wrap;
+    row-gap: 12px;
+  }
+}
+.sheet.sheet-bare:focus {
+  outline: none;
+}
+.sheet-unsaved {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.sheet-close {
+  flex: none;
+}
 
 .form-stack {
   display: flex;
@@ -2183,11 +2739,434 @@ button.chip:active {
 
 .row-tight .input { flex: 1 1 160px; }
 
-.search-box {
-  padding: 16px 18px;
-  border: 1px solid var(--line);
+
+/* ---------- композер: заведение книги и материала ---------- */
+
+/* Строка захвата — единственное, что видно при открытии, поэтому она крупнее
+   обычного поля: это не одно из полей формы, а вся форма на первом шаге. */
+.compose-capture {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.compose-line {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.compose-line .input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.compose-q.input {
+  height: 52px;
+  padding: 0 16px;
   border-radius: var(--r-md);
-  background: var(--bg);
+  font-size: 17px;
+}
+/* Звёздочка — квадрат по высоте своей строки. Палочка в захвате залита: там
+   это главное действие. В карточке она контурная: главное там — «Добавить». */
+.btn.compose-wand {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  padding: 0;
+  border-radius: var(--r-md);
+}
+.compose-source .btn.compose-wand {
+  width: 40px;
+  height: 40px;
+  margin-left: auto;
+  border-radius: var(--r-sm);
+}
+/* Пока читается ссылка, звёздочка мерцает: ответ сети приходит за секунду-две,
+   и без знака жизни нажатие выглядит потерянным. */
+.compose-wand.busy .icon {
+  animation: wand-think 1.1s ease-in-out infinite;
+}
+@keyframes wand-think {
+  0%, 100% { transform: rotate(0deg) scale(1); opacity: 1; }
+  50% { transform: rotate(-14deg) scale(0.86); opacity: 0.55; }
+}
+.compose-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin: 0;
+}
+
+.results.compose-hits {
+  max-height: 340px;
+  margin-top: 6px;
+}
+/* Своё и найденное — две группы одного списка. Подпись группы мелкая: она
+   отвечает «откуда это», а не спорит с названиями книг. */
+.compose-group {
+  margin-top: 6px;
+}
+.compose-group h3.label {
+  margin: 0 0 0 10px;
+}
+.results.compose-hits button {
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+.compose-hit-cover {
+  flex: none;
+  width: 28px;
+  height: 42px;
+  overflow: hidden;
+  border-radius: 3px;
+  box-shadow: 0 1px 3px rgba(22, 25, 28, 0.18);
+}
+.compose-hit-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.compose-hit-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.results .compose-hit-raw {
+  border-top: 1px solid var(--line);
+  border-radius: 0 0 var(--r-sm) var(--r-sm);
+  color: var(--ink-2);
+}
+
+/* Карточка — то, что получится, в том виде, в каком ляжет в список. */
+.compose-card {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+.compose-source {
+  min-height: 40px;
+}
+.compose-host {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-2);
+  text-decoration: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.compose-host:hover {
+  color: var(--ink);
+}
+.compose-note {
+  margin: -10px 0 0;
+}
+.seg.compose-kinds {
+  width: 100%;
+}
+
+.compose-main {
+  /* Над подвалом: подсказки значков обложки свисают вниз, через его линию.
+     Оба — слои со своим transform (лесенка проявления), и без явного
+     порядка подвал, стоящий позже, рисовался бы поверх подсказки. */
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 28px;
+}
+
+/* Колонка обложки шириной с саму обложку: книжный кадр уже лежачего, и при
+   смене вида колонка перетекает в новую ширину, а кадр — в новую пропорцию. */
+.compose-cover {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  width: 132px;
+  transition: width 0.26s cubic-bezier(0.77, 0, 0.175, 1);
+}
+.compose-main:not([data-kind='book']) .compose-cover {
+  width: 196px;
+}
+.compose-cover-frame {
+  width: 100%;
+  border-radius: 6px;
+  outline: 2px dashed transparent;
+  outline-offset: 4px;
+  transition: outline-color 0.15s ease;
+}
+.compose-cover-frame.over {
+  outline-color: var(--ink);
+}
+.compose-cover .mcover.mcover-lg {
+  width: 100%;
+  transition: aspect-ratio 0.26s cubic-bezier(0.77, 0, 0.175, 1);
+  box-shadow: 0 10px 24px -14px rgba(22, 25, 28, 0.45);
+}
+/* Пришедшая картинка проявляется поверх нарисованной обложки, а не
+   выскакивает: нарисованная была на месте всё это время. */
+.compose-cover .mcover img {
+  animation: cover-arrive 0.45s var(--ease-out) both;
+}
+@keyframes cover-arrive {
+  from { opacity: 0; filter: blur(8px); }
+  to { opacity: 1; filter: blur(0); }
+}
+.compose-cover-acts {
+  display: flex;
+  gap: 8px;
+}
+/* Подсказки у значков обложки растут вправо, в сторону названия: колонка
+   узкая, и пузырь по центру первой кнопки вылез бы за левый край листа. */
+.compose-cover-acts .tip::after {
+  left: 0;
+  transform: translateY(-4px) scale(0.96);
+  transform-origin: top left;
+}
+.compose-cover-acts .tip:hover::after,
+.compose-cover-acts .tip:has(:focus-visible)::after {
+  transform: translateY(0) scale(1);
+}
+/* Загрузка — `<label>` вокруг скрытого поля файла: фокус стоит на поле, а
+   обводку должна получить видимая кнопка. */
+.compose-cover-acts label.icon-act:has(:focus-visible) {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+.compose-cover-url.input {
+  height: 34px;
+  font-size: 13px;
+}
+.compose-add-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.compose-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+/* Поле выглядит текстом карточки, пока его не трогают. Рамка проступает под
+   курсором и стоит под фокусом — поле не прячется, а не кричит. Отрицательный
+   отступ держит текст на одной вертикали с остальной карточкой. */
+.compose-field {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  margin: 0 -8px;
+}
+.compose-title,
+.compose-author {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--ink);
+  resize: none;
+  overflow: hidden;
+  transition: border-color 0.2s, background-color 0.2s, box-shadow 0.2s;
+}
+.compose-title {
+  font-size: 28px;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  text-wrap: balance;
+}
+.compose-author {
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--ink-2);
+}
+.compose-title::placeholder,
+.compose-author::placeholder {
+  color: var(--ink-3);
+}
+@media (hover: hover) and (pointer: fine) {
+  .compose-title:hover,
+  .compose-author:hover {
+    border-color: var(--line-2);
+  }
+}
+.compose-title:focus,
+.compose-author:focus {
+  outline: none;
+  border-color: var(--ink);
+  background: var(--paper);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+/* Вспышка поля, которое заполнилось не руками: лимонная подложка за текстом
+   гаснет за секунду. Только прозрачность — она остаётся и при просьбе
+   о меньшем движении. */
+.fill-glow {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: var(--r-sm);
+  background: var(--brand);
+  pointer-events: none;
+  animation: fill-glow 0.9s var(--ease-out) both;
+}
+@keyframes fill-glow {
+  from { opacity: 0.9; }
+  to { opacity: 0; }
+}
+.compose-dupe {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 4px 12px;
+  padding: 14px 16px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.compose-dupe > .icon {
+  margin-top: 1px;
+}
+.compose-dupe-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  color: var(--ink-2);
+}
+.compose-dupe-text strong {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+}
+.compose-dupe-open {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--ink);
+  font-weight: 500;
+  text-decoration: none;
+  white-space: nowrap;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s;
+}
+.compose-dupe-open:hover {
+  border-color: currentColor;
+}
+/* Копия — лимонная подложка: это не ошибка, а другое действие главной кнопки,
+   и подложка того же цвета, что и она. */
+.compose-dupe.copy {
+  background: var(--brand-soft);
+}
+/* Запрет — тон ошибки: «Добавить» погасла, и причина должна читаться без
+   поиска. Цветом метятся значок и заголовок, пояснение остаётся чернилами. */
+.compose-dupe.blocking {
+  background: color-mix(in srgb, var(--danger) 9%, var(--paper));
+}
+.compose-dupe.blocking > .icon,
+.compose-dupe.blocking strong {
+  color: var(--danger);
+}
+@media (max-width: 540px) {
+  .compose-dupe {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+  .compose-dupe-open {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
+
+.compose-measure {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+.compose-count {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+}
+.compose-count .input {
+  width: 76px;
+  height: 34px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.compose-count .fill-glow {
+  inset: -3px;
+}
+.compose-unit {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+
+.compose-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  margin-top: 4px;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.compose-foot-end {
+  display: inline-flex;
+  align-items: center;
+  gap: 18px;
+  margin-left: auto;
+}
+
+/* На телефоне лежачая обложка рядом с названием оставляет тексту полоску в
+   сотню пикселей. Она встаёт сверху во всю ширину; книжная остаётся сбоку —
+   она узкая. */
+@media (max-width: 540px) {
+  .compose-main:not([data-kind='book']) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .compose-main:not([data-kind='book']) .compose-cover {
+    width: min(100%, 320px);
+  }
+  .compose-main {
+    gap: 16px;
+  }
+  .compose-cover {
+    width: 112px;
+  }
+  .compose-title {
+    font-size: 23px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .compose-wand.busy .icon {
+    animation: none;
+    opacity: 0.55;
+  }
+  .compose-cover,
+  .compose-cover .mcover {
+    transition: none;
+  }
+  .compose-cover .mcover img {
+    animation-name: cover-arrive-still;
+  }
+  @keyframes cover-arrive-still {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
 }
 
 .results {
@@ -2403,10 +3382,15 @@ button.chip:active {
   opacity: 0.95;
 }
 
-/* The card is a link to the journal, so it answers the cursor: it lifts, its
-   shadow deepens, and the spiral turns a few degrees under the text — slower
-   than the lift, the way something heavy comes round. */
-.thought-cards > .thought-card:hover {
+/* The card answers the cursor: it lifts, its shadow deepens, and the spiral
+   turns a few degrees under the text — slower than the lift, the way
+   something heavy comes round. On the dashboard and in the store alike: in
+   the store each card sits inside a motion wrapper, which a child selector
+   used to miss, and the hover quietly went away there. A quiet card in a
+   feed (.flat) has no spiral to turn and keeps still. */
+@media (hover: hover) and (pointer: fine) {
+.thought-cards > .thought-card:hover,
+.store-grid .thought-card:not(.flat):hover {
   transform: translateY(-3px);
   box-shadow:
     inset 0 0 0 1px rgba(14, 16, 18, 0.05),
@@ -2414,8 +3398,11 @@ button.chip:active {
     0 26px 36px -24px rgba(14, 16, 18, 0.6);
 }
 .thought-cards > .thought-card:hover::before,
-.thought-cards > .thought-card:hover::after {
+.thought-cards > .thought-card:hover::after,
+.store-grid .thought-card:not(.flat):hover::before,
+.store-grid .thought-card:not(.flat):hover::after {
   transform: rotate(8deg) scale(1.04);
+}
 }
 
 /* Cream and apricot, cool blue, periwinkle, rose, mint — one step paler than
@@ -2447,6 +3434,34 @@ button.chip:active {
   --core: #eef9f4;
 }
 
+/* ---------- подложки ----------
+   Вещь — на бумаге, событие — на линейке. Книга (обложка), материал
+   (.mat-card), мысль и конспект (.thought-card) — то, что можно взять и
+   открыть, — стоят на подложке. Сессия и занятие — запись о том, что было, —
+   строкой без фона (.log-row). Мысль и конспект рисуются одной
+   бумагой везде: в галерее книги, в дневнике, в листе записи.
+
+   .flat — та же бумага для лент: без спирали, с тенью потише. Спираль в
+   длинном списке рябит, и каждая карточка начинает спорить с соседней. */
+.thought-card.flat {
+  gap: 10px;
+  padding: 14px 16px 13px;
+  border-radius: 14px;
+  /* Без спирали обрезать нечего, а внутри листа записи живёт плавающая
+     панель форматирования конспекта — её срезал бы край карточки. */
+  overflow: visible;
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 16, 18, 0.06),
+    0 1px 1px rgba(14, 16, 18, 0.04),
+    0 12px 20px -18px rgba(14, 16, 18, 0.5);
+}
+.thought-card.flat::before,
+.thought-card.flat::after {
+  display: none;
+}
+.thought-card.flat .thought-body {
+  -webkit-line-clamp: 5;
+}
 /* The stamped box in the corner, like the date field on a memo pad. */
 .thought-tag {
   align-self: flex-start;
@@ -2688,26 +3703,6 @@ button.chip:active {
 .face-sm {
   margin-right: 6px;
 }
-
-.note-draft {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 10px;
-  padding: 14px;
-  margin-bottom: 12px;
-  border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--bg);
-}
-
-.note-draft textarea {
-  width: 100%;
-  resize: vertical;
-  font-family: inherit;
-}
-
-
 
 /* ---------- the shelf as a turntable ---------- */
 
@@ -3051,4 +4046,596 @@ button.chip:active {
   .topbar-right {
     flex: none;
   }
+}
+
+/* ---------- лист записи: сессия, занятие, мысль, конспект ----------
+   Лист выглядит как то, что получится: шапка — обложка и название, как у
+   строки дневника; главный шаг крупно; всё необязательное одной тихой
+   строкой; написанное — бумагой мысли. Общий для чтения и обучения. */
+
+/* Шапка: название и есть переключатель, когда выбирать есть из чего. */
+.subject-pick {
+  position: relative;
+  /* Базис ноль: шапка делит строку с крестиком, а не выталкивает его на
+     вторую строку длинным названием. */
+  flex: 1 1 0;
+  min-width: 0;
+}
+.subject-pick .sheet-title {
+  display: block;
+}
+.subject-by {
+  display: block;
+  margin-top: 3px;
+}
+.subject-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding: 4px 8px 4px 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+}
+.subject-chevron {
+  flex: none;
+  color: var(--ink-3);
+  transition: transform 0.2s var(--ease-out), color 0.2s;
+}
+.subject-toggle[aria-expanded='true'] .subject-chevron {
+  transform: rotate(180deg);
+  color: var(--ink);
+}
+@media (hover: hover) and (pointer: fine) {
+  .subject-toggle:hover .subject-chevron {
+    color: var(--ink);
+  }
+}
+.subject-toggle:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+/* Список встаёт поверх полей, а не сдвигает их: выбор — короткий взгляд, и
+   форма под ним не должна прыгать. Растёт от названия, на которое нажали. */
+.subject-list {
+  position: absolute;
+  z-index: 3;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(420px, calc(100vw - 64px));
+  max-height: 320px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: var(--r-md);
+  background: var(--paper);
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 16, 18, 0.08),
+    0 18px 40px -16px rgba(14, 16, 18, 0.32);
+  transform-origin: top left;
+}
+.subject-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  text-align: left;
+  color: inherit;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.subject-option:hover,
+.subject-option:focus-visible {
+  outline: none;
+  background: var(--bg);
+}
+.subject-option.on {
+  background: var(--brand-soft);
+}
+.subject-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.subject-option-title {
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.subject-option .mcover-title,
+.subject-option .mcover-foot {
+  display: none;
+}
+
+/* Главный шаг. Числа — моно и крупно: это мера, а мера в приложении
+   набирается моноширинным. */
+.step {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.step-pages {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.step-num {
+  width: 4.2ch;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  font-family: var(--mono);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+  transition: border-color 0.2s;
+}
+.step-num:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+/* «От» подставлено и правится редко — стоит тише и подчёркивается только
+   под курсором, чтобы было видно, что это поле. */
+.step-from {
+  font-size: 22px;
+  color: var(--ink-3);
+}
+@media (hover: hover) and (pointer: fine) {
+  .step-from:hover {
+    border-bottom-color: var(--line-2);
+  }
+}
+.step-to {
+  width: 5ch;
+  font-size: 40px;
+  line-height: 1.1;
+  border-bottom-color: var(--line-2);
+}
+.step-to::placeholder {
+  color: var(--line-2);
+}
+.step-to[aria-invalid] {
+  border-bottom-color: var(--danger);
+}
+.step-arrow {
+  color: var(--ink-3);
+  font-size: 20px;
+}
+.step-delta {
+  margin-left: auto;
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.step-error {
+  margin: 0;
+  color: var(--danger);
+}
+/* Было и станет — одной полосой. Густое — то, что было; бледное — шаг
+   этой записи — тем же чернилом, бледнее. Обе части растут `scaleX`, без
+   пересчёта ширины. */
+.step-meter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.step-meter {
+  position: relative;
+  flex: 1;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--line);
+  overflow: hidden;
+}
+.step-meter span {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  transform-origin: left center;
+  transition: transform 0.22s var(--ease-out);
+}
+.step-meter-was {
+  background: var(--ink);
+}
+.step-meter-will {
+  background: var(--ink-3);
+  opacity: 0.45;
+}
+
+/* Точки в листе крупнее, чем у полосы прогресса: здесь по ним целятся, а не
+   смотрят на них. Уже закрытые не нажимаются — и не обещают нажатия. */
+.dots.dots-step {
+  --dot: max(var(--dot-base, 12px), 16px);
+}
+@media (pointer: coarse) {
+  .dots.dots-step {
+    --dot: max(var(--dot-touch, 16px), 20px);
+  }
+}
+.dots-step .dot:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+.step-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step-part {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.step-part-mark {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.step-part-name {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: none;
+  font-weight: 500;
+  color: var(--ink);
+  transition: border-color 0.2s;
+}
+.step-part-name:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+.step-part-name::placeholder {
+  color: var(--ink-3);
+  font-weight: 400;
+}
+.step-after {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+}
+.step-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 500;
+  cursor: pointer;
+}
+.step-flag input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--ink);
+}
+
+/* Тихая строка: дата, минуты, лица. Подписей нет — значки и единица
+   говорят сами, а лист не превращается в анкету из необязательных полей. */
+.when-line {
+  display: flex;
+  align-items: center;
+  gap: 10px 18px;
+  flex-wrap: wrap;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+/* Одна дата — не строка из трёх ответов: линейки сверху и снизу оставили бы
+   её стоять на пустой полке. */
+.when-line.solo {
+  padding: 0;
+  border: 0;
+}
+.when-date {
+  position: relative;
+  display: inline-flex;
+}
+.when-chip {
+  gap: 6px;
+  cursor: pointer;
+}
+/* Настоящее поле даты лежит под чипом невидимым: календарь открывает
+   система, а чип только говорит «Сегодня» словами. */
+.when-picker {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+.when-minutes {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--ink-3);
+}
+.when-minutes-input {
+  width: 3.5ch;
+  padding: 2px 0;
+  border: 0;
+  border-bottom: 1px solid var(--line-2);
+  background: none;
+  font-family: var(--mono);
+  font-size: 14px;
+  text-align: center;
+  color: var(--ink);
+}
+.when-minutes-input:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+.when-faces {
+  gap: 4px;
+  margin-left: auto;
+}
+.face-btn.sm {
+  width: 32px;
+  height: 30px;
+  font-size: 16px;
+}
+
+/* Стопка написанного. Карточка — та же бумага, что в ленте; внутри поля
+   без рамок, чтобы карточка читалась листком, а не формой в рамке. */
+.draft-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.draft-card {
+  padding-right: 44px;
+}
+.draft-drop {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 28px;
+  height: 28px;
+  color: var(--ink-3);
+}
+/* Выбор тега на карточке мысли — ряд штампов. Выбранный — в рамке, как штамп
+   на готовой карточке (.thought-tag); остальные — те же буквы без рамки,
+   бледнее. Подложки у ряда нет: под ним бумага, и её цвет и есть ответ на
+   «какой тег». Буквы на ступень крупнее штампа готовой карточки: здесь по ним
+   попадают пальцем и курсором, а не только читают. */
+.tag-stamps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 4px;
+  margin: -4px 0 0 -9px;
+}
+.tag-stamp {
+  position: relative;
+  cursor: pointer;
+}
+/* Радиокнопка остаётся в разметке ради клавиатуры и диктора, но не видна. */
+.tag-stamp input {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+.tag-stamp .label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  font-size: 11px;
+  letter-spacing: 0.07em;
+  color: var(--ink-3);
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .tag-stamp:hover .label {
+    color: var(--ink);
+  }
+}
+.tag-stamp input:checked + .label {
+  border-color: rgba(14, 16, 18, 0.2);
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink-2);
+}
+.tag-stamp input:focus-visible + .label {
+  outline: 2px solid var(--ink);
+  outline-offset: 1px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tag-stamp .label {
+    transition: none;
+  }
+}
+.draft-body {
+  width: 100%;
+  min-height: 64px;
+  padding: 0;
+  border: 0;
+  background: none;
+  resize: vertical;
+  font: inherit;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.draft-body:focus {
+  outline: none;
+}
+.draft-body::placeholder {
+  color: var(--ink-3);
+}
+.draft-page {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  align-self: flex-end;
+}
+.draft-page input {
+  width: 4ch;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid rgba(14, 16, 18, 0.15);
+  background: none;
+  font: inherit;
+  color: var(--ink-2);
+  text-align: right;
+}
+.draft-page input:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+.draft-part {
+  align-self: flex-start;
+  background-color: rgba(255, 255, 255, 0.6);
+}
+.draft-card .note-input {
+  min-height: 140px;
+}
+/* Конспект в листе — на своей бумаге (.sheet-page.slip), а выбор главы
+   стоит на месте служебной строки листа, над чертой. */
+.sheet-page.draft-card {
+  gap: 10px;
+  padding-right: 44px;
+}
+.sheet-page.draft-card .slip-rule {
+  margin: 0;
+}
+.draft-open {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+.draft-gone {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 4px 2px;
+}
+.draft-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+}
+
+/* Подвал листа: разрушительное слева и тихо, сохранение справа. */
+.sheet-foot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  padding-top: 4px;
+}
+.sheet-foot .link-btn.danger {
+  margin-right: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .step-meter span,
+  .subject-chevron {
+    transition: none;
+  }
+}
+
+/* Книга в шапке листа — ростом с обложку материала в той же шапке: у
+   книги обложка вытянутая, и ступень `sm` (96px шириной) поднимала шапку
+   выше главного шага. Название не дублируется внутри — оно стоит рядом. */
+.subject-pick > .cover {
+  width: 56px;
+}
+.subject-pick > .cover .cover-art {
+  display: none;
+}
+
+/* ---------- лист глав и лекций ----------
+   Строка — точка отметки, номер, название полем прямо в строке. Поле
+   выглядит текстом, пока его не трогают: список читают чаще, чем правят. */
+.parts-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0 0 14px;
+  padding: 0;
+  list-style: none;
+}
+.parts-row {
+  display: grid;
+  grid-template-columns: 22px 28px minmax(0, 1fr) 28px;
+  align-items: center;
+  column-gap: 10px;
+  min-height: 44px;
+  border-bottom: 1px solid var(--line);
+}
+.parts-row:last-child {
+  border-bottom: 0;
+}
+.parts-dot {
+  --dot: 14px;
+}
+.parts-num {
+  font-size: 12px;
+  color: var(--ink-3);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.parts-name {
+  min-width: 0;
+  padding: 6px 0;
+  border: 0;
+  border-bottom: 1px solid transparent;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  color: var(--ink);
+  transition: border-color 0.15s ease;
+}
+.parts-name::placeholder {
+  color: var(--ink-3);
+}
+@media (hover: hover) and (pointer: fine) {
+  .parts-name:hover {
+    border-bottom-color: var(--line-2);
+  }
+}
+.parts-name:focus {
+  outline: none;
+  border-bottom-color: var(--ink);
+}
+.parts-remove {
+  width: 28px;
+  height: 28px;
+  color: var(--ink-3);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+.parts-row:hover .parts-remove,
+.parts-row:focus-within .parts-remove {
+  opacity: 1;
+}
+@media (hover: none) {
+  .parts-remove {
+    opacity: 1;
+  }
+}
+.parts-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+.back-link {
+  margin-right: auto;
 }

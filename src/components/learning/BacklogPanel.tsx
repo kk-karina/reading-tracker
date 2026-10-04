@@ -2,19 +2,20 @@ import { Link } from 'react-router-dom'
 import { materialsOf } from '../../lib/learning/buckets'
 import type { Material, Stream } from '../../lib/learning/types'
 import { useLocale } from '../../state/LocaleContext'
+import { Empty } from '../ui'
 import { MaterialRow } from './MaterialRow'
 
 /** Сколько ожидающих показать именем, а не числом. */
 const NAMED = 4
 
 /**
- * Очередь решений, а не список дел.
+ * Бэклог — это решения, а не список дел.
  *
- * Показана именами: у строки обложка и источник, и по ней видно, что там
+ * Показан именами: у строки обложка и источник, и по ней видно, что там
  * лежит — доклад, статья или четырёхсотстраничная книга, — а это ровно то
  * решение, которое здесь и принимают.
  *
- * Хвост очереди уходит одной ссылкой «и ещё N», как соседние обложки у
+ * Хвост бэклога уходит одной ссылкой «и ещё N», как соседние обложки у
  * фокуса: панель дашборда показывает начало списка, а весь список живёт
  * в «Материалах».
  *
@@ -28,7 +29,14 @@ export function BacklogPanel({ stream, materials }: { stream: Stream; materials:
   const rest = queued.length - shown.length
   const from = { to: `/learning/${stream.slug}`, label: t('nav.dashboard') }
 
-  if (queued.length === 0) return <div className="queue-empty">{t('stream.resourcesNone')}</div>
+  // Зона дашборда узкая, поэтому мелкий размер и без заголовка: над блоком
+  // уже стоит имя зоны, и повторять его второй строкой незачем.
+  if (queued.length === 0)
+    return (
+      <Empty size="sm" art="pile">
+        {t('stream.resourcesNone')}
+      </Empty>
+    )
 
   return (
     <div className="queue">
@@ -41,7 +49,7 @@ export function BacklogPanel({ stream, materials }: { stream: Stream; materials:
       {rest > 0 && (
         <p className="queue-counts">
           <Link to={`/learning/${stream.slug}/materials?view=backlog`}>
-            {t('stream.moreQueued', { n: rest })}
+            {t('stream.moreBacklog', { n: rest })}
           </Link>
         </p>
       )}

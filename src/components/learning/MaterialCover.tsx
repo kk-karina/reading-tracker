@@ -1,19 +1,12 @@
 import { useState, type CSSProperties } from 'react'
 import { toneOf } from '../../lib/covers'
-import { sourceName, sourceOf } from '../../lib/learning/cover'
+import { sourceName, sourceOf } from '../../lib/compose/linkMeta'
 import type { Material } from '../../lib/learning/types'
 import { useLocale } from '../../state/LocaleContext'
-import { Icon, type IconName } from '../Icon'
+import { Icon } from '../Icon'
+import { KIND_ICON } from './kindIcon'
 
 type Size = 'sm' | 'md' | 'lg' | 'xl'
-
-/** Значок вида — единственное, что отличает курс от статьи, когда обложки нет. */
-const KIND_ICON: Record<Material['kind'], IconName> = {
-  book: 'book',
-  article: 'pen',
-  course: 'compass',
-  video: 'chart-bar',
-}
 
 /**
  * Пропорция кадра — свойство вида, а не константа компонента.
@@ -49,7 +42,8 @@ export function MaterialCover({
   size = 'md',
   className = '',
 }: {
-  material: Material
+  /** Только то, что рисуется: форма показывает обложку черновика, которого ещё нет в базе. */
+  material: Pick<Material, 'title' | 'kind' | 'url' | 'cover_url'>
   size?: Size
   className?: string
 }) {
