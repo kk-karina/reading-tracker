@@ -1,8 +1,8 @@
-import awful from '../assets/moods/awful.webp'
-import flat from '../assets/moods/flat.webp'
-import glad from '../assets/moods/glad.webp'
-import great from '../assets/moods/great.webp'
-import unsure from '../assets/moods/unsure.webp'
+import bright from '../assets/moods/bright.webp'
+import cozy from '../assets/moods/cozy.webp'
+import love from '../assets/moods/love.webp'
+import puzzled from '../assets/moods/puzzled.webp'
+import sleepy from '../assets/moods/sleepy.webp'
 import { MOODS, moodOf, type MoodId } from '../lib/rating'
 import { useT } from '../state/LocaleContext'
 
@@ -11,7 +11,7 @@ import { useT } from '../state/LocaleContext'
  * системных эмодзи: те рисуются каждой платформой по-своему и в приложении
  * со своим героем выглядели чужими. Запись полная: забытый файл ловит `tsc`.
  */
-const MOOD_SRC: Record<MoodId, string> = { awful, unsure, flat, glad, great }
+const MOOD_SRC: Record<MoodId, string> = { sleepy, puzzled, cozy, bright, love }
 
 type Rating = 1 | 2 | 3 | 4 | 5
 
