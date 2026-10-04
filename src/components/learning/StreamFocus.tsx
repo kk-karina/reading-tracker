@@ -11,6 +11,7 @@ import { useLocale } from '../../state/LocaleContext'
 import { Icon } from '../Icon'
 import { Jelly, Tip } from '../ui'
 import { MaterialCover } from './MaterialCover'
+import { useProgressText } from './Progress'
 
 /** Сколько соседей показать корешками; остальные уходят в число. */
 const SPINES = 4
@@ -59,6 +60,7 @@ export function StreamFocus({
   // Части берутся из контекста, а не пропом: они нужны здесь ровно на одну
   // строку прогресса и не стоят того, чтобы менять сигнатуру для трёх экранов.
   const { parts, sessions, updateMaterial, updateStream } = useLearning()
+  const progressText = useProgressText()
 
   const focus = focusOf(materials, stream.focus_material_id)
   const others = studying(materials, stream.id).filter((m) => m.id !== focus?.id)
@@ -127,8 +129,10 @@ export function StreamFocus({
                 <MaterialCover material={m} size="md" />
               </motion.span>
               <span className="hero-pick-title">{m.title}</span>
+              {/* Прогресс виден и до выбора фокуса: «120 из 300» у того, за
+                  что уже садилась, — лучшая подсказка, что выбрать. */}
               <span className="hero-pick-by">
-                {[t(`kind.${m.kind}`), m.status === 'active' ? t('mview.active') : null]
+                {[t(`kind.${m.kind}`), progressText(materialProgress(m, parts)) ?? (m.status === 'active' ? t('mview.active') : null)]
                   .filter(Boolean)
                   .join(' · ')}
               </span>
@@ -201,8 +205,14 @@ export function StreamFocus({
         </div>
         <p className="hero-focus-meta">
           {[
-            p.total ? t('material.progress', { done: p.done, total: p.total }) : null,
-            last ? t('stream.lastNote', { date: fmtDate(last, locale) }) : t('stream.neverNoted'),
+            progressText(p),
+            // «Ещё не садилась» рядом с «80 страниц» спорило бы само с собой:
+            // прогресс, поставленный до журнала, даты не оставил.
+            last
+              ? t('stream.lastNote', { date: fmtDate(last, locale) })
+              : p.done > 0
+                ? null
+                : t('stream.neverNoted'),
           ]
             .filter(Boolean)
             .join(' · ')}

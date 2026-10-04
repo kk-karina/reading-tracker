@@ -14,6 +14,7 @@ import { noteLinkState } from '../../components/learning/noteLink'
 import { StudySheet } from '../../components/learning/StudySheet'
 import { StudyNoteCard } from '../../components/learning/StudyNoteCard'
 import { useStudyLine } from '../../components/learning/studyStep'
+import { useDirectProgress } from '../../components/learning/useDirectProgress'
 import { LogRow } from '../../components/log/LogRow'
 import { MaterialForm } from '../../components/MaterialForm'
 import { Empty, inkSlide, Jelly, Tip } from '../../components/ui'
@@ -54,7 +55,6 @@ export function Material() {
     notes,
     sessions,
     loading,
-    updatePart,
     deleteMaterial,
     updateStream,
     updateMaterial,
@@ -66,6 +66,7 @@ export function Material() {
   const [logging, setLogging] = useState<'log' | 'note' | null>(null)
   const [editingSession, setEditingSession] = useState<StudySession | null>(null)
   const line = useStudyLine()
+  const direct = useDirectProgress()
   const [openSession, setOpenSession] = useState<string | null>(null)
   const [tab, setTab] = useState<Tab>('notes')
   /* Лист имён списком — вторая дверь к переименованию, для тех случаев, когда
@@ -146,7 +147,9 @@ export function Material() {
   const setPage = (value: string) => {
     const n = Number(value.replace(/\D/g, ''))
     const capped = material.pages_total ? Math.min(n, material.pages_total) : n
-    void updateMaterial(material.id, { page_current: capped > 0 ? capped : null })
+    // Вместе со следом в журнале: страница, поставленная здесь, — тоже
+    // занятие за сегодня, иначе дашборд не узнал бы, что за книгу садились.
+    void direct.setPage(material, capped > 0 ? capped : null)
   }
 
   const dash = <span className="faint">{t('book.unknown')}</span>
@@ -234,7 +237,7 @@ export function Material() {
                 started={started}
                 label={label}
                 word={word}
-                onToggle={(part) => void updatePart(part.id, { done: !part.done })}
+                onToggle={(part) => void direct.togglePart(material, part)}
               />
             ) : (
               <div className="meter big" aria-hidden>

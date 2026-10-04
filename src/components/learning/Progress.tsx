@@ -12,7 +12,9 @@ export function useProgressText() {
   const { t } = useLocale()
   return (p: MaterialProgress): string | null => {
     if (p.unit === 'flag') return null
-    if (p.total === null) return null
+    // Книга без числа страниц: «из скольких» неизвестно, но докуда дошла —
+    // известно, и это не повод молчать о прогрессе вовсе.
+    if (p.total === null) return p.unit === 'page' && p.done > 0 ? t('count.pages', { n: p.done }) : null
     return p.unit === 'page'
       ? t('material.progressPages', { done: p.done, total: p.total })
       : t('material.progress', { done: p.done, total: p.total })

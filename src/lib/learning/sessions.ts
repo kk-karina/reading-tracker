@@ -128,3 +128,99 @@ export function lastTouched(
   }
   return last
 }
+
+/**
+ * Что прямая правка прогресса делает с журналом.
+ *
+ * Прогресс правят и мимо листа занятия: точкой главы на странице материала,
+ * номером страницы там же. Пока такие правки меняли один материал, у них не
+ * было даты: глава отмечена, а в ритме, стрике и вкладке «Занятия» — пусто,
+ * и дашборд потока молчал о том, что за материал садились. Теперь прямая
+ * правка — тоже занятие: сегодняшнее по этому материалу, а если его нет —
+ * новое. У прогресса один источник времени.
+ */
+export type SessionOp =
+  | { kind: 'add'; session: Omit<StudySession, 'id' | 'created_at'> }
+  | { kind: 'update'; id: string; patch: Partial<StudySession> }
+  | { kind: 'delete'; id: string }
+
+const todayOf = (sessions: StudySession[], materialId: string, today: string) =>
+  sessions.find((s) => s.material_id === materialId && s.date === today)
+
+const blankSession = (materialId: string, today: string): Omit<StudySession, 'id' | 'created_at'> => ({
+  material_id: materialId,
+  date: today,
+  page_from: null,
+  page_to: null,
+  part_ids: [],
+  completed: false,
+  minutes: null,
+  rating: null,
+})
+
+/**
+ * Занятие, от которого после правки ничего не осталось: ни шага, ни минут,
+ * ни оценки, ни написанного. Такое удаляется, а не висит пустой строкой.
+ */
+function hollow(s: StudySession, notes: Pick<StudyNote, 'session_id'>[]): boolean {
+  const moved = s.part_ids.length > 0 || s.completed || (s.page_to !== null && s.page_to !== s.page_from)
+  return !moved && s.minutes === null && s.rating === null && !notes.some((n) => n.session_id === s.id)
+}
+
+/** Точку главы отметили или сняли на странице материала. */
+export function markPart(
+  sessions: StudySession[],
+  notes: Pick<StudyNote, 'session_id'>[],
+  material: Material,
+  partId: string,
+  done: boolean,
+  today: string,
+): SessionOp | null {
+  if (done) {
+    const same = todayOf(sessions, material.id, today)
+    if (same) {
+      if (same.part_ids.includes(partId)) return null
+      return { kind: 'update', id: same.id, patch: { part_ids: [...same.part_ids, partId] } }
+    }
+    return { kind: 'add', session: { ...blankSession(material.id, today), part_ids: [partId] } }
+  }
+
+  // Снять — из того занятия, что её отметило, самого свежего из таких.
+  // Часть, отмеченная до появления занятий, ни в одном не числится.
+  const host = sessions
+    .filter((s) => s.material_id === material.id && s.part_ids.includes(partId))
+    .sort((a, b) => (a.date === b.date ? b.created_at.localeCompare(a.created_at) : b.date.localeCompare(a.date)))[0]
+  if (!host) return null
+  const left = { ...host, part_ids: host.part_ids.filter((id) => id !== partId) }
+  if (hollow(left, notes)) return { kind: 'delete', id: host.id }
+  return { kind: 'update', id: host.id, patch: { part_ids: left.part_ids } }
+}
+
+/**
+ * Номер страницы поставили на странице материала.
+ *
+ * Назад — это поправка, а не прогресс: занятия она не открывает. Сегодняшнее
+ * занятие, поправленное к своему же началу, удаляется: шага в нём не осталось.
+ */
+export function setPage(
+  sessions: StudySession[],
+  notes: Pick<StudyNote, 'session_id'>[],
+  material: Material,
+  page: number,
+  today: string,
+): SessionOp | null {
+  const same = todayOf(sessions, material.id, today)
+  if (same && same.page_from !== null) {
+    if (page === same.page_to) return null
+    const next = { ...same, page_to: page, page_from: Math.min(same.page_from, page) }
+    if (hollow(next, notes)) return { kind: 'delete', id: same.id }
+    const patch: Partial<StudySession> = { page_to: page }
+    if (next.page_from !== same.page_from) patch.page_from = next.page_from
+    return { kind: 'update', id: same.id, patch }
+  }
+
+  const from = material.page_current ?? 0
+  if (page <= from) return null
+  if (same) return { kind: 'update', id: same.id, patch: { page_from: from, page_to: page } }
+  return { kind: 'add', session: { ...blankSession(material.id, today), page_from: from, page_to: page } }
+}

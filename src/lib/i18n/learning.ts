@@ -81,8 +81,9 @@ export const LEARNING = {
     ru: 'Активна {n} из 8 недель',
     en: 'Active {n} of the last 8 weeks',
   },
-  'stream.lastNote': { ru: 'последний конспект {date}', en: 'last note {date}' },
-  'stream.neverNoted': { ru: 'конспектов пока нет', en: 'no notes yet' },
+  // Считается по занятиям и конспектам вместе — слово «конспект» здесь врало.
+  'stream.lastNote': { ru: 'последний раз {date}', en: 'last time {date}' },
+  'stream.neverNoted': { ru: 'ещё не садилась', en: 'not started yet' },
 
   'stream.continue': { ru: 'Продолжить', en: 'Continue' },
 

@@ -7,6 +7,7 @@ import { useLocale } from '../../state/LocaleContext'
 import { Icon } from '../Icon'
 import { Sheet } from '../Sheet'
 import { Field, FormStack, Jelly, listItem } from '../ui'
+import { useDirectProgress } from './useDirectProgress'
 
 /**
  * Главы или лекции материала — листом поверх его страницы.
@@ -40,6 +41,7 @@ export function PartNames({
 }) {
   const { t } = useLocale()
   const { addPart, updatePart, deletePart } = useLearning()
+  const direct = useDirectProgress()
   const [pasting, setPasting] = useState(parts.length === 0)
   const [fresh, setFresh] = useState<string | null>(null)
 
@@ -79,7 +81,7 @@ export function PartNames({
                   aria-pressed={part.done}
                   aria-label={`${label(part, i)} — ${t(`part.state.${state}`)}`}
                   title={t(`part.state.${state}`)}
-                  onClick={() => void updatePart(part.id, { done: !part.done })}
+                  onClick={() => void direct.togglePart(material, part)}
                 >
                   <span className="dot-fill" aria-hidden />
                 </button>
