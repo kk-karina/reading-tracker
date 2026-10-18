@@ -403,33 +403,29 @@ export function Material() {
                   <NoteSheet
                     note={shown}
                     stream={stream}
-                    /* Шапка листа — про место в пачке: справа «1/2 в главе» и
-                       листалка у самого края, где она стоит на месте, что бы ни
-                       менялось левее. Правка — про сам лист, и стоит у его
-                       заголовка тем же карандашом, что у книги и материала. */
+                    /* Шапка листа — две группы по близости. Слева про сам
+                       лист: «Поток · дата · ✎». Справа про место в пачке:
+                       «1/2 в главе» и листалка у самого края, где она стоит на
+                       месте, что бы ни менялось левее. */
                     edit={
-                      <Tip text={t('note.edit')}>
-                        {/* `Jelly`, а не ссылка: тот же отклик на руку, что у
-                            карандаша материала в крошке. Лист ложится поверх
-                            материала и сразу на правку. */}
-                        <Jelly
-                          className="icon-act"
-                          aria-label={t('note.edit')}
-                          onClick={() =>
-                            navigate(`/learning/${stream.slug}/n/${shown.id}`, {
-                              state: {
-                                ...noteLinkState(
-                                  location,
-                                  ordered.map((n) => n.id),
-                                ),
-                                edit: true,
-                              },
-                            })
-                          }
-                        >
-                          <Icon name="pen" size={17} />
-                        </Jelly>
-                      </Tip>
+                      // Лист ложится поверх материала и сразу на правку.
+                      <button
+                        type="button"
+                        className="label sheet-edit"
+                        onClick={() =>
+                          navigate(`/learning/${stream.slug}/n/${shown.id}`, {
+                            state: {
+                              ...noteLinkState(
+                                location,
+                                ordered.map((n) => n.id),
+                              ),
+                              edit: true,
+                            },
+                          })
+                        }
+                      >
+                        {t('note.edit')}
+                      </button>
                     }
                     actions={
                       <div className="row-tight sheet-head-actions">

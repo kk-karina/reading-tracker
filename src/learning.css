@@ -256,17 +256,36 @@
   padding: 0 2px;
 }
 
-/* Заголовок листа и карандаш правки рядом: карандаш у первой строки, а не
-   посередине длинного переносящегося заголовка. */
-.sheet-title-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 14px;
-  margin: 0 0 10px;
-}
-.sheet-title-row > .sheet-title-big {
-  margin: 0;
+/* Подпись листа: «Поток · дата · Изменить». Правка — ещё одно звено
+   подписи, через ту же точку и тем же шрифтом; что она нажимается, говорит
+   пунктир снизу, как у ячейки «Пройдено» и счётчика листов. */
+.sheet-sign {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
   min-width: 0;
+}
+.sheet-edit {
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  text-decoration: underline dotted var(--line-2);
+  text-underline-offset: 4px;
+  transition:
+    color 0.18s var(--ease-out),
+    text-decoration-color 0.18s var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .sheet-edit:hover {
+    color: var(--ink);
+    text-decoration-color: var(--ink);
+  }
+}
+.sheet-edit:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 .sheet-title-big {
   margin: 0 0 10px;

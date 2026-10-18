@@ -35,9 +35,10 @@ export function NoteSheet({
   /** Перед подписью листа, слева: листание. Подальше от действий справа. */
   lead?: ReactNode
   /**
-   * Правка — карандашом справа от заголовка: она про сам лист, и стоит у его
-   * имени, а не в служебной строке, где справа навигация по пачке. Листа без
-   * заголовка карандаш ждёт в служебной строке, после подписи.
+   * Правка — словом в подписи листа, через точку: «Поток · дата · Изменить».
+   * Она про сам лист и стоит с тем, что про сам лист, слева; справа в шапке
+   * — навигация по пачке. Словом, а не значком в кружке: в строке подписи
+   * кружок перекрикивал её саму.
    */
   edit?: ReactNode
   actions?: ReactNode
@@ -57,26 +58,27 @@ export function NoteSheet({
       <div className="sheet-head-line">
         <span className="sheet-head-lead">
           {lead}
-          <span className="label">
-            {stream.accent && <i className="stream-dot" data-accent={stream.accent} />}
-            {stream.name} · {fmtDate(note.date, locale)}
+          <span className="sheet-sign">
+            <span className="label">
+              {stream.accent && <i className="stream-dot" data-accent={stream.accent} />}
+              {stream.name} · {fmtDate(note.date, locale)}
+            </span>
+            {edit && (
+              <>
+                <span className="label" aria-hidden>
+                  ·
+                </span>
+                {edit}
+              </>
+            )}
           </span>
-          {!heading && edit}
         </span>
         {actions}
       </div>
 
       {children ?? (
         <>
-          {heading &&
-            (edit ? (
-              <div className="sheet-title-row">
-                <h1 className="sheet-title-big">{heading}</h1>
-                {edit}
-              </div>
-            ) : (
-              <h1 className="sheet-title-big">{heading}</h1>
-            ))}
+          {heading && <h1 className="sheet-title-big">{heading}</h1>}
 
           <div className="sheet-rule" aria-hidden />
 

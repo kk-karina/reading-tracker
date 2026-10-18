@@ -166,14 +166,10 @@ function NotePaper({
 
   const actions = (
     <div className="row-tight">
-      {editing ? (
+      {editing && (
         <Jelly className="btn sm" onClick={() => void save()} disabled={!dirty}>
           {t('form.save')}
         </Jelly>
-      ) : (
-        <button className="link-btn" type="button" onClick={() => setEditing(true)}>
-          {t('note.edit')}
-        </button>
       )}
       <button className="link-btn danger" type="button" onClick={() => void remove()}>
         {t('note.delete')}
@@ -196,6 +192,15 @@ function NotePaper({
           count > 1 && !editing ? (
             <SheetFlip at={at} count={count} onPrev={onPrev} onNext={onNext} />
           ) : undefined
+        }
+        // Правка — словом в подписи, как на вкладке «Конспекты» у материала.
+        // Пока лист правят, её нет: правка уже идёт.
+        edit={
+          editing ? undefined : (
+            <button type="button" className="label sheet-edit" onClick={() => setEditing(true)}>
+              {t('note.edit')}
+            </button>
+          )
         }
         actions={actions}
       >
