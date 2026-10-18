@@ -58,8 +58,8 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown('> мысль')).toBe('<blockquote><p>мысль</p></blockquote>')
   })
 
-  it('склеивает соседние строки цитаты', () => {
-    expect(renderMarkdown('> раз\n> два')).toBe('<blockquote><p>раз два</p></blockquote>')
+  it('строки цитаты остаются строками внутри одной цитаты', () => {
+    expect(renderMarkdown('> раз\n> два')).toBe('<blockquote><p>раз</p><p>два</p></blockquote>')
   })
 
   it('делает горизонтальную линию', () => {
@@ -91,8 +91,22 @@ describe('renderMarkdown', () => {
     expect(renderMarkdown('раз\n\nдва')).toBe('<p>раз</p><p>два</p>')
   })
 
-  it('склеивает строки одного абзаца', () => {
-    expect(renderMarkdown('раз\nдва')).toBe('<p>раз два</p>')
+  it('каждая строка — свой абзац: Enter в поле нажали нарочно', () => {
+    expect(renderMarkdown('раз\nдва')).toBe('<p>раз</p><p>два</p>')
+  })
+
+  it('пустые строки между абзацами лишнего не добавляют', () => {
+    expect(renderMarkdown('раз\n\n\nдва')).toBe('<p>раз</p><p>два</p>')
+  })
+
+  it('красит маркер в названный цвет, лимон — без имени', () => {
+    expect(renderMarkdown('==лимон== и =={pink}роза==')).toBe(
+      '<p><mark>лимон</mark> и <mark data-mark="pink">роза</mark></p>',
+    )
+  })
+
+  it('незнакомое имя цвета остаётся текстом внутри обычного маркера', () => {
+    expect(renderMarkdown('=={red}x==')).toBe('<p><mark>{red}x</mark></p>')
   })
 
   it('на пустом входе отдаёт пустую строку', () => {
@@ -122,6 +136,10 @@ describe('renderMarkdown', () => {
 describe('plainText', () => {
   it('снимает выделение, жирный и курсив', () => {
     expect(plainText('==раз== **два** *три*')).toBe('раз два три')
+  })
+
+  it('снимает имя цвета вместе с маркером', () => {
+    expect(plainText('=={mint}мята==')).toBe('мята')
   })
 
   it('оставляет от ссылки только подпись', () => {

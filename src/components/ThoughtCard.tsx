@@ -41,7 +41,17 @@ export function ThoughtCard({
           {t('book.edit')}
         </button>
       )}
-      <p className="thought-body">{note.body}</p>
+      <div className="thought-body">
+        {/* Строка — абзац: Enter нажали нарочно, а склеенные строки читались
+            кашей. Пустые строки отступа не добавляют — его ставит CSS. */}
+        {note.body
+          .split('\n')
+          .map((line) => line.trim())
+          .filter(Boolean)
+          .map((line, i) => (
+            <p key={i}>{line}</p>
+          ))}
+      </div>
       <NoteMeta
         parts={[note.page !== null && t('session.noteOnPage', { n: note.page }), ...(meta ?? [])]}
       />

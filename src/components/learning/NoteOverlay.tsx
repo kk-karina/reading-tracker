@@ -1,6 +1,7 @@
 import { useEffect, useEffectEvent, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { NoteTag } from '../../lib/types'
+import { partLabel, partWord, partsOf } from '../../lib/learning/parts'
 import type { Stream, StudyNote } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
@@ -101,17 +102,46 @@ function NotePaper({
   onClose: () => void
 }) {
   const { t } = useLocale()
-  const { updateNote, deleteNote } = useLearning()
+  const { updateNote, deleteNote, materials, parts } = useLearning()
   const [editing, setEditing] = useState(startEditing)
-  const [part, setPart] = useState(note.part ?? '')
   const [body, setBody] = useState(note.body)
   const [tags, setTags] = useState<NoteTag[]>(note.tags)
 
-  const dirty =
-    editing && (part !== (note.part ?? '') || body !== note.body || tags.join() !== note.tags.join())
+  /**
+   * Чем лист озаглавлен — то же, что показывает `noteHeading`, и правится
+   * тем же, чем выбирается при заведении.
+   *
+   * Раньше здесь стояло текстовое поле «Глава 1. Название», и правило оно
+   * `part` — имя главы, набранное руками в давние времена. Новые конспекты
+   * держат главу указателем, и у них поле стояло пустым, а набранное в нём
+   * на листе не появлялось: указатель главнее текста.
+   *
+   * Теперь у материала с главами — выбор главы, как в «Добавить конспект».
+   * У материала без глав — заголовок словами: главу выбирать не из чего, а
+   * назвать лист хочется.
+   */
+  const material = materials.find((m) => m.id === note.material_id)
+  const chapters = material ? partsOf(parts, material.id) : []
+  const word = partWord(material?.kind ?? 'book')
+  const label = (i: number) =>
+    partLabel(chapters[i], i, (n) => t(word === 'lecture' ? 'part.lecture' : 'part.chapter', { n }))
+  const linked = chapters.some((c) => c.id === note.part_id) ? (note.part_id ?? '') : ''
+  const [partId, setPartId] = useState(linked)
+  const [title, setTitle] = useState(note.part ?? note.title ?? '')
+
+  const headed = chapters.length > 0 ? partId !== linked : title !== (note.part ?? note.title ?? '')
+  const dirty = editing && (headed || body !== note.body || tags.join() !== note.tags.join())
 
   const save = async () => {
-    await updateNote(note.id, { part: part.trim() || null, body, tags })
+    // Заголовок меняется, только если его трогали: старый лист с главой,
+    // набранной руками, не должен терять её от правки одной запятой.
+    const heading: Partial<StudyNote> = !headed
+      ? {}
+      : chapters.length > 0
+        ? // Выбранная глава заменяет набранную руками: показывалась бы всё равно она.
+          { part_id: partId || null, part: null }
+        : { title: title.trim() || null, part: null }
+    await updateNote(note.id, { ...heading, body, tags })
     setEditing(false)
   }
 
@@ -174,12 +204,29 @@ function NotePaper({
         {/* Пока лист правят, под верхней строкой стоят поля — рамка та же. */}
         {editing ? (
           <>
-            <input
-              className="input sheet-part"
-              value={part}
-              placeholder={t('note.partPlaceholder')}
-              onChange={(e) => setPart(e.target.value)}
-            />
+            {chapters.length > 0 ? (
+              <select
+                className="select sm draft-part slip-head-pick"
+                aria-label={t('draft.part')}
+                value={partId}
+                onChange={(e) => setPartId(e.target.value)}
+              >
+                <option value="">{t('draft.noPart')}</option>
+                {chapters.map((c, i) => (
+                  <option key={c.id} value={c.id}>
+                    {label(i)}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <input
+                className="input sheet-part"
+                value={title}
+                aria-label={t('note.titlePlaceholder')}
+                placeholder={t('note.titlePlaceholder')}
+                onChange={(e) => setTitle(e.target.value)}
+              />
+            )}
             <div className="sheet-rule" aria-hidden />
             <NoteEditor body={body} tags={tags} onBody={setBody} onTags={setTags} />
           </>

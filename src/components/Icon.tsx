@@ -36,6 +36,9 @@ export const ICONS = {
   // Закрыть лист. Значок, а не слово «Отмена»: отменять в листе нечего, он
   // просто закрывается, а слово спорило с заголовком за место в шапке.
   "close-md": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m18 18l-6-6m0 0L6 6m6 6l6-6m-6 6l-6 6\"/>",
+  // Списки в конспекте: строка с точкой и строка с номером.
+  "list-unordered": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M9 17h10M9 12h10M9 7h10M5.002 17v.002H5V17zm0-5v.002H5V12zm0-5v.002H5V7z\"/>",
+  "list-ordered": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M10 17h10M4 15.685V15.5A1.5 1.5 0 0 1 5.5 14h.04c.807 0 1.46.653 1.46 1.46c0 .35-.114.692-.324.973L4 20h3m3-8h10M10 7h10M4 5l2-1v6\"/>",
   "link": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"m9.172 14.829l5.657-5.657M7.05 11.293l-1.414 1.414a4 4 0 1 0 5.657 5.657l1.412-1.414m-1.413-9.9l1.414-1.414a4 4 0 1 1 5.657 5.657l-1.414 1.414\"/>",
   "cloud-upload": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M12 16v-6m0 0l-3 2m3-2l3 2m8 3a4 4 0 0 0-4.07-4A7.002 7.002 0 0 0 5.669 9.01A5 5 0 0 0 6 19h13a4 4 0 0 0 4-4\"/>",
   "download": "<path fill=\"none\" stroke=\"currentColor\" stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M6 21h12M12 3v14m0 0l5-5m-5 5l-5-5\"/>",

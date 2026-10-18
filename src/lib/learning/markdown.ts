@@ -10,6 +10,8 @@
  * написанный в конспекте script доезжает до страницы.
  */
 
+import { MARK } from './marks'
+
 const ESCAPE: Record<string, string> = {
   '&': '&amp;',
   '<': '&lt;',
@@ -19,6 +21,10 @@ const ESCAPE: Record<string, string> = {
 }
 
 const escapeHtml = (s: string) => s.replace(/[&<>"']/g, (c) => ESCAPE[c])
+
+/** Маркер с цветом: лимон — голым `<mark>`, как и раньше, остальные — с именем. */
+const markTag = (_: string, color: string | undefined, body: string) =>
+  color ? `<mark data-mark="${color}">${body}</mark>` : `<mark>${body}</mark>`
 
 /** Ссылка принимается, только если это http, https или почта. */
 function safeHref(url: string): string | null {
@@ -47,7 +53,7 @@ function inline(text: string): string {
     return href ? `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>` : label
   })
 
-  out = out.replace(/==(.+?)==/g, '<mark>$1</mark>')
+  out = out.replace(MARK, markTag)
   out = out.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
   // Волна идёт после жирного и до курсива: знака для волнистого подчёркивания
   // в markdown нет, и `__` занят под него здесь. В чужом редакторе он выродится
@@ -59,20 +65,23 @@ function inline(text: string): string {
   return out.replace(HOLD_BACK, (_, i: string) => code[Number(i)])
 }
 
+/**
+ * Каждая строка — свой абзац.
+ *
+ * Обычный markdown склеивает соседние строки в один абзац: там перенос — это
+ * перенос в исходнике, а не в мысли. В конспекте наоборот: Enter в поле нажали
+ * нарочно, и склеенные строки читались кашей. Отступ между абзацами ставит CSS,
+ * поэтому пустая строка между ними не нужна — и лишнего не добавляет.
+ */
 export function renderMarkdown(src: string): string {
   const lines = escapeHtml(src).split('\n')
   const out: string[] = []
 
-  let para: string[] = []
   let quote: string[] = []
   let list: { tag: 'ul' | 'ol'; items: string[] } | null = null
 
-  const flushPara = () => {
-    if (para.length) out.push(`<p>${inline(para.join(' '))}</p>`)
-    para = []
-  }
   const flushQuote = () => {
-    if (quote.length) out.push(`<blockquote><p>${inline(quote.join(' '))}</p></blockquote>`)
+    if (quote.length) out.push(`<blockquote>${quote.map((q) => `<p>${inline(q)}</p>`).join('')}</blockquote>`)
     quote = []
   }
   const flushList = () => {
@@ -80,7 +89,6 @@ export function renderMarkdown(src: string): string {
     list = null
   }
   const flushAll = () => {
-    flushPara()
     flushQuote()
     flushList()
   }
@@ -110,7 +118,6 @@ export function renderMarkdown(src: string): string {
     // Знак цитаты уже экранирован в &gt; — ищем именно его.
     const quoted = line.match(/^&gt;\s?(.*)$/)
     if (quoted) {
-      flushPara()
       flushList()
       quote.push(quoted[1].trim())
       continue
@@ -118,7 +125,6 @@ export function renderMarkdown(src: string): string {
 
     const bullet = line.match(/^-\s+(.*)$/)
     if (bullet) {
-      flushPara()
       flushQuote()
       if (!list || list.tag !== 'ul') {
         flushList()
@@ -130,7 +136,6 @@ export function renderMarkdown(src: string): string {
 
     const numbered = line.match(/^\d+\.\s+(.*)$/)
     if (numbered) {
-      flushPara()
       flushQuote()
       if (!list || list.tag !== 'ol') {
         flushList()
@@ -140,9 +145,8 @@ export function renderMarkdown(src: string): string {
       continue
     }
 
-    flushQuote()
-    flushList()
-    para.push(line)
+    flushAll()
+    out.push(`<p>${inline(line)}</p>`)
   }
 
   flushAll()
@@ -160,7 +164,7 @@ export function plainText(src: string): string {
   return src
     .replace(/`([^`]+)`/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
-    .replace(/==(.+?)==/g, '$1')
+    .replace(MARK, '$2')
     .replace(/\*\*(.+?)\*\*/g, '$1')
     .replace(/__(.+?)__/g, '$1')
     .replace(/(^|[^*])\*([^*]+)\*/g, '$1$2')

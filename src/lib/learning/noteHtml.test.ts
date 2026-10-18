@@ -18,27 +18,41 @@ const root = (kids: HtmlNode[]): HtmlNode => el('div', kids)
 
 describe('mdToHtml', () => {
   it('экранирует HTML до того, как появятся наши теги', () => {
-    expect(mdToHtml('<script>alert(1)</script>')).toBe('&lt;script&gt;alert(1)&lt;/script&gt;')
+    expect(mdToHtml('<script>alert(1)</script>')).toBe(
+      '<div>&lt;script&gt;alert(1)&lt;/script&gt;</div>',
+    )
   })
 
-  it('рисует четыре формата теми же тегами, что ставит браузер', () => {
-    expect(mdToHtml('**жирный**')).toBe('<b>жирный</b>')
-    expect(mdToHtml('*курсив*')).toBe('<i>курсив</i>')
-    expect(mdToHtml('__волна__')).toBe('<u>волна</u>')
-    expect(mdToHtml('==маркер==')).toBe('<mark>маркер</mark>')
+  it('рисует форматы теми же тегами и заливкой, что ставит браузер', () => {
+    expect(mdToHtml('**жирный**')).toBe('<div><b>жирный</b></div>')
+    expect(mdToHtml('*курсив*')).toBe('<div><i>курсив</i></div>')
+    expect(mdToHtml('__волна__')).toBe('<div><u>волна</u></div>')
+    expect(mdToHtml('==маркер==')).toBe(
+      '<div><span style="background-color: var(--mark-lemon)">маркер</span></div>',
+    )
   })
 
-  it('переносы строк становятся переносами поля', () => {
-    expect(mdToHtml('раз\nдва')).toBe('раз<br>два')
+  it('цвет маркера идёт переменной темы', () => {
+    expect(mdToHtml('=={mint}мята==')).toBe(
+      '<div><span style="background-color: var(--mark-mint)">мята</span></div>',
+    )
+  })
+
+  it('каждая строка — свой блок, пустая держится на br', () => {
+    expect(mdToHtml('раз\n\nдва')).toBe('<div>раз</div><div><br></div><div>два</div>')
+  })
+
+  it('пустой конспект — пустое поле', () => {
+    expect(mdToHtml('')).toBe('')
   })
 
   it('блочную разметку оставляет текстом — поле правит строки, а не документ', () => {
-    expect(mdToHtml('# Заголовок')).toBe('# Заголовок')
-    expect(mdToHtml('- пункт')).toBe('- пункт')
+    expect(mdToHtml('# Заголовок')).toBe('<div># Заголовок</div>')
+    expect(mdToHtml('- пункт')).toBe('<div>- пункт</div>')
   })
 
   it('одиночная звёздочка между словами разметкой не становится', () => {
-    expect(mdToHtml('2 * 2')).toBe('2 * 2')
+    expect(mdToHtml('2 * 2')).toBe('<div>2 * 2</div>')
   })
 })
 
@@ -65,6 +79,31 @@ describe('htmlToMd', () => {
     ).toBe('==главное==')
   })
 
+  it('цвет заливки сводится к ближайшему цвету палитры', () => {
+    const palette = { lemon: '#e9f86b', pink: '#ffc8d8', mint: '#b9efd2' }
+    const span = (fill: string) =>
+      root([el('span', [txt('x')], { style: `background-color: ${fill}` })])
+    expect(htmlToMd(span('rgb(255, 200, 216)'), palette)).toBe('=={pink}x==')
+    expect(htmlToMd(span('rgb(186, 238, 210)'), palette)).toBe('=={mint}x==')
+    expect(htmlToMd(span('rgb(233, 248, 107)'), palette)).toBe('==x==')
+    expect(htmlToMd(span('var(--mark-sky)'))).toBe('=={sky}x==')
+  })
+
+  it('прозрачная заливка — снятый маркер', () => {
+    expect(
+      htmlToMd(root([el('span', [txt('x')], { style: 'background-color: transparent' })])),
+    ).toBe('x')
+  })
+
+  it('маркер внутри маркера знаков второй раз не ставит', () => {
+    const tree = root([
+      el('span', [txt('a'), el('span', [txt('b')], { style: 'background-color: var(--mark-pink)' })], {
+        style: 'background-color: var(--mark-lemon)',
+      }),
+    ])
+    expect(htmlToMd(tree)).toBe('==ab==')
+  })
+
   it('span без заливки оформления не несёт', () => {
     expect(htmlToMd(root([el('span', [txt('обычное')], { style: 'color: red' })]))).toBe('обычное')
   })
@@ -73,6 +112,23 @@ describe('htmlToMd', () => {
     expect(htmlToMd(root([el('b', [txt('жирное с '), el('mark', [txt('главным')])])]))).toBe(
       '**жирное с ==главным==**',
     )
+  })
+
+  it('маркер на жирном не теряется: браузер кладёт заливку прямо на <b>', () => {
+    const fill = (tag: string) =>
+      root([el(tag, [txt('Закон Якоба')], { style: 'background-color: var(--mark-mint)' })])
+    expect(htmlToMd(fill('b'))).toBe('=={mint}**Закон Якоба**==')
+    expect(htmlToMd(fill('i'))).toBe('=={mint}*Закон Якоба*==')
+    expect(htmlToMd(fill('u'))).toBe('=={mint}__Закон Якоба__==')
+  })
+
+  it('знак списка из-под оформления выносит наружу', () => {
+    const line = (tag: string, text: string) => el('div', [el(tag, [txt(text)])])
+    expect(htmlToMd(root([line('b', '- пункт'), line('i', '2. второй')]))).toBe('- **пункт**\n2. *второй*')
+  })
+
+  it('пробелы по краям выносит за знаки', () => {
+    expect(htmlToMd(root([txt('a'), el('b', [txt(' жирный ')]), txt('b')]))).toBe('a **жирный** b')
   })
 
   it('пустая обёртка знаков не оставляет', () => {
@@ -115,6 +171,14 @@ describe('круг md → поле → md', () => {
     { md: '*курсив*', tree: root([el('i', [txt('курсив')])]) },
     { md: '__волна__', tree: root([el('u', [txt('волна')])]) },
     { md: '==маркер==', tree: root([el('mark', [txt('маркер')])]) },
+    {
+      md: '=={peach}персик==',
+      tree: root([el('span', [txt('персик')], { style: 'background-color: var(--mark-peach)' })]),
+    },
+    {
+      md: 'раз\n\nдва',
+      tree: root([el('div', [txt('раз')]), el('div', [el('br')]), el('div', [txt('два')])]),
+    },
     {
       md: '**жирное с ==главным== внутри**',
       tree: root([

@@ -1,4 +1,5 @@
 import { plainText } from './markdown'
+import { MARK } from './marks'
 import type { StudyNote } from './types'
 
 /**
@@ -14,14 +15,11 @@ export interface Highlight {
   materialId: string
 }
 
-/** Тот же синтаксис, что понимает `renderMarkdown`, и так же не через строку. */
-const MARK = /==([^\n=]+?)==/g
-
 export function extractHighlights(notes: StudyNote[]): Highlight[] {
   const out: Highlight[] = []
   for (const n of notes) {
     for (const m of n.body.matchAll(MARK)) {
-      const text = m[1].trim()
+      const text = m[2].trim()
       // Пустое выделение — опечатка, а не мысль.
       if (text) out.push({ text, noteId: n.id, materialId: n.material_id })
     }

@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Образец данных</title>
+  </head>
+  <body style="font: 15px/1.5 system-ui; padding: 24px">
+    <p id="out">Кладу образец в хранилище браузера…</p>
+    <!-- Только для dev-сервера: сборка берёт один index.html. -->
+    <script type="module">
+      import { plantDemo } from '/src/dev/demo.ts'
+      const n = plantDemo()
+      document.getElementById('out').textContent =
+        `Готово: книг ${n.books}, мыслей ${n.thoughts}, материалов ${n.materials}, конспектов ${n.notes}. Открываю приложение…`
+      setTimeout(() => location.replace('/'), 900)
+    </script>
+  </body>
+</html>

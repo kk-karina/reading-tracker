@@ -20,6 +20,16 @@
   --accent-soft: var(--brand-soft);
   --danger: #a8455f;
 
+  /* Highlighter inks for notes. Lemon is the system accent and stays the
+     default; the rest are a step deeper than the thought-card tints, so a
+     stroke of colour still reads on paper that already carries a tint. All
+     sit light enough that ink on them keeps body-text contrast. */
+  --mark-lemon: var(--brand);
+  --mark-pink: #ffc8d8;
+  --mark-peach: #ffd2a6;
+  --mark-mint: #b6ebcf;
+  --mark-sky: #bcdcf8;
+
   /* The shelf split is ordered by size and rides ink from full to pale: with
      black as the data colour, lightness is what tells the segments apart. */
   --ramp-1: #16181a;
@@ -100,9 +110,13 @@ button {
   padding: 0;
 }
 
+/* Выделение — карандашом, а не лимоном. Лимон в конспекте значит маркер, и
+   выделенная строка читалась уже отмеченной, а белый текст на нём терялся
+   совсем. Чернила вполсилы ложатся и на бумагу, и поверх любого маркера:
+   цвет под ним остаётся виден, а текст остаётся чернилами. */
 ::selection {
-  background: var(--hot);
-  color: #fff;
+  background: color-mix(in srgb, var(--ink) 16%, transparent);
+  color: var(--ink);
 }
 
 :focus-visible {
@@ -3529,6 +3543,15 @@ a.group-subject:hover .group-subject-title {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 7;
+}
+/* Every line of a thought is its own paragraph: Enter was pressed on purpose,
+   and lines run together read as one lump. The gap is set here, so a blank
+   line between them is never needed. */
+.thought-body p {
+  margin: 0;
+}
+.thought-body p + p {
+  margin-top: 0.55em;
 }
 .thought-foot,
 .thought-book {

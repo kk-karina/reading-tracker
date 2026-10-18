@@ -297,7 +297,7 @@
 .sheet-body h1 { font-size: 24px; }
 .sheet-body h2 { font-size: 20px; }
 .sheet-body h3 { font-size: 17px; }
-.sheet-body p { margin: 0 0 16px; }
+.sheet-body p { margin: 0 0 0.9em; }
 .sheet-body ul,
 .sheet-body ol {
   margin: 0 0 16px;
@@ -327,13 +327,18 @@
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-/* Текстовыделитель. Акцент системы и есть лимонный маркер. */
+/* Текстовыделитель. Акцент системы — лимонный маркер по умолчанию, остальные
+   цвета приходят именем в data-mark. */
 .sheet-body mark {
-  background: var(--brand);
+  background: var(--mark, var(--mark-lemon));
   color: var(--ink);
   padding: 0 2px;
   border-radius: 2px;
 }
+mark[data-mark='pink'] { --mark: var(--mark-pink); }
+mark[data-mark='peach'] { --mark: var(--mark-peach); }
+mark[data-mark='mint'] { --mark: var(--mark-mint); }
+mark[data-mark='sky'] { --mark: var(--mark-sky); }
 
 .note-editor {
   display: flex;
@@ -362,6 +367,11 @@
   overflow-wrap: anywhere;
 }
 .note-input:focus { outline: none; }
+/* Строка поля — блок, и между блоками тот же воздух, что между абзацами
+   готового конспекта: как напишешь, так и ляжет. */
+.note-input > div + div {
+  margin-top: 0.45em;
+}
 /* У contentEditable своего плейсхолдера нет — рисуем сами по флагу от React.
    :empty здесь не годится: браузер держит в пустом поле служебный <br>. */
 .note-input[data-empty]::before {
@@ -379,11 +389,16 @@
   text-underline-offset: 3px;
   text-decoration-thickness: 1px;
 }
-.note-input mark {
-  background: var(--brand);
+/* Маркер в поле — заливкой в style (так его ставит браузер), и форма у него
+   та же, что у <mark> в готовом конспекте. */
+.note-input mark,
+.note-input [style*='background'] {
   color: var(--ink);
   padding: 0 2px;
   border-radius: 2px;
+}
+.note-input mark {
+  background: var(--mark-lemon);
 }
 
 /* ---------- оформление по выделению ---------- */
@@ -423,15 +438,60 @@
   text-decoration: underline wavy var(--brand-2);
   text-underline-offset: 2px;
 }
-.note-fmt-glyph.note-fmt-mark {
-  background: var(--brand);
-  border-radius: 2px;
-  padding: 0 3px;
+
+/* Маркеры — кружки своего цвета. Включённый обведён чернилами через зазор
+   бумаги: заливка у кружка уже занята цветом, и второй заливкой «включено» не
+   сказать. Нажатие — короткое сжатие, ответ пальцу, а не украшение. */
+.note-swatch {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
 }
-.note-fmt-mark span:first-child {
-  background: var(--brand);
-  border-radius: 2px;
-  padding: 0 3px;
+.note-swatch::before {
+  content: '';
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--swatch);
+  box-shadow: inset 0 0 0 1px rgba(14, 16, 18, 0.12);
+  transition:
+    box-shadow 0.15s ease,
+    transform 0.12s var(--ease-out);
+}
+.note-swatch.on::before {
+  box-shadow:
+    inset 0 0 0 1px rgba(14, 16, 18, 0.12),
+    0 0 0 2px var(--paper),
+    0 0 0 3.5px var(--ink);
+}
+.note-swatch:active::before {
+  transform: scale(0.86);
+}
+.note-swatch:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .note-swatch:hover { background: var(--line); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-swatch::before { transition: box-shadow 0.15s ease; }
+  .note-swatch:active::before { transform: none; }
+}
+.note-bar-sep {
+  align-self: center;
+  width: 1px;
+  height: 18px;
+  margin: 0 3px;
+  background: var(--line);
 }
 .note-bar {
   position: fixed;
@@ -470,6 +530,11 @@
   text-align: left;
   cursor: pointer;
 }
+.note-menu-sep {
+  height: 1px;
+  margin: 4px 9px;
+  background: var(--line);
+}
 .note-menu-row:hover { background: var(--line); }
 .note-menu-row.on { background: var(--brand-soft); }
 .note-fmt-glyph {
@@ -484,6 +549,24 @@
   margin-left: auto;
   color: var(--ink-3);
   font-size: 12px;
+}
+/* Маркер в меню — не строка, а подпись и ряд цветов под ней: пять строк
+   «маркер такой-то» растянули бы меню вдвое ради одного действия. */
+.note-menu-marks {
+  margin-top: 4px;
+  padding: 8px 9px 4px;
+  border-top: 1px solid var(--line);
+}
+.note-menu-marks-label {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.note-menu-marks-row {
+  display: flex;
+  gap: 2px;
+  margin-left: -7px;
 }
 
 /* ---------- шапка листа с предметом ---------- */

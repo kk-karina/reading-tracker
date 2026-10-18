@@ -348,7 +348,7 @@ export const LEARNING = {
   'backlog.take': { ru: 'Взять на изучение', en: 'Start studying' },
 
   'note.part': { ru: 'Глава или часть', en: 'Chapter or part' },
-  'note.partPlaceholder': { ru: 'Глава 1. Название', en: 'Chapter 1. Title' },
+  'note.titlePlaceholder': { ru: 'Заголовок', en: 'Title' },
   'note.body': { ru: 'Конспект', en: 'Note' },
   'note.bodyPlaceholder': {
     ru: 'Пиши как в тетради. ## заголовок, - список, > цитата. Оформить — выделить и правой кнопкой.',
@@ -359,6 +359,13 @@ export const LEARNING = {
   'note.italic': { ru: 'Курсив', en: 'Italic' },
   'note.wave': { ru: 'Волна', en: 'Wave' },
   'note.mark': { ru: 'Маркер', en: 'Marker' },
+  'note.ul': { ru: 'Список', en: 'Bulleted list' },
+  'note.ol': { ru: 'Нумерованный список', en: 'Numbered list' },
+  'mark.lemon': { ru: 'лимонный', en: 'lemon' },
+  'mark.pink': { ru: 'розовый', en: 'pink' },
+  'mark.peach': { ru: 'персиковый', en: 'peach' },
+  'mark.mint': { ru: 'мятный', en: 'mint' },
+  'mark.sky': { ru: 'голубой', en: 'sky' },
   'note.edit': { ru: 'Править', en: 'Edit' },
   'note.empty': { ru: 'Лист пока пустой.', en: 'The sheet is still empty.' },
   'note.blankChip': { ru: 'пустой', en: 'empty' },
