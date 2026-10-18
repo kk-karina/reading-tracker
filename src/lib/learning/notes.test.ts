@@ -149,16 +149,16 @@ describe('noteOutline', () => {
     expect(shape(notes)).toEqual([['p1', ['x', 'y', 'late']]])
   })
 
-  it('старые имена текстом идут за главами, листы без главы — в конце', () => {
+  it('листы без главы — первыми, старые имена текстом — за главами', () => {
     const notes = [
       at('free', '2026-10-01'),
       at('old', '2026-10-01', { part: 'Глава 1. Nobody' }),
       at('ch', '2026-10-09', { part_id: 'p2' }),
     ]
     expect(shape(notes)).toEqual([
+      ['none', ['free']],
       ['p2', ['ch']],
       ['name:Глава 1. Nobody', ['old']],
-      ['none', ['free']],
     ])
   })
 
