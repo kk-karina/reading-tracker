@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { isBlankNote, noteHeading, notesOfStream } from './notes'
+import { isBlankNote, noteHeading, noteOutline, notesOfStream } from './notes'
 import type { Material, MaterialPart, StudyNote } from './types'
 
 const material = (id: string, streamId: string): Material => ({
@@ -115,5 +115,55 @@ describe('isBlankNote', () => {
 
   it('написанное без контура — конспект', () => {
     expect(isBlankNote('одна строка', null)).toBe(false)
+  })
+})
+
+describe('noteOutline', () => {
+  const parts = [part('p1', 'Первая', 0), part('p2', '', 1), part('p3', 'Третья', 2)]
+  const at = (id: string, date: string, extra: Partial<StudyNote> = {}) => ({
+    ...note(id, 'm1'),
+    date,
+    ...extra,
+  })
+  const shape = (notes: StudyNote[]) =>
+    noteOutline(notes, parts).map((g) => [g.key, g.notes.map((n) => n.id)])
+
+  it('собирает листы одной главы вместе, главы — в порядке материала', () => {
+    const notes = [
+      at('a', '2026-10-01', { part_id: 'p3' }),
+      at('b', '2026-10-02', { part_id: 'p1' }),
+      at('c', '2026-10-03', { part_id: 'p3' }),
+    ]
+    expect(shape(notes)).toEqual([
+      ['p1', ['b']],
+      ['p3', ['a', 'c']],
+    ])
+  })
+
+  it('внутри главы — по дате, листы одного дня в порядке написания', () => {
+    const notes = [
+      at('late', '2026-10-05', { part_id: 'p1' }),
+      at('x', '2026-10-01', { part_id: 'p1' }),
+      at('y', '2026-10-01', { part_id: 'p1' }),
+    ]
+    expect(shape(notes)).toEqual([['p1', ['x', 'y', 'late']]])
+  })
+
+  it('старые имена текстом идут за главами, листы без главы — в конце', () => {
+    const notes = [
+      at('free', '2026-10-01'),
+      at('old', '2026-10-01', { part: 'Глава 1. Nobody' }),
+      at('ch', '2026-10-09', { part_id: 'p2' }),
+    ]
+    expect(shape(notes)).toEqual([
+      ['p2', ['ch']],
+      ['name:Глава 1. Nobody', ['old']],
+      ['none', ['free']],
+    ])
+  })
+
+  it('указатель на удалённую главу не теряет лист', () => {
+    const notes = [at('ghost', '2026-10-01', { part_id: 'gone' })]
+    expect(shape(notes)).toEqual([['none', ['ghost']]])
   })
 })

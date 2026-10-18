@@ -312,7 +312,7 @@ function learning(): LearningSnapshot {
         '- Не выбирать шрифт, пока нет текста',
         '- =={mint}Личность системы== задают углы, шрифт и цвет — решить один раз',
       ].join('\n'),
-      { session_id: sessions[0].id, part_id: ch[0].id, title: 'Сначала функция', tags: ['idea'] },
+      { session_id: sessions[0].id, part_id: ch[0].id, title: 'Сначала функция' },
     ),
     note(
       1,
@@ -328,7 +328,7 @@ function learning(): LearningSnapshot {
         '2. Серый на цветном фоне — не серый, а __тот же оттенок с прозрачностью__',
         '3. Кнопка-действие ≠ кнопка-разрушение: =={pink}опасное не обязано быть красным и большим==',
       ].join('\n'),
-      { session_id: sessions[1].id, part_id: ch[1].id, title: 'Hierarchy is Everything', tags: ['quote', 'idea'] },
+      { session_id: sessions[1].id, part_id: ch[1].id, title: 'Hierarchy is Everything' },
     ),
     note(
       2,
@@ -342,14 +342,14 @@ function learning(): LearningSnapshot {
         '### Вопрос себе',
         'Где у меня в трекере сетка заполняет ширину просто потому, что может? Проверить `.store-grid`.',
       ].join('\n'),
-      { session_id: sessions[2].id, part_id: ch[2].id, title: 'Пространство', tags: ['question'] },
+      { session_id: sessions[2].id, part_id: ch[2].id, title: 'Пространство' },
     ),
     note(
       3,
       refactoring,
       1,
       'Высота строки обратно пропорциональна кеглю: крупному — меньше, мелкому — больше.\n=={mint}Длина строки 45–75 знаков==.\nБазовая линия важнее центрирования, когда шрифты разного размера стоят в ряд.',
-      { part_id: ch[3].id, tags: [] },
+      { part_id: ch[3].id },
     ),
     note(
       4,
@@ -360,7 +360,7 @@ function learning(): LearningSnapshot {
         'Частые действия (командная палитра, переключение табов) — =={pink}без анимации вовсе==.',
         '*Ощущение скорости важнее самой скорости.*',
       ].join('\n'),
-      { session_id: sessions[3].id, part_id: lec[0].id, title: 'Зачем', tags: ['idea'] },
+      { session_id: sessions[3].id, part_id: lec[0].id, title: 'Зачем' },
     ),
     note(
       5,
@@ -375,7 +375,7 @@ function learning(): LearningSnapshot {
         'Длительность UI-анимаций — до 300 мс. Модалка 200–250, тултип 150.',
         '> Кастомные кривые сильнее встроенных — `cubic-bezier(0.23, 1, 0.32, 1)`.',
       ].join('\n'),
-      { session_id: sessions[4].id, part_id: lec[1].id, title: 'Кривые и длительность', tags: ['quote'] },
+      { session_id: sessions[4].id, part_id: lec[1].id, title: 'Кривые и длительность' },
     ),
     note(
       6,
@@ -388,7 +388,7 @@ function learning(): LearningSnapshot {
         '',
         'Источник: [lawsofux.com](https://lawsofux.com)',
       ].join('\n'),
-      { title: 'Три закона на каждый день', tags: ['idea'] },
+      { title: 'Три закона на каждый день' },
     ),
     note(
       7,
@@ -400,14 +400,14 @@ function learning(): LearningSnapshot {
         '> A reliable way to make people believe in falsehoods is frequent repetition.',
         'Когнитивная лёгкость = ощущение правды. __Знакомое кажется верным.__',
       ].join('\n'),
-      { session_id: sessions[5].id, title: 'Две системы', tags: ['quote', 'idea'] },
+      { session_id: sessions[5].id, title: 'Две системы' },
     ),
     note(
       8,
       kahneman,
       5,
       'Якорение: любое число, увиденное до оценки, тянет оценку к себе — даже ==заведомо случайное==.\nПроверить на себе: цены в магазине, оценки сроков в работе.\n=={pink}Не согласна с выводом про экспертов — у пожарных интуиция работает.==',
-      { session_id: sessions[6].id, title: 'Якоря', tags: ['disagree'] },
+      { session_id: sessions[6].id, title: 'Якоря' },
     ),
   ]
 

@@ -9,11 +9,9 @@ import {
   type HtmlNode,
   type MarkPalette,
 } from '../lib/learning/noteHtml'
-import type { NoteTag } from '../lib/types'
 import { useLocale } from '../state/LocaleContext'
 import { Icon } from './Icon'
 
-const TAGS: NoteTag[] = ['quote', 'idea', 'question', 'disagree', 'feeling']
 
 type Fmt = 'bold' | 'italic' | 'wave'
 
@@ -133,22 +131,16 @@ function activeFormats(root: HTMLElement): Active {
  * В хранилище по-прежнему уходит markdown, а не разметка поля, — перевод в обе
  * стороны лежит в `lib/learning/noteHtml.ts`.
  *
- * Метки необязательны. В листе занятия разметка по категориям решается не в
- * момент записи: там важно успеть записать, а разобрать написанное можно потом,
- * на самом конспекте. Поэтому `tags`/`onTags` приходят парой или не приходят
- * вовсе, и без них ряд чипов просто не рисуется.
+ * Меток у конспекта нет: категории мыслей — вещь чтения, в обучении они не
+ * нужны. Ряд чипов, который здесь был, убран вместе с ними.
  */
 export function NoteEditor({
   body,
-  tags,
   onBody,
-  onTags,
   autoFocus,
 }: {
   body: string
-  tags?: NoteTag[]
   onBody: (next: string) => void
-  onTags?: (next: NoteTag[]) => void
   /** Курсор сюда при появлении: карточку только что добавили, чтобы писать. */
   autoFocus?: boolean
 }) {
@@ -444,24 +436,6 @@ export function NoteEditor({
 
   return (
     <div className="note-editor">
-      {tags && onTags && (
-        <div className="note-tools">
-          <div className="chips">
-            {TAGS.map((g) => (
-              <button
-                key={g}
-                type="button"
-                className={`chip${tags.includes(g) ? ' on' : ''}`}
-                aria-pressed={tags.includes(g)}
-                onClick={() => onTags(tags.includes(g) ? tags.filter((x) => x !== g) : [...tags, g])}
-              >
-                {t(`tag.${g}`)}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-
       <div
         ref={ref}
         className="note-input"

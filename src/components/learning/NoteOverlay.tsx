@@ -1,6 +1,5 @@
 import { useEffect, useEffectEvent, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type { NoteTag } from '../../lib/types'
 import { partLabel, partWord, partsOf } from '../../lib/learning/parts'
 import type { Stream, StudyNote } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
@@ -105,7 +104,6 @@ function NotePaper({
   const { updateNote, deleteNote, materials, parts } = useLearning()
   const [editing, setEditing] = useState(startEditing)
   const [body, setBody] = useState(note.body)
-  const [tags, setTags] = useState<NoteTag[]>(note.tags)
 
   /**
    * Чем лист озаглавлен — то же, что показывает `noteHeading`, и правится
@@ -130,7 +128,7 @@ function NotePaper({
   const [title, setTitle] = useState(note.part ?? note.title ?? '')
 
   const headed = chapters.length > 0 ? partId !== linked : title !== (note.part ?? note.title ?? '')
-  const dirty = editing && (headed || body !== note.body || tags.join() !== note.tags.join())
+  const dirty = editing && (headed || body !== note.body)
 
   const save = async () => {
     // Заголовок меняется, только если его трогали: старый лист с главой,
@@ -141,7 +139,7 @@ function NotePaper({
         ? // Выбранная глава заменяет набранную руками: показывалась бы всё равно она.
           { part_id: partId || null, part: null }
         : { title: title.trim() || null, part: null }
-    await updateNote(note.id, { ...heading, body, tags })
+    await updateNote(note.id, { ...heading, body })
     setEditing(false)
   }
 
@@ -228,7 +226,7 @@ function NotePaper({
               />
             )}
             <div className="sheet-rule" aria-hidden />
-            <NoteEditor body={body} tags={tags} onBody={setBody} onTags={setTags} />
+            <NoteEditor body={body} onBody={setBody} />
           </>
         ) : undefined}
       </NoteSheet>

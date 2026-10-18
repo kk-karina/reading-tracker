@@ -59,3 +59,66 @@ export function isBlankNote(body: string, outline: string | null): boolean {
   const written = body.trim()
   return written === '' || written === (outline ?? '').trim()
 }
+
+/**
+ * Группа оглавления: глава со своими листами.
+ *
+ * `part` — глава из списка материала, `name` — имя, набранное руками у старых
+ * конспектов. Ни того ни другого — листы без главы.
+ */
+export interface NoteGroup<T> {
+  key: string
+  part: MaterialPart | null
+  /** Номер главы в материале, с нуля. Только при `part`. */
+  index: number
+  name: string | null
+  notes: T[]
+}
+
+/**
+ * Листы материала по главам — оглавление, по которому их и листают.
+ *
+ * Главы идут в порядке материала, а не в порядке написания: конспект читают
+ * как книгу, а не как журнал, и два листа к одной главе должны стоять рядом,
+ * даже если между ними написаны три других. Внутри главы — по дате. Старые
+ * листы с именем главы текстом встают за главами, листы без главы — в конец.
+ *
+ * Листание идёт по этому же порядку: соседний лист — тот, что ниже в
+ * оглавлении, иначе стрелка прыгала бы по колонке вверх-вниз.
+ */
+export function noteOutline<T extends Pick<StudyNote, 'part_id' | 'part' | 'date'>>(
+  notes: T[],
+  parts: MaterialPart[],
+): NoteGroup<T>[] {
+  const index = new Map(parts.map((p, i) => [p.id, i]))
+  const chapters = new Map<string, NoteGroup<T>>()
+  const named = new Map<string, NoteGroup<T>>()
+  const loose: NoteGroup<T> = { key: 'none', part: null, index: -1, name: null, notes: [] }
+
+  for (const n of notes) {
+    // Указатель на удалённую главу ничего не значит: лист держится за своё имя.
+    const i = n.part_id ? index.get(n.part_id) : undefined
+    if (i !== undefined) {
+      const part = parts[i]
+      const g = chapters.get(part.id) ?? { key: part.id, part, index: i, name: null, notes: [] }
+      g.notes.push(n)
+      chapters.set(part.id, g)
+    } else if (n.part?.trim()) {
+      const name = n.part.trim()
+      const g = named.get(name) ?? { key: `name:${name}`, part: null, index: -1, name, notes: [] }
+      g.notes.push(n)
+      named.set(name, g)
+    } else {
+      loose.notes.push(n)
+    }
+  }
+
+  const groups = [
+    ...[...chapters.values()].sort((a, b) => a.index - b.index),
+    ...named.values(),
+    ...(loose.notes.length > 0 ? [loose] : []),
+  ]
+  // Сортировка устойчивая: листы одного дня остаются в порядке написания.
+  for (const g of groups) g.notes.sort((a, b) => a.date.localeCompare(b.date))
+  return groups
+}

@@ -1,4 +1,3 @@
-import { motion } from 'motion/react'
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { BookCover } from '../components/BookCover'
@@ -8,10 +7,11 @@ import { Icon } from '../components/Icon'
 import { Review } from '../components/Review'
 import { SessionSheet } from '../components/SessionSheet'
 import { LogRow } from '../components/log/LogRow'
+import { PageTabs } from '../components/PageTabs'
 import { PagesStrip } from '../components/log/ProgressStrip'
 import { ThoughtCard } from '../components/ThoughtCard'
 import { ThoughtSheet } from '../components/ThoughtSheet'
-import { Empty, inkSlide, Jelly, Tip } from '../components/ui'
+import { Empty, Jelly, Tip } from '../components/ui'
 import { sourceOf } from '../lib/compose/linkMeta'
 import { fmtDate, fmtMinutes } from '../lib/format'
 import { Mood } from '../components/Mood'
@@ -252,45 +252,43 @@ export function Book() {
         </div>
       </div>
 
-      <div className="tabs" role="tablist" aria-label={book.title}>
-        {TABS.map((id) => {
-          const locked = id === 'review' && !finished
-          const on = current === id
-          return (
-            <button
-              key={id}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              disabled={locked}
-              title={locked ? t('book.reviewLocked') : undefined}
-              className={`tab${on ? ' on' : ''}`}
-              onClick={() => setTab(id)}
-            >
-              {/* Имя несёт своё имя ещё и атрибутом: по нему `.tab-label`
-                  держит ширину жирного начертания всегда — см. `index.css`. */}
-              <span className="tab-label" data-label={t(TAB_KEY[id])}>
-                {t(TAB_KEY[id])}
-              </span>
-              {counts[id] !== null && counts[id] > 0 && (
-                <span className="tab-n">{counts[id]}</span>
-              )}
-              {on && (
-                <motion.span layoutId="book-tab" className="tab-line" transition={inkSlide} />
-              )}
-            </button>
-          )
-        })}
-      </div>
+      <PageTabs
+        id="book"
+        label={book.title}
+        value={current}
+        onChange={setTab}
+        items={[
+          {
+            id: 'reflection',
+            label: t(TAB_KEY.reflection),
+            count: counts.reflection,
+            add: { label: t('thought.add'), onClick: () => setThinking(true) },
+          },
+          {
+            id: 'sessions',
+            label: t(TAB_KEY.sessions),
+            count: counts.sessions,
+            add: { label: t('session.log'), onClick: () => setLogging(true) },
+          },
+          // Рецензия одна, дописывать к ней нечего — плюса нет.
+          {
+            id: 'review',
+            label: t(TAB_KEY.review),
+            locked: finished ? undefined : t('book.reviewLocked'),
+          },
+        ]}
+      />
 
-      {current === 'reflection' && (
-        <div className="tab-body">
-          {/* Та же строка, что над листами у материала: чипы среза слева,
-              дверь справа. Мысль приходит и не за чтением — для неё своя
-              дверь, а не «Записать сессию». Пока мыслей нет, срезать нечего:
-              строки нет, дверь стоит в пустоте ниже. */}
-          {bookNotes.length > 0 && (
-            <div className="panel-head">
+      {/* Одно тело на все вкладки, меняется только содержимое — см. тот же
+          разбор в `Material`. */}
+      <div className="tab-body">
+        {current === 'reflection' && (
+          <>
+            {/* Срез по тегу. Дверь к новой мысли — плюсом у вкладки, а не здесь:
+                мысль приходит и не за чтением, и ей нужна своя дверь, а не
+                «Записать сессию». Пока мыслей нет, срезать нечего: ряда нет,
+                дверь стоит ещё и в пустоте ниже. */}
+            {bookNotes.length > 0 && (
               <div className="chips">
                 {(['all', ...TAGS] as const).map((tag) => (
                   <button
@@ -304,113 +302,106 @@ export function Book() {
                   </button>
                 ))}
               </div>
-              <Jelly className="btn sm" onClick={() => setThinking(true)}>
-                {t('thought.add')}
-              </Jelly>
-            </div>
-          )}
-          {myNotes.length === 0 ? (
-            /* Рисунок только у настоящей пустоты: ниже этого же места
-               «под фильтр ничего не попало» остаётся строкой. */
-            bookNotes.length === 0 ? (
+            )}
+            {myNotes.length === 0 ? (
+              /* Рисунок только у настоящей пустоты: ниже этого же места
+                 «под фильтр ничего не попало» остаётся строкой. */
+              bookNotes.length === 0 ? (
+                <Empty
+                  size="sm"
+                  art="writing"
+                  action={
+                    <Jelly className="btn ghost sm" onClick={() => setThinking(true)}>
+                      {t('thought.add')}
+                    </Jelly>
+                  }
+                >
+                  {t('book.reflectionEmpty')}
+                </Empty>
+              ) : (
+                <Empty size="sm">{t('journal.emptyHere')}</Empty>
+              )
+            ) : (
+              <div className="thought-cards">
+                {myNotes.map((n) => (
+                  <ThoughtCard key={n.id} note={n} />
+                ))}
+              </div>
+            )}
+          </>
+        )}
+
+        {current === 'sessions' && (
+          <>
+            {mySessions.length === 0 ? (
               <Empty
                 size="sm"
-                art="writing"
+                art="reading"
                 action={
-                  <Jelly className="btn ghost sm" onClick={() => setThinking(true)}>
-                    {t('thought.add')}
+                  <Jelly className="btn ghost sm" onClick={() => setLogging(true)}>
+                    {t('session.log')}
                   </Jelly>
                 }
               >
-                {t('book.reflectionEmpty')}
+                {t('book.sessionsEmpty')}
               </Empty>
             ) : (
-              <Empty size="sm">{t('journal.emptyHere')}</Empty>
-            )
-          ) : (
-            <div className="thought-cards">
-              {myNotes.map((n) => (
-                <ThoughtCard key={n.id} note={n} />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+              <>
+                {/* Та же строка журнала, что во вкладке «Сессии» раздела: шаг
+                    крупно, мысли значком с числом. Книги в строке нет — мы на
+                    её странице. */}
+                <div className="log">
+                  {mySessions.map((s) => {
+                    const thoughts = bookNotes
+                      .filter((n) => n.session_id === s.id)
+                      .sort((a, b) => a.created_at.localeCompare(b.created_at))
+                    return (
+                      <LogRow
+                        key={s.id}
+                        step={`+${s.page_to - s.page_from}`}
+                        unit={t('unit.pages')}
+                        detail={
+                          <span className="mono">
+                            {s.page_from} → {s.page_to}
+                          </span>
+                        }
+                        mood={s.rating && <Mood rating={s.rating} />}
+                        when={[
+                          fmtDate(s.date, locale),
+                          timeOf(s.date, s.created_at),
+                          s.minutes && fmtMinutes(s.minutes, locale),
+                        ]}
+                        meter={
+                          book.pages ? (
+                            <PagesStrip from={s.page_from} to={s.page_to} total={book.pages} />
+                          ) : undefined
+                        }
+                        written={thoughts.length}
+                        open={openSession === s.id}
+                        onToggle={() => setOpenSession(openSession === s.id ? null : s.id)}
+                        onEdit={() => setEditingSession(s)}
+                      >
+                        <div className="store-grid">
+                          {thoughts.map((n) => (
+                            <ThoughtCard key={n.id} note={n} flat />
+                          ))}
+                        </div>
+                      </LogRow>
+                    )
+                  })}
+                </div>
+                {read > 0 && (
+                  <p className="small faint" style={{ margin: '14px 0 0' }}>
+                    {t('count.pages', { n: read })}
+                  </p>
+                )}
+              </>
+            )}
+          </>
+        )}
 
-      {current === 'sessions' && (
-        <div className="tab-body">
-          {mySessions.length === 0 ? (
-            <Empty
-              size="sm"
-              art="reading"
-              action={
-                <Jelly className="btn ghost sm" onClick={() => setLogging(true)}>
-                  {t('session.log')}
-                </Jelly>
-              }
-            >
-              {t('book.sessionsEmpty')}
-            </Empty>
-          ) : (
-            <>
-              {/* Та же строка журнала, что во вкладке «Сессии» раздела: шаг
-                  крупно, мысли значком с числом. Книги в строке нет — мы на
-                  её странице. */}
-              <div className="log">
-                {mySessions.map((s) => {
-                  const thoughts = bookNotes
-                    .filter((n) => n.session_id === s.id)
-                    .sort((a, b) => a.created_at.localeCompare(b.created_at))
-                  return (
-                    <LogRow
-                      key={s.id}
-                      step={`+${s.page_to - s.page_from}`}
-                      unit={t('unit.pages')}
-                      detail={
-                        <span className="mono">
-                          {s.page_from} → {s.page_to}
-                        </span>
-                      }
-                      mood={s.rating && <Mood rating={s.rating} />}
-                      when={[
-                        fmtDate(s.date, locale),
-                        timeOf(s.date, s.created_at),
-                        s.minutes && fmtMinutes(s.minutes, locale),
-                      ]}
-                      meter={
-                        book.pages ? (
-                          <PagesStrip from={s.page_from} to={s.page_to} total={book.pages} />
-                        ) : undefined
-                      }
-                      written={thoughts.length}
-                      open={openSession === s.id}
-                      onToggle={() => setOpenSession(openSession === s.id ? null : s.id)}
-                      onEdit={() => setEditingSession(s)}
-                    >
-                      <div className="store-grid">
-                        {thoughts.map((n) => (
-                          <ThoughtCard key={n.id} note={n} flat />
-                        ))}
-                      </div>
-                    </LogRow>
-                  )
-                })}
-              </div>
-              {read > 0 && (
-                <p className="small faint" style={{ margin: '14px 0 0' }}>
-                  {t('count.pages', { n: read })}
-                </p>
-              )}
-            </>
-          )}
-        </div>
-      )}
-
-      {current === 'review' && (
-        <div className="tab-body">
-          <Review key={book.id} book={book} />
-        </div>
-      )}
+        {current === 'review' && <Review key={book.id} book={book} />}
+      </div>
 
       {editing && (
         <BookForm book={book} onClose={() => setEditing(false)} onDeleted={() => nav('/reading/shelf')} />

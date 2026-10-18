@@ -1,11 +1,12 @@
-import { motion } from 'motion/react'
 import { useState } from 'react'
-import { Link, Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Crumbs } from '../../components/Crumbs'
 import { Icon } from '../../components/Icon'
 import { MaterialCover } from '../../components/learning/MaterialCover'
 import { NoteSheet } from '../../components/learning/NoteSheet'
+import { NoteStack } from '../../components/learning/NoteStack'
 import { SheetFlip } from '../../components/learning/SheetFlip'
+import { NoteToc } from '../../components/learning/NoteToc'
 import { PartDots } from '../../components/learning/PartDots'
 import { PartNames } from '../../components/learning/PartNames'
 import { useProgressText } from '../../components/learning/Progress'
@@ -17,17 +18,20 @@ import { useStudyLine } from '../../components/learning/studyStep'
 import { useDirectProgress } from '../../components/learning/useDirectProgress'
 import { LogRow } from '../../components/log/LogRow'
 import { MaterialForm } from '../../components/MaterialForm'
-import { Empty, inkSlide, Jelly, Tip } from '../../components/ui'
+import { PageTabs } from '../../components/PageTabs'
+import { Sheet } from '../../components/Sheet'
+import { Empty, Jelly, Tip } from '../../components/ui'
 import { fmtDate, fmtMinutes } from '../../lib/format'
 import { focusOf } from '../../lib/learning/buckets'
 import { sourceOf } from '../../lib/compose/linkMeta'
 import { barWidth, materialProgress, remainingOf } from '../../lib/learning/metrics'
 import { lastTouched } from '../../lib/learning/sessions'
 import { Mood } from '../../components/Mood'
-import { isBlankNote, noteHeading } from '../../lib/learning/notes'
+import { isBlankNote, noteOutline } from '../../lib/learning/notes'
 import { timeOf } from '../../lib/log'
 import { hasParts, partLabel, partWord, partsOf } from '../../lib/learning/parts'
 import type { MaterialPart, StudySession } from '../../lib/learning/types'
+import { useMedia } from '../../lib/useMedia'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 import { useStream } from './StreamLayout'
@@ -75,6 +79,11 @@ export function Material() {
   /* Открытый лист помнится по id, а не по номеру: номера сдвигаются, когда
      лист удаляют или дописывают новый, и запомненный номер показал бы соседа. */
   const [openNote, setOpenNote] = useState<string | null>(null)
+  /* Колонка оглавления стоит рядом с листом, пока рядом есть место. Уже —
+     её нет, и оглавление открывается листом со счётчика. Порог тот же, что
+     у `.notes-read` в `learning.css`. */
+  const narrow = useMedia('(max-width: 960px)')
+  const [toc, setToc] = useState(false)
 
   if (loading) return null
 
@@ -120,10 +129,32 @@ export function Material() {
   const label = (part: MaterialPart, i: number) =>
     partLabel(part, i, (n) => t(word === 'lecture' ? 'part.lecture' : 'part.chapter', { n }))
 
+  /* Листы в порядке оглавления: по главам, а не по написанию. Тем же порядком
+     их листают стрелки и лист поверх экрана. */
+  const groups = noteOutline(mine, chapters)
+  const ordered = groups.flatMap((g) => g.notes)
+  // Оглавление из одной строки ничего не оглавляет: листы одной главы — или
+  // вовсе без глав — листаются стрелками в шапке листа, как раньше.
+  const withToc = groups.length > 1
+
   /** Открытый лист. Пока ни один не выбран — последний написанный. */
-  const found = mine.findIndex((n) => n.id === openNote)
-  const at = found >= 0 ? found : mine.length - 1
-  const shown = mine[at] ?? null
+  const found = ordered.findIndex((n) => n.id === openNote)
+  const latest = mine[mine.length - 1]?.id
+  const at = found >= 0 ? found : ordered.findIndex((n) => n.id === latest)
+  const shown = ordered[at] ?? null
+
+  /* Какой это лист своей главы. Говорится только там, где листов к главе
+     несколько, — это исключение, и о нём надо знать, листая. */
+  const group = groups.find((g) => g.notes.some((n) => n.id === shown?.id))
+  const inGroup =
+    withToc && group && group.notes.length > 1 && shown ? (
+      <span className="small faint mono note-of">
+        {t(word === 'lecture' ? 'note.inLecture' : 'note.inChapter', {
+          n: group.notes.indexOf(shown) + 1,
+          total: group.notes.length,
+        })}
+      </span>
+    ) : null
 
   /** Сделать материал фокусом потока значит сесть за него: статус ставится
       первым же шагом. Порядок обязателен — `updateMaterial` сам снимает
@@ -307,181 +338,179 @@ export function Material() {
         </div>
       </div>
 
-      <div className="tabs" role="tablist" aria-label={material.title}>
-        {TABS.map((key) => {
-          const on = current === key
-          const name = key === 'notes' ? t('nav.notes') : t('material.tabSessions')
-          return (
-            <button
-              key={key}
-              type="button"
-              role="tab"
-              aria-selected={on}
-              className={`tab${on ? ' on' : ''}`}
-              onClick={() => setTab(key)}
-            >
-              {/* Имя несёт своё имя ещё и атрибутом: по нему `.tab-label`
-                  держит ширину жирного начертания всегда — см. `index.css`. */}
-              <span className="tab-label" data-label={name}>
-                {name}
-              </span>
-              {counts[key] > 0 && <span className="tab-n">{counts[key]}</span>}
-              {on && (
-                <motion.span
-                  layoutId="material-tab"
-                  className="tab-line"
-                  transition={inkSlide}
-                />
-              )}
-            </button>
-          )
-        })}
-      </div>
+      <PageTabs
+        id="material"
+        label={material.title}
+        value={current}
+        onChange={setTab}
+        items={[
+          {
+            id: 'notes',
+            label: t('nav.notes'),
+            count: counts.notes,
+            add: { label: t('note.add'), onClick: () => setLogging('note') },
+          },
+          {
+            id: 'sessions',
+            label: t('material.tabSessions'),
+            count: counts.sessions,
+            add: { label: t('study.log'), onClick: () => setLogging('log') },
+          },
+        ]}
+      />
 
       {/* Тело вкладки меняется в кадре. Гасить его — значит проводить всю
           страницу через пустоту: см. тот же разбор в `StreamLayout`. О
-          переключении говорит полоска под вкладкой, и этого достаточно. */}
-      {current === 'notes' && (
-        <div className="tab-body">
-          {/* Навигация по листам тем же рядом чипов, каким в чтении отбирают
-              мысли по тегу: один жест, выученный на соседнем экране. Пока
-              листов нет, навигации нет тоже — а с ней и полосы: ряд чипов
-              пуст, и кнопка в ней осталась бы висеть над пустотой одна. */}
-          {shown !== null && (
-            <div className="panel-head">
-              <div className="chips">
-                {mine.map((n, i) => {
-                  // Пустой лист не выдаёт себя за конспект: тихий чип с
-                  // пометкой — открыть, дописать или удалить.
-                  const blank = isBlankNote(n.body, stream.outline)
+          переключении говорит полоска под вкладкой, и этого достаточно.
+
+          И тело одно на все вкладки: меняется только содержимое. Когда у
+          каждой вкладки был свой `.tab-body`, на смене старый уходил раньше,
+          чем вставал новый, страница на миг становилась короче экрана, и
+          браузер прижимал прокрутку к началу — вкладку переключали, стоя на
+          ней, а оказывались у названия. Остающийся узел держит высоту. */}
+      <div className="tab-body">
+        {current === 'notes' && (
+          <>
+            {shown === null ? (
+              <Empty
+                size="sm"
+                art="writing"
+                action={
+                  <Jelly className="btn ghost sm" onClick={() => setLogging('note')}>
+                    {t('note.add')}
+                  </Jelly>
+                }
+              >
+                {t('material.notesEmpty')}
+              </Empty>
+            ) : (
+              <div className={`notes-read${withToc ? ' with-toc' : ''}`}>
+                {withToc && !narrow && (
+                  <NoteToc
+                    groups={groups}
+                    current={shown.id}
+                    label={label}
+                    onPick={(g) => setOpenNote(g.notes[0].id)}
+                    layout="material-toc"
+                  />
+                )}
+                <NoteStack
+                  at={at}
+                  count={ordered.length}
+                  onPrev={() => setOpenNote(ordered[at - 1].id)}
+                  onNext={() => setOpenNote(ordered[at + 1].id)}
+                >
+                  <NoteSheet
+                    note={shown}
+                    stream={stream}
+                    /* Шапка листа — про место в пачке: справа «1/2 в главе» и
+                       листалка у самого края, где она стоит на месте, что бы ни
+                       менялось левее. Правка — про сам лист, и стоит у его
+                       заголовка тем же карандашом, что у книги и материала. */
+                    edit={
+                      <Tip text={t('note.edit')}>
+                        {/* `Jelly`, а не ссылка: тот же отклик на руку, что у
+                            карандаша материала в крошке. Лист ложится поверх
+                            материала и сразу на правку. */}
+                        <Jelly
+                          className="icon-act"
+                          aria-label={t('note.edit')}
+                          onClick={() =>
+                            navigate(`/learning/${stream.slug}/n/${shown.id}`, {
+                              state: {
+                                ...noteLinkState(
+                                  location,
+                                  ordered.map((n) => n.id),
+                                ),
+                                edit: true,
+                              },
+                            })
+                          }
+                        >
+                          <Icon name="pen" size={17} />
+                        </Jelly>
+                      </Tip>
+                    }
+                    actions={
+                      <div className="row-tight sheet-head-actions">
+                        {inGroup}
+                        <SheetFlip
+                          at={at}
+                          count={ordered.length}
+                          onPrev={() => setOpenNote(ordered[at - 1].id)}
+                          onNext={() => setOpenNote(ordered[at + 1].id)}
+                          onList={withToc && narrow ? () => setToc(true) : undefined}
+                        />
+                      </div>
+                    }
+                  />
+                </NoteStack>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* Занятия — строками в линейку, как «Сессии» у книги: событие, не вещь,
+            и подложки ему не положено. */}
+        {current === 'sessions' && (
+          <>
+            {mySessions.length === 0 ? (
+              <Empty
+                size="sm"
+                art="reading"
+                action={
+                  <Jelly className="btn ghost sm" onClick={() => setLogging('log')}>
+                    {t('study.log')}
+                  </Jelly>
+                }
+              >
+                {t('material.sessionsEmpty')}
+              </Empty>
+            ) : (
+              <div className="log">
+                {mySessions.map((x) => {
+                  const l = line(x, material, parts)
+                  const written = mine.filter(
+                    (n) => n.session_id === x.id && !isBlankNote(n.body, stream.outline),
+                  )
                   return (
-                    <button
-                      key={n.id}
-                      type="button"
-                      className={`chip${i === at ? ' on' : ''}${blank ? ' blank' : ''}`}
-                      aria-pressed={i === at}
-                      onClick={() => setOpenNote(n.id)}
+                    <LogRow
+                      key={x.id}
+                      step={l.step}
+                      unit={l.unit}
+                      detail={l.detail}
+                      meter={l.meter}
+                      mood={x.rating && <Mood rating={x.rating} />}
+                      when={[
+                        fmtDate(x.date, locale),
+                        timeOf(x.date, x.created_at),
+                        x.minutes && l.unit ? fmtMinutes(x.minutes, locale) : null,
+                      ]}
+                      written={written.length}
+                      open={openSession === x.id}
+                      onToggle={() => setOpenSession(openSession === x.id ? null : x.id)}
+                      onEdit={() => setEditingSession(x)}
                     >
-                      {noteHeading(n, parts, label) ?? fmtDate(n.date, locale)}
-                      {blank && <span className="chip-note">{t('note.blankChip')}</span>}
-                    </button>
+                      <div className="store-grid">
+                        {written.map((n) => (
+                          <StudyNoteCard
+                            key={n.id}
+                            note={n}
+                            material={material}
+                            parts={parts}
+                            slug={stream.slug}
+                            siblings={written.map((w) => w.id)}
+                          />
+                        ))}
+                      </div>
+                    </LogRow>
                   )
                 })}
               </div>
-              <Jelly className="btn sm" onClick={() => setLogging('note')}>
-                {t('note.add')}
-              </Jelly>
-            </div>
-          )}
-
-          {shown === null ? (
-            <Empty
-              size="sm"
-              art="writing"
-              action={
-                <Jelly className="btn ghost sm" onClick={() => setLogging('note')}>
-                  {t('note.add')}
-                </Jelly>
-              }
-            >
-              {t('material.notesEmpty')}
-            </Empty>
-          ) : (
-            <NoteSheet
-              note={shown}
-              stream={stream}
-              lead={
-                <SheetFlip
-                  at={at}
-                  count={mine.length}
-                  onPrev={() => setOpenNote(mine[at - 1].id)}
-                  onNext={() => setOpenNote(mine[at + 1].id)}
-                />
-              }
-              actions={
-                <div className="row-tight">
-                  <Link
-                    className="link-btn"
-                    to={`/learning/${stream.slug}/n/${shown.id}`}
-                    // Лист ложится поверх материала и сразу на правку — ссылка
-                    // так и называется.
-                    state={{
-                      ...noteLinkState(
-                        location,
-                        mine.map((n) => n.id),
-                      ),
-                      edit: true,
-                    }}
-                  >
-                    {t('note.edit')}
-                  </Link>
-                </div>
-              }
-            />
-          )}
-        </div>
-      )}
-
-      {/* Занятия — строками в линейку, как «Сессии» у книги: событие, не вещь,
-          и подложки ему не положено. */}
-      {current === 'sessions' && (
-        <div className="tab-body">
-          {mySessions.length === 0 ? (
-            <Empty
-              size="sm"
-              art="reading"
-              action={
-                <Jelly className="btn ghost sm" onClick={() => setLogging('log')}>
-                  {t('study.log')}
-                </Jelly>
-              }
-            >
-              {t('material.sessionsEmpty')}
-            </Empty>
-          ) : (
-            <div className="log">
-              {mySessions.map((x) => {
-                const l = line(x, material, parts)
-                const written = mine.filter(
-                  (n) => n.session_id === x.id && !isBlankNote(n.body, stream.outline),
-                )
-                return (
-                  <LogRow
-                    key={x.id}
-                    step={l.step}
-                    unit={l.unit}
-                    detail={l.detail}
-                    meter={l.meter}
-                    mood={x.rating && <Mood rating={x.rating} />}
-                    when={[
-                      fmtDate(x.date, locale),
-                      timeOf(x.date, x.created_at),
-                      x.minutes && l.unit ? fmtMinutes(x.minutes, locale) : null,
-                    ]}
-                    written={written.length}
-                    open={openSession === x.id}
-                    onToggle={() => setOpenSession(openSession === x.id ? null : x.id)}
-                    onEdit={() => setEditingSession(x)}
-                  >
-                    <div className="store-grid">
-                      {written.map((n) => (
-                        <StudyNoteCard
-                          key={n.id}
-                          note={n}
-                          material={material}
-                          parts={parts}
-                          slug={stream.slug}
-                          siblings={written.map((w) => w.id)}
-                        />
-                      ))}
-                    </div>
-                  </LogRow>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
 
       {editing && (
         <MaterialForm
@@ -503,6 +532,20 @@ export function Material() {
         />
       )}
 
+      {toc && shown && (
+        <Sheet title={t('note.toc')} onClose={() => setToc(false)}>
+          <NoteToc
+            groups={groups}
+            current={shown.id}
+            label={label}
+            onPick={(g) => {
+              setOpenNote(g.notes[0].id)
+              setToc(false)
+            }}
+            layout="material-toc-sheet"
+          />
+        </Sheet>
+      )}
       {logging === 'log' && (
         <StudySheet stream={stream} material={material} onClose={() => setLogging(null)} />
       )}

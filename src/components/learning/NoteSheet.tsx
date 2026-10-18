@@ -26,6 +26,7 @@ export function NoteSheet({
   note,
   stream,
   lead,
+  edit,
   actions,
   children,
 }: {
@@ -33,6 +34,12 @@ export function NoteSheet({
   stream: Stream
   /** Перед подписью листа, слева: листание. Подальше от действий справа. */
   lead?: ReactNode
+  /**
+   * Правка — карандашом справа от заголовка: она про сам лист, и стоит у его
+   * имени, а не в служебной строке, где справа навигация по пачке. Листа без
+   * заголовка карандаш ждёт в служебной строке, после подписи.
+   */
+  edit?: ReactNode
   actions?: ReactNode
   children?: ReactNode
 }) {
@@ -54,23 +61,22 @@ export function NoteSheet({
             {stream.accent && <i className="stream-dot" data-accent={stream.accent} />}
             {stream.name} · {fmtDate(note.date, locale)}
           </span>
+          {!heading && edit}
         </span>
         {actions}
       </div>
 
       {children ?? (
         <>
-          {heading && <h1 className="sheet-title-big">{heading}</h1>}
-
-          {note.tags.length > 0 && (
-            <div className="chips sheet-tags">
-              {note.tags.map((g) => (
-                <span key={g} className="chip sm">
-                  {t(`tag.${g}`)}
-                </span>
-              ))}
-            </div>
-          )}
+          {heading &&
+            (edit ? (
+              <div className="sheet-title-row">
+                <h1 className="sheet-title-big">{heading}</h1>
+                {edit}
+              </div>
+            ) : (
+              <h1 className="sheet-title-big">{heading}</h1>
+            ))}
 
           <div className="sheet-rule" aria-hidden />
 
