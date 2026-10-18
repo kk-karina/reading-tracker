@@ -286,7 +286,7 @@ const BASE = {
     ru: 'Open Library хорошо знает англоязычные издания и почти не знает русские.',
     en: 'Open Library knows English editions well and Russian ones barely at all.',
   },
-  'chart.rhythm': { ru: 'Страниц в день за полгода', en: 'Pages per day, last 26 weeks' },
+  'chart.rhythm': { ru: 'Страниц в день за 4 месяца', en: 'Pages per day, last 16 weeks' },
   'chart.weeks': { ru: 'Страниц по неделям', en: 'Pages per week' },
   'chart.weekdays': { ru: 'Пн Ср Пт', en: 'M W F' },
   'chart.rest': { ru: 'Отдых', en: 'Rest' },
@@ -295,8 +295,11 @@ const BASE = {
     ru: 'Стопки начнут расти с первой сессии',
     en: 'The piles start growing with your first session',
   },
-  'chart.now': { ru: 'сейчас', en: 'now' },
+  // Номер недели по ISO под столбиком. «W» и по-русски: так он напечатан в
+  // календарях, и в узкой колонке три знака влезают там, где дата — нет.
+  'chart.week': { ru: 'W{n}', en: 'W{n}' },
   'chart.avg': { ru: 'в среднем {n}', en: 'avg {n}' },
+  'chart.weekAgo': { ru: 'неделю назад {v}', en: 'a week ago {v}' },
 
 
   'progress.noBooks': { ru: 'Пока ни одной книги', en: 'No books yet' },

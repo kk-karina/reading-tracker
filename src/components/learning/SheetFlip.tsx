@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { useLocale } from '../../state/LocaleContext'
 
 /**
@@ -15,6 +16,9 @@ import { useLocale } from '../../state/LocaleContext'
  *
  * С `onList` счётчик — дверь к оглавлению: на узком экране колонки с главами
  * рядом с листом нет, и прыгнуть через десять листов иначе нечем.
+ *
+ * С `label` вместо счётчика стоит подпись — так листают не листы, а время на
+ * графике: «‹ май – окт. 2026 ›». Тогда и стрелки называются по-своему.
  */
 export function SheetFlip({
   at,
@@ -22,27 +26,39 @@ export function SheetFlip({
   onPrev,
   onNext,
   onList,
+  label,
+  prevLabel,
+  nextLabel,
 }: {
   at: number
   count: number
   onPrev: () => void
   onNext: () => void
   onList?: () => void
+  label?: ReactNode
+  prevLabel?: string
+  nextLabel?: string
 }) {
   const { t } = useLocale()
+  const prev = prevLabel ?? t('note.prev')
+  const next = nextLabel ?? t('note.next')
   return (
     <span className="row-tight sheet-flip">
       <button
         type="button"
         className="link-btn"
         disabled={at <= 0}
-        aria-label={t('note.prev')}
-        title={t('note.prev')}
+        aria-label={prev}
+        title={prev}
         onClick={onPrev}
       >
         ‹
       </button>
-      {onList ? (
+      {label !== undefined ? (
+        // Подпись — слова и даты, а не счётчик: без моноширинного, которым
+        // набраны «2/5».
+        <span className="small faint">{label}</span>
+      ) : onList ? (
         <button
           type="button"
           className="link-btn sheet-flip-n small mono"
@@ -62,8 +78,8 @@ export function SheetFlip({
         type="button"
         className="link-btn"
         disabled={at >= count - 1}
-        aria-label={t('note.next')}
-        title={t('note.next')}
+        aria-label={next}
+        title={next}
         onClick={onNext}
       >
         ›

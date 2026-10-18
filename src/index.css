@@ -1129,21 +1129,74 @@ button.chip:active {
 .wk-label.is-now {
   color: var(--ink);
 }
-/* Twelve dates only fit on a wide panel. Narrower, they thin out to every
-   second and then every third — always counted back from "now", which is the
-   one date that has to survive. */
-@media (max-width: 860px) {
-  .wk-labels > :nth-child(odd) {
-    visibility: hidden;
+/* Month labels carry a two-digit year. A narrow chart has no room for six
+   of them, so there the year stays only where it starts — the first month
+   and January — the way a calendar prints it. Measured on the chart, not the
+   window: a chart in half a panel is narrow on the widest screen. */
+.chart.wk {
+  container-type: inline-size;
+}
+@container (max-width: 400px) {
+  .wk-year:not(.keep) {
+    display: none;
   }
 }
-@media (max-width: 560px) {
-  .wk-labels > * {
-    visibility: hidden;
-  }
-  .wk-labels > :nth-child(3n) {
-    visibility: visible;
-  }
+/* A tick across this week's bar: where a usual week stands by today. Ink, not
+   lemon — it is a thin mark (see --brand-strong), and wider than the bar so it
+   reads as a level the bar is measured against, not as part of the bar. */
+.wk-mark {
+  position: absolute;
+  left: 50%;
+  width: 84%;
+  max-width: 58px;
+  height: 2px;
+  margin-bottom: -1px;
+  border-radius: 1px;
+  background: var(--ink);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* ---------- this week against the last ---------- */
+
+.race-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+.race-svg polyline {
+  fill: none;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+.race-ago {
+  stroke: var(--line-2);
+  stroke-width: 2;
+}
+.race-now {
+  stroke: var(--brand-strong);
+  stroke-width: 2.5;
+}
+/* The gap between the two lines today — the answer, so it is drawn, not left
+   for the eye to measure. */
+.race-gap {
+  stroke: var(--ink-3);
+  stroke-width: 1;
+  stroke-dasharray: 3 3;
+}
+.race-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--brand);
+  box-shadow: 0 0 0 1.5px var(--ink);
+  transform: translate(-50%, 50%);
+  pointer-events: none;
+  z-index: 1;
 }
 
 .top-topics {
@@ -3354,11 +3407,30 @@ a.group-subject:hover .group-subject-title {
 
 /* One column, top to bottom: nothing sits beside anything, so nothing has to
    agree about its height. */
-.dash-stack {
-  display: flex;
-  flex-direction: column;
+/* Две панели рядом, когда каждая отвечает на свой вопрос и ни одной не нужна
+   вся ширина: график на всю страницу раздувает точки и столбики до размеров,
+   в которых их уже не читают, а разглядывают. Панели одной высоты, и у
+   панели-графика шапка прижата вверх, а график — вниз: подписи под обоими
+   графиками стоят на одной линии. Узко — снова стопкой. */
+.dash-cols {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 24px;
   margin-top: 24px;
+}
+.dash-cols > .rhythm-panel {
+  align-content: space-between;
+}
+/* Панель с шапкой-подписью: шапка вверху, график внизу — тоже вровень с
+   соседом. */
+.dash-cols > .panel:not(.rhythm-panel) {
+  display: grid;
+  align-content: space-between;
+}
+@media (max-width: 860px) {
+  .dash-cols {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* A thought is a card, not a row in a box: cards in a grid row settle to one

@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, test, vi } from 'vitest'
-import { addDays, fmtDate, fmtMinutes, fromISO, toISO } from './format'
+import { addDays, fmtDate, fmtMinutes, fromISO, isoWeek, toISO } from './format'
 
 describe('fmtMinutes', () => {
   test('shows bare minutes under an hour', () => {
@@ -65,5 +65,22 @@ describe('addDays', () => {
     const noon = new Date(2026, 8, 14, 12, 30, 45)
     expect(addDays(noon, 1).getHours()).toBe(0)
     expect(toISO(addDays(noon, 1))).toBe('2026-09-15')
+  })
+})
+
+describe('isoWeek', () => {
+  test('counts weeks from the one holding the year’s first Thursday', () => {
+    expect(isoWeek(fromISO('2026-10-18'))).toBe(42)
+    expect(isoWeek(fromISO('2026-10-12'))).toBe(42)
+    expect(isoWeek(fromISO('2026-01-01'))).toBe(1) // a Thursday
+  })
+
+  test('the first days of January can belong to last year’s final week', () => {
+    expect(isoWeek(fromISO('2027-01-01'))).toBe(53) // Friday; 2026 has 53 weeks
+    expect(isoWeek(fromISO('2021-01-03'))).toBe(53)
+  })
+
+  test('the last days of December can open next year', () => {
+    expect(isoWeek(fromISO('2025-12-29'))).toBe(1)
   })
 })

@@ -357,7 +357,8 @@
 }
 /* Текстовыделитель. Акцент системы — лимонный маркер по умолчанию, остальные
    цвета приходят именем в data-mark. */
-.sheet-body mark {
+.sheet-body mark,
+.pace mark {
   background: var(--mark, var(--mark-lemon));
   color: var(--ink);
   padding: 0 2px;
@@ -1510,6 +1511,21 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
   letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums;
 }
+/* Число с единицей — одна пара, пары между собой — шире: «3 ч  05 мин», а не
+   четыре равных слова. */
+.reading-part {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.reading-part + .reading-part {
+  margin-left: 4px;
+}
+/* Подпись в строке числа отходит от него дальше, чем единица: «45 мин» —
+   одно, «на этой неделе» — уже другое. */
+.reading-tail {
+  margin-left: 6px;
+}
 .reading-suffix {
   font-size: 15px;
   font-weight: 400;
@@ -1532,6 +1548,117 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
   margin: 0;
   text-align: right;
   font-size: 12.5px;
+  color: var(--ink-3);
+}
+
+/* ---------- время ----------
+   Та же шапка, что у ритма: число раньше подписи. Справа — разрез; на узком
+   экране он уходит под число, а не сминает его. */
+.time-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px 24px;
+}
+/* Показание сжимается и переносит вердикт, а не выталкивает разрез под себя:
+   переключатель стоит справа, пока рядом с ним влезает само число. */
+.time-head > .reading {
+  flex: 1 1 200px;
+  min-width: 0;
+}
+/* Пустой график держит посередине своего поля значок и строку — над осью
+   и подписями, которые остаются видны. Снизу — строка подписей (24 px). */
+.time-chart {
+  position: relative;
+}
+.time-blank {
+  position: absolute;
+  inset: 0 0 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+}
+/* Значок в мягком лимонном круге: тот же лимон, что у маркера, только
+   разбавленный — здесь нечего нажимать, и кружок не должен звать. */
+.time-blank-ico {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--brand-soft);
+  color: var(--ink);
+}
+.time-blank p {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 13px;
+  line-height: 1.45;
+  text-align: center;
+  text-wrap: balance;
+  color: var(--ink-2);
+}
+/* Под графиком одна строка: листалка окна в левом нижнем углу, сумма и
+   подписи справа, по нижнему краю. Подпись у текущего окна длиннее, чем у
+   прошлых, поэтому рядом с листалкой правая колонка всегда держит две
+   строки — иначе на листании подвал прыгал бы из одной в две. */
+.time-panel {
+  container-type: inline-size;
+}
+.time-foot {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: end;
+  gap: 6px 16px;
+}
+.time-foot .sheet-flip {
+  grid-row: 1;
+  grid-column: 1;
+}
+.time-foot .rhythm-cap {
+  grid-column: 2;
+}
+.time-foot:has(.sheet-flip) .rhythm-cap {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  min-height: 2lh;
+}
+/* Узко подписям рядом с листалкой не хватает места: они встают строкой
+   выше, а листалка остаётся в углу. */
+@container (max-width: 460px) {
+  .time-foot {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .time-foot .rhythm-cap {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .time-foot .sheet-flip {
+    grid-row: 2;
+    justify-self: start;
+  }
+  .time-foot:has(.sheet-flip) .rhythm-cap {
+    min-height: 0;
+  }
+}
+/* Вердикт — третьей строкой под подписью, тем же кеглем: это продолжение
+   фразы «3 ч 25 мин на этой неделе», а не отдельный значок. */
+.pace {
+  margin: 10px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.pace b {
+  font-weight: 500;
+  color: var(--ink);
+}
+.pace-why {
   color: var(--ink-3);
 }
 

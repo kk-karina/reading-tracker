@@ -50,7 +50,7 @@ describe('Rhythm', () => {
   test.each([
     ['2026-09-14', 'a Monday, which opens the last column'],
     ['2026-09-13', 'a Sunday, which closes it'],
-    ['2026-11-05', 'a day whose half-year reaches back past the autumn change'],
+    ['2026-11-05', 'a day whose four months reach back past the autumn change'],
   ])('draws the whole week around %s — %s', (today) => {
     vi.setSystemTime(at(today))
     const svg = renderToStaticMarkup(
@@ -59,7 +59,7 @@ describe('Rhythm', () => {
     const days = drawnDays(svg)
 
     expect(days).toContain(today) // the current week is on the chart at all
-    expect(days).toContain(toISO(addDays(at(today), -7 * 25))) // half a year is still covered
+    expect(days).toContain(toISO(addDays(at(today), -7 * 15))) // sixteen weeks are still covered
     expect(new Set(days).size).toBe(days.length) // no day drawn twice
 
     // The grid ends on the Sunday of this week, and every day after today in
@@ -95,7 +95,10 @@ describe('WeeklyBars', () => {
   const bars = (html: string): number[] =>
     [...html.matchAll(/class="wk-bar" style="height:(\d+(?:\.\d+)?)px"/g)].map((m) => Number(m[1]))
 
-  const week = (sessions: Session[]) => renderToStaticMarkup(<WeeklyBars sessions={sessions} />)
+  const week = (sessions: Session[]) =>
+    renderToStaticMarkup(
+      <WeeklyBars byDate={pagesByDate(sessions)} unit={(n) => `${n} p.`} empty="empty" />,
+    )
 
   test('a heavier week is a taller bar, in proportion', () => {
     const today = todayISO()

@@ -5,6 +5,7 @@ import { RecentStudyNotes } from '../../components/learning/RecentStudyNotes'
 import { StreamFocus } from '../../components/learning/StreamFocus'
 import { StreamGoal } from '../../components/learning/StreamGoal'
 import { StreamStats } from '../../components/learning/StreamStats'
+import { StreamTime } from '../../components/learning/StreamTime'
 import { NoteAddSheet } from '../../components/learning/NoteAddSheet'
 import { StudySheet } from '../../components/learning/StudySheet'
 import { Zone } from '../../components/Zone'
@@ -62,7 +63,8 @@ export function StreamDashboard() {
   const mine = notesOfStream(materials, notes, stream.id)
   // Ритм — по всему, что было: занятие без конспекта тоже живой день. Вес
   // кружка — сколько записей в нём, занятий и конспектов вместе.
-  const entries = [...notesOfStream(materials, sessions, stream.id), ...mine].map((r) => r.date)
+  const streamSessions = notesOfStream(materials, sessions, stream.id)
+  const entries = [...streamSessions, ...mine].map((r) => r.date)
   const focus = focusOf(materials, stream.focus_material_id)
 
   return (
@@ -91,21 +93,26 @@ export function StreamDashboard() {
       </section>
 
       {/* Без заголовка: «Как идёт» над графиком ритма ничего не добавляло —
-          панель с числами и точками отвечает на этот вопрос собой. */}
+          панель с числами и точками отвечает на этот вопрос собой. Ритм
+          отвечает «садилась ли», время рядом — «сколько»; две колонки, а не
+          стопка: на всю ширину оба графика раздуваются. */}
       <Zone>
-        <div className="panel rhythm-panel">
-          {/* Страйк берёт все конспекты, а не только этого потока: училась
-              вчера другому — день не пропал. */}
-          <StreamStats streamNotes={mine} allNotes={notes} allSessions={sessions} />
-          <div className="rhythm-plot">
-            <Rhythm
-              byDate={notesByDate(entries)}
-              label={t('chart.studyRhythm')}
-              unit={(n) => t('study.entries', { n })}
-              full={NOTES_FOR_FULL_DOT}
-            />
-            <p className="rhythm-cap">{t('stream.activeWeeks', { n: activeWeeks(entries) })}</p>
+        <div className="dash-cols">
+          <div className="panel rhythm-panel">
+            {/* Страйк берёт все конспекты, а не только этого потока: училась
+                вчера другому — день не пропал. */}
+            <StreamStats streamNotes={mine} allNotes={notes} allSessions={sessions} />
+            <div className="rhythm-plot">
+              <Rhythm
+                byDate={notesByDate(entries)}
+                label={t('chart.studyRhythm')}
+                unit={(n) => t('study.entries', { n })}
+                full={NOTES_FOR_FULL_DOT}
+              />
+              <p className="rhythm-cap">{t('stream.activeWeeks', { n: activeWeeks(entries) })}</p>
+            </div>
           </div>
+          <StreamTime sessions={streamSessions} />
         </div>
       </Zone>
 

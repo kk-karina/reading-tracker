@@ -122,9 +122,12 @@ export function Progress() {
         </div>
       </div>
 
-      {/* Графики — одной зоной без шапки: каждая панель называет себя сама. */}
+      {/* Графики — одной зоной без шапки: каждая панель называет себя сама.
+          Двумя колонками, как на дашборде обучения: на всю ширину точки
+          ритма и столбики раздувались до размеров, в которых их уже не
+          читают, а разглядывают. */}
       <Zone>
-        <div className="dash-stack">
+        <div className="dash-cols">
           <section className="panel">
             <div className="panel-head">
               <div className="label">{t('chart.rhythm')}</div>
@@ -142,7 +145,11 @@ export function Progress() {
               <div className="label">{t('chart.weeks')}</div>
               <span className="small faint">{t('progress.weeksHint')}</span>
             </div>
-            <WeeklyBars sessions={sessions} />
+            <WeeklyBars
+              byDate={pagesByDate(sessions)}
+              unit={(n) => t('count.pages', { n })}
+              empty={t('chart.weeksEmpty')}
+            />
           </section>
         </div>
       </Zone>

@@ -159,9 +159,44 @@ export const LEARNING = {
   'stream.notesAll': { ru: 'Все конспекты', en: 'All notes' },
   'stream.notesNone': { ru: 'Конспектов пока нет', en: 'No notes yet' },
   'stream.resourcesNone': { ru: 'В бэклоге пусто', en: 'The backlog is empty' },
+  // Панель «Время». Вердикт сравнивает с тем же днём недели, и слова обязаны
+  // это говорить: «обычно к концу среды», а не «обычно за неделю».
+  'time.label': { ru: 'Время на поток', en: 'Time on this stream' },
+  'time.thisWeek': { ru: 'на этой неделе', en: 'this week' },
+  'time.view': { ru: 'Разрез', en: 'View' },
+  'time.months': { ru: 'Месяцы', en: 'Months' },
+  'time.weeks': { ru: 'Недели', en: 'Weeks' },
+  'time.race': { ru: 'Гонка', en: 'Race' },
+  'time.ahead': { ru: 'впереди на {v}', en: '{v} ahead' },
+  'time.behind': { ru: 'до обычного {v}', en: '{v} short of usual' },
+  'time.even': { ru: 'как обычно', en: 'on par' },
+  'time.usualBy': { ru: 'обычно к концу {day} {v}', en: 'usually {v} by the end of {day}' },
+  // Родительный падеж: «к концу среды». Понедельник первым, как в неделе.
+  'time.days': {
+    ru: 'понедельника вторника среды четверга пятницы субботы воскресенья',
+    en: 'Monday Tuesday Wednesday Thursday Friday Saturday Sunday',
+  },
+  'time.fresh': { ru: 'сравнивать пока не с чем', en: 'nothing to compare with yet' },
+  'time.tick': { ru: 'черта — обычно к этому дню', en: 'the tick: where you usually are by today' },
+  'time.tickTip': { ru: 'обычно к этому дню {v}', en: 'usually {v} by today' },
+  'time.tickMonth': { ru: 'черта — обычно к этому числу', en: 'the tick: where you usually are by this date' },
+  'time.tickTipMonth': { ru: 'обычно к этому числу {v}', en: 'usually {v} by this date' },
+  'time.total': { ru: 'всего {v}', en: '{v} in total' },
+  'time.earlier': { ru: 'Раньше', en: 'Earlier' },
+  'time.later': { ru: 'Позже', en: 'Later' },
+  'time.ghost': { ru: 'серым — прошлая неделя, {v}', en: 'grey: last week, {v}' },
+  'time.untimed': {
+    ru: { one: '{n} занятие без времени', few: '{n} занятия без времени', many: '{n} занятий без времени' },
+    en: { one: '{n} session without time', other: '{n} sessions without time' },
+  },
+  'time.empty': {
+    // Неразрывный пробел после «в»: в узкой строке предлог не висит в конце.
+    ru: 'Впиши минуты в\u00a0занятие, чтобы увидеть статистику',
+    en: 'Add minutes to a session to see statistics',
+  },
   'chart.studyRhythm': {
-    ru: 'Конспектов в день за полгода',
-    en: 'Notes per day, last 26 weeks',
+    ru: 'Конспектов в день за 4 месяца',
+    en: 'Notes per day, last 16 weeks',
   },
 
   'stream.name': { ru: 'Название', en: 'Name' },
