@@ -8,6 +8,14 @@
   --ink-3: #757b80;
   --line: #e2e4e6;
   --line-2: #c9ccd0;
+  /* Серая заливка — одна на всё, что подкладывают под содержимое: подложка
+     сегментов, дорожка прогресса, пустая клетка ритма, подсветка строки под
+     курсором. Раньше это был `--line`, цвет линий, и плашка выходила тяжелее
+     того, что на ней стоит. Чернила на просвет, а не цвет: одна и та же
+     заливка светлая и на бумаге панели, и на сером фоне страницы, где стоят
+     полосы фильтров, — сплошной светлый серый там был бы светлее самой
+     страницы. */
+  --well: rgba(14, 16, 18, 0.04);
 
   --brand: #e9f86b;
   --brand-2: #dcf03f;
@@ -452,7 +460,7 @@ button {
   gap: 4px;
   padding: 4px;
   border-radius: var(--r-md);
-  background: var(--line);
+  background: var(--well);
 }
 .seg.grid3 {
   display: grid;
@@ -959,7 +967,7 @@ button.chip:active {
   transition: background 0.2s;
 }
 .rose-legend button:hover {
-  background: var(--bg);
+  background: var(--well);
 }
 .rose-legend .sw {
   width: 10px;
@@ -1051,6 +1059,31 @@ button.chip:active {
 }
 .chart-tip span {
   color: rgba(255, 255, 255, 0.65);
+}
+
+/* ---------- rhythm: a square per day ----------
+   Одна заливка, без ступеней густоты: садилась в этот день или нет. Шкала
+   из оттенков жёлтого выходила то оливковой, то желточной, а сколько именно
+   прочитано, говорит подсказка. Пустой день — общей серой заливкой
+   `--well`; волосок по краю держит клетку на белой панели, как у GitHub. */
+.rhythm {
+  display: grid;
+  gap: 10px;
+}
+.rh-cell {
+  fill: var(--well);
+  stroke: rgba(14, 16, 18, 0.06);
+  stroke-width: 1;
+  /* SVG растянут по панели вдвое-втрое, и волосок вместе с ним становился
+     рамкой: пустые дни читались обведёнными. */
+  vector-effect: non-scaling-stroke;
+}
+.rh-cell.is-on {
+  fill: var(--brand);
+}
+.rh-cell.rh-future {
+  fill: none;
+  stroke: var(--line);
 }
 
 /* ---------- weeks: pages per week as bars ---------- */
@@ -1220,7 +1253,7 @@ button.chip:active {
   grid-column: 1 / -1;
   height: 6px;
   border-radius: 3px;
-  background: var(--line);
+  background: var(--well);
   overflow: hidden;
 }
 .top-bar {
@@ -1803,7 +1836,7 @@ a.log-title:hover {
   flex: 1;
   height: 4px;
   border-radius: 999px;
-  background: var(--line);
+  background: var(--well);
   overflow: hidden;
 }
 .strip-bar span {
@@ -2508,7 +2541,7 @@ a.group-subject:hover .group-subject-title {
   height: 3px;
   margin-top: 5px;
   border-radius: 999px;
-  background: var(--line-2);
+  background: var(--well);
   overflow: hidden;
 }
 
@@ -3196,7 +3229,7 @@ a.group-subject:hover .group-subject-title {
 /* Связь — решённый дубль: подложка тихая, главная кнопка от неё не меняется.
    Два действия рядом: открыть пару и отвязать. */
 .compose-dupe.linked {
-  background: var(--bg);
+  background: var(--well);
 }
 .compose-dupe-acts {
   align-self: center;
@@ -4335,7 +4368,7 @@ a.group-subject:hover .group-subject-title {
 .subject-option:hover,
 .subject-option:focus-visible {
   outline: none;
-  background: var(--bg);
+  background: var(--well);
 }
 .subject-option.on {
   background: var(--brand-soft);
@@ -4434,7 +4467,7 @@ a.group-subject:hover .group-subject-title {
   flex: 1;
   height: 6px;
   border-radius: 999px;
-  background: var(--line);
+  background: var(--well);
   overflow: hidden;
 }
 .step-meter span {

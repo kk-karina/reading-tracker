@@ -147,7 +147,7 @@
 .icon-btn:hover,
 .icon-btn.active {
   color: var(--ink);
-  background: var(--bg);
+  background: var(--well);
 }
 
 /* ---------- аватар ----------
@@ -170,7 +170,7 @@
   display: block;
   flex: none;
   border-radius: 50%;
-  background: var(--line);
+  background: var(--well);
 }
 .avatar-face .avatar {
   position: absolute;

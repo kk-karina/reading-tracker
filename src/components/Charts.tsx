@@ -37,16 +37,21 @@ export function pagesByDate(sessions: Session[]): Map<string, number> {
   return m
 }
 
-/* ---------- Rhythm: one dot per day, last 16 weeks ---------- */
+/* ---------- Rhythm: one square per day, last 16 weeks ---------- */
 
 /* Four months, not half a year: on both dashboards the rhythm sits in half
    the width, next to the chart that explains it, and sixteen weeks is what
-   fits there as dots rather than dust. */
+   fits there as squares rather than dust. */
 const WEEKS = 16
 /** Кегль подписей осей в настоящих пикселях — тот же, что у `.wk-cap`. */
 const AXIS_PX = 10
 const CELL = 22
-const PAD_L = 26
+/* Клетка с зазором в четверть себя, как у календаря вкладов на GitHub:
+   уже — и сетка слипается в полосу, шире — и клетки рассыпаются в точки. */
+const SQ = 17
+/* Поле под подписи дней: «Пн» в две буквы на узком экране иначе упирается
+   в первую колонку. */
+const PAD_L = 30
 const PAD_T = 22
 
 /**
@@ -58,27 +63,22 @@ export function Rhythm({
   byDate,
   label,
   unit,
-  full,
   weeks = WEEKS,
+  cap,
 }: {
   byDate: Map<string, number>
   label: string
   unit: (n: number) => string
-  /**
-   * Сколько за день — это «полный» кружок. Без него шкала берётся от максимума
-   * в данных, и там, где за день бывает одна запись, эта одна запись рисуется
-   * самой жирной точкой: страницы дают разброс, конспекты — нет.
-   */
-  full?: number
   /** Сколько недель назад. По умолчанию — сколько влезает в половину ширины. */
   weeks?: number
+  /** Вывод под сеткой. */
+  cap?: ReactNode
 }) {
   const { t, locale } = useLocale()
   const [tip, setTip] = useState<Tip | null>(null)
   const today = todayISO()
 
   const start = addDays(mondayOf(fromISO(today)), -(weeks - 1) * 7)
-  const max = full ?? Math.max(1, ...byDate.values())
 
   const W = PAD_L + weeks * CELL
   const H = PAD_T + 7 * CELL
@@ -134,82 +134,97 @@ export function Rhythm({
     fromISO(iso).toLocaleDateString(tag, { weekday: 'short', day: 'numeric', month: 'short' })
 
   return (
-    <div ref={box} className="chart" style={{ aspectRatio: `${W} / ${H}` }}>
-      <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" role="img" aria-label={label}>
-        {months.map((m) => (
-          <text key={m.x} x={m.x} y={12} className="chart-axis" style={{ fontSize: axis }}>
-            {m.label}
-          </text>
-        ))}
-        {[0, 2, 4].map((d, i) => (
-          <text
-            key={d}
-            x={8}
-            y={PAD_T + d * CELL + CELL / 2}
-            className="chart-axis"
-            dominantBaseline="middle"
-            style={{ fontSize: axis }}
-          >
-            {t('chart.weekdays').split(' ')[i]}
-          </text>
-        ))}
-        {cells.map((c) => {
-          /* The days of this week that have not happened yet are drawn too, a
-             shade paler than a rest day: a column that stops mid-air reads as
-             missing data, where a pale dot reads as a day still to come. They
-             take no tooltip — there is nothing to say about them. */
-          if (c.future) {
-            return (
-              <circle key={c.iso} data-day={c.iso} cx={c.x} cy={c.y} r={1.6} fill="var(--line)" />
-            )
-          }
-          const share = Math.min(1, c.value / max)
-          // Самая полная точка оставляет до соседей зазор в треть клетки:
-          // сливаясь, точки перестают быть днями и становятся пятном.
-          const r = c.value === 0 ? 1.6 : 2.5 + share * 4.5
-          return (
-            <g key={c.iso} data-day={c.iso}>
-              <circle
-                cx={c.x}
-                cy={c.y}
-                r={r}
-                fill={c.value === 0 ? 'var(--line-2)' : 'var(--brand-strong)'}
-                fillOpacity={c.value === 0 ? 1 : 0.35 + share * 0.65}
-              />
-              {/* Today is where the eye starts, so it is ringed whether it was
-                  read on or not — and the ring keeps a floor, or a rest day
-                  today would wear one two pixels wide. */}
-              {c.iso === today && (
-                <circle
-                  cx={c.x}
-                  cy={c.y}
-                  r={Math.max(r + 3, 5.5)}
-                  fill="none"
-                  stroke="var(--ink)"
-                  strokeWidth={1.4}
+    <div className="rhythm">
+      <div ref={box} className="chart" style={{ aspectRatio: `${W} / ${H}` }}>
+        <svg viewBox={`0 0 ${W} ${H}`} className="chart-svg" role="img" aria-label={label}>
+          {months.map((m) => (
+            <text key={m.x} x={m.x} y={12} className="chart-axis" style={{ fontSize: axis }}>
+              {m.label}
+            </text>
+          ))}
+          {/* Все семь дней, а не через один: с подписанными Пн, Ср, Пт
+              пустые строки между ними читались пропущенными, как сбой. */}
+          {t('chart.weekdays').split(' ').map((day, d) => (
+            <text
+              key={d}
+              x={8}
+              y={PAD_T + d * CELL + CELL / 2}
+              className="chart-axis"
+              dominantBaseline="middle"
+              style={{ fontSize: axis }}
+            >
+              {day}
+            </text>
+          ))}
+          {cells.map((c) => {
+            /* The days of this week that have not happened yet are drawn too,
+               as an empty outline: a column that stops mid-air reads as missing
+               data, where an outline reads as a day still to come. They take
+               no tooltip — there is nothing to say about them. */
+            if (c.future) {
+              return (
+                <rect
+                  key={c.iso}
+                  data-day={c.iso}
+                  className="rh-cell rh-future"
+                  x={c.x - SQ / 2}
+                  y={c.y - SQ / 2}
+                  width={SQ}
+                  height={SQ}
+                  rx={3.5}
                 />
-              )}
-              <rect
-                x={c.x - CELL / 2}
-                y={c.y - CELL / 2}
-                width={CELL}
-                height={CELL}
-                fill="transparent"
-                onMouseEnter={() =>
-                  setTip({
-                    x: (c.x / W) * 100,
-                    y: ((c.y - CELL / 2) / H) * 100,
-                    text: c.value ? unit(c.value) : t('chart.rest'),
-                    sub: dayLabel(c.iso),
-                  })
-                }
-                onMouseLeave={() => setTip(null)}
-              />
-            </g>
-          )
-        })}
-      </svg>
-      <Tooltip tip={tip} />
+              )
+            }
+            return (
+              <g key={c.iso} data-day={c.iso}>
+                <rect
+                  className={`rh-cell${c.value > 0 ? ' is-on' : ''}`}
+                  x={c.x - SQ / 2}
+                  y={c.y - SQ / 2}
+                  width={SQ}
+                  height={SQ}
+                  rx={3.5}
+                />
+                {/* Today is where the eye starts, so it is framed whether it
+                    was read on or not — in the gap around the square, so the
+                    frame never covers its colour. */}
+                {c.iso === today && (
+                  <rect
+                    x={c.x - SQ / 2 - 2.5}
+                    y={c.y - SQ / 2 - 2.5}
+                    width={SQ + 5}
+                    height={SQ + 5}
+                    rx={5.5}
+                    fill="none"
+                    stroke="var(--ink)"
+                    strokeWidth={1.5}
+                    vectorEffect="non-scaling-stroke"
+                  />
+                )}
+                <rect
+                  x={c.x - CELL / 2}
+                  y={c.y - CELL / 2}
+                  width={CELL}
+                  height={CELL}
+                  fill="transparent"
+                  onMouseEnter={() =>
+                    setTip({
+                      x: (c.x / W) * 100,
+                      y: ((c.y - CELL / 2) / H) * 100,
+                      text: c.value ? unit(c.value) : t('chart.rest'),
+                      sub: dayLabel(c.iso),
+                    })
+                  }
+                  onMouseLeave={() => setTip(null)}
+                />
+              </g>
+            )
+          })}
+        </svg>
+        <Tooltip tip={tip} />
+      </div>
+
+      {cap}
     </div>
   )
 }

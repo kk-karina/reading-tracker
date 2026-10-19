@@ -349,7 +349,7 @@
   font-size: 0.9em;
   padding: 1px 5px;
   border-radius: 4px;
-  background: var(--bg);
+  background: var(--well);
 }
 .sheet-body a {
   text-decoration: underline;
@@ -442,7 +442,7 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
   cursor: pointer;
   transition: background 0.15s;
 }
-.note-fmt:hover { background: var(--line); }
+.note-fmt:hover { background: var(--well); }
 /* Нажатое — чернилами, а не лимоном: у маркера лимон уже занят под образец
    цвета, и две лимонные плашки рядом не дают понять, что из них включено. */
 .note-fmt.on {
@@ -502,7 +502,7 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
   outline-offset: -2px;
 }
 @media (hover: hover) and (pointer: fine) {
-  .note-swatch:hover { background: var(--line); }
+  .note-swatch:hover { background: var(--well); }
 }
 @media (prefers-reduced-motion: reduce) {
   .note-swatch::before { transition: box-shadow 0.15s ease; }
@@ -557,7 +557,7 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
   margin: 4px 9px;
   background: var(--line);
 }
-.note-menu-row:hover { background: var(--line); }
+.note-menu-row:hover { background: var(--well); }
 .note-menu-row.on { background: var(--brand-soft); }
 .note-fmt-glyph {
   display: inline-flex;
@@ -933,7 +933,7 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
   background: color-mix(in srgb, var(--cat) 30%, var(--paper));
 }
 .stream-list a:hover {
-  background: var(--bg);
+  background: var(--well);
 }
 
 /* ---------- дашборд потока ----------
@@ -1539,10 +1539,6 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
 }
 .reading-scope {
   color: var(--ink-3);
-}
-.rhythm-plot {
-  display: grid;
-  gap: 10px;
 }
 .rhythm-cap {
   margin: 0;

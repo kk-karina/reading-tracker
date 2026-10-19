@@ -42,9 +42,6 @@ import { useStream } from './StreamLayout'
  * полоса подразделов прямо над ними; теперь ссылка живёт в шапке зоны.
  */
 
-/** Три конспекта за день — уже много; на этом кружок ритма набирает полный вес. */
-const NOTES_FOR_FULL_DOT = 3
-
 export function StreamDashboard() {
   const { t } = useLocale()
   const stream = useStream()
@@ -102,15 +99,12 @@ export function StreamDashboard() {
             {/* Страйк берёт все конспекты, а не только этого потока: училась
                 вчера другому — день не пропал. */}
             <StreamStats streamNotes={mine} allNotes={notes} allSessions={sessions} />
-            <div className="rhythm-plot">
-              <Rhythm
-                byDate={notesByDate(entries)}
-                label={t('chart.studyRhythm')}
-                unit={(n) => t('study.entries', { n })}
-                full={NOTES_FOR_FULL_DOT}
-              />
-              <p className="rhythm-cap">{t('stream.activeWeeks', { n: activeWeeks(entries) })}</p>
-            </div>
+            <Rhythm
+              byDate={notesByDate(entries)}
+              label={t('chart.studyRhythm')}
+              unit={(n) => t('study.entries', { n })}
+              cap={<p className="rhythm-cap">{t('stream.activeWeeks', { n: activeWeeks(entries) })}</p>}
+            />
           </div>
           <StreamTime sessions={streamSessions} />
         </div>

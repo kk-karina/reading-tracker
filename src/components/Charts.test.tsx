@@ -24,8 +24,8 @@ const session = (date: string, pages: number): Session => ({
 const drawnDays = (svg: string): string[] =>
   [...svg.matchAll(/data-day="([^"]+)"/g)].map((m) => m[1])
 
-/** The dots for days that have not happened yet, told apart by their colour. */
-const paleDots = (svg: string): number => [...svg.matchAll(/fill="var\(--line\)"/g)].length
+/** The outlines for days that have not happened yet. */
+const futureCells = (svg: string): number => [...svg.matchAll(/rh-future/g)].length
 
 describe('Rhythm', () => {
   beforeAll(() => {
@@ -63,13 +63,13 @@ describe('Rhythm', () => {
     expect(new Set(days).size).toBe(days.length) // no day drawn twice
 
     // The grid ends on the Sunday of this week, and every day after today in
-    // it is one of the pale dots.
+    // it is one of the empty outlines.
     const sunday = toISO(addDays(at(today), 6 - ((at(today).getDay() + 6) % 7)))
     expect(days.at(-1)).toBe(sunday)
-    expect(paleDots(svg)).toBe(days.filter((d) => d > today).length)
+    expect(futureCells(svg)).toBe(days.filter((d) => d > today).length)
   })
 
-  test('rings today even when nothing was read', () => {
+  test('frames today even when nothing was read', () => {
     vi.setSystemTime(at('2026-09-14'))
     const svg = renderToStaticMarkup(
       <Rhythm byDate={pagesByDate([])} label="rhythm" unit={(n) => `${n}`} />,

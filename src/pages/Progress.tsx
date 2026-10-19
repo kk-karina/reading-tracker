@@ -131,7 +131,6 @@ export function Progress() {
           <section className="panel">
             <div className="panel-head">
               <div className="label">{t('chart.rhythm')}</div>
-              <span className="small faint">{t('progress.rhythmHint')}</span>
             </div>
             <Rhythm
               byDate={pagesByDate(sessions)}

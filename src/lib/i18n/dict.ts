@@ -288,7 +288,7 @@ const BASE = {
   },
   'chart.rhythm': { ru: 'Страниц в день за 4 месяца', en: 'Pages per day, last 16 weeks' },
   'chart.weeks': { ru: 'Страниц по неделям', en: 'Pages per week' },
-  'chart.weekdays': { ru: 'Пн Ср Пт', en: 'M W F' },
+  'chart.weekdays': { ru: 'Пн Вт Ср Чт Пт Сб Вс', en: 'M T W T F S S' },
   'chart.rest': { ru: 'Отдых', en: 'Rest' },
   'chart.nothing': { ru: 'Ничего', en: 'Nothing' },
   'chart.weeksEmpty': {
@@ -325,7 +325,6 @@ const BASE = {
   'progress.stuck': { ru: 'Застряли', en: 'Gone quiet' },
   'progress.stuckHint': { ru: 'Читаю, но больше двух недель без сессий', en: 'Being read, but untouched for over two weeks' },
   'progress.stuckEmpty': { ru: 'Ничего не простаивает', en: 'Nothing is stalling' },
-  'progress.rhythmHint': { ru: 'Точка на день. Крупнее — больше страниц.', en: 'One dot per day. Bigger is more pages.' },
   'progress.weeksHint': { ru: 'Последние 12 недель', en: 'Last 12 weeks' },
   'progress.noSessions': { ru: 'Сессий пока нет', en: 'No sessions yet' },  'progress.ofTotal': { ru: 'из {n}', en: 'of {n}' },
   // The unit on its own: the tile already shows the number in large type.
