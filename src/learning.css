@@ -2734,6 +2734,12 @@ a.sheet-page.slip:focus-visible {
   line-height: 1.2;
   letter-spacing: -0.018em;
 }
+/* Бейдж главного приза — справа от названия, в строку: под ним он
+   добавлял строке высоту, и номер шага съезжал вниз от названия. */
+.sl-t .pbadge {
+  margin: 0 0 0 10px;
+  vertical-align: 1px;
+}
 .sl-date {
   margin-left: 8px;
   font-size: 13px;

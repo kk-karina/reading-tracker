@@ -172,8 +172,10 @@ function StepList({
           <li key={s.id} className="sl-row" data-st="later">
             <span className="sl-mark">{i + 1}</span>
             <div className="sl-text">
-              <div className="sl-t">{title}</div>
-              {i === last && <span className="pbadge">{t('steps.mainPrize')}</span>}
+              <div className="sl-t">
+                {title}
+                {i === last && <span className="pbadge">{t('steps.mainPrize')}</span>}
+              </div>
             </div>
           </li>
         )
