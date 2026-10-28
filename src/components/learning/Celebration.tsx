@@ -27,18 +27,22 @@ const FOCUSABLE = 'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"
  * увёл бы фокус в его поля.
  *
  * `replay` — показать уже открытый приз ещё раз: без хлопушек и без
- * возгласа, с датой.
+ * возгласа, с датой. Здесь же — `onUndo`: стикер, отклеенный из любопытства,
+ * обнаруживают как раз тогда, когда открывают его снова.
  */
 export function Celebration({
   step,
   final,
   replay,
   onClose,
+  onUndo,
 }: {
   step: StreamStep
   final: boolean
   replay: boolean
   onClose: () => void
+  /** Вернуть шаг в незакрытые. Есть только у последнего закрытого. */
+  onUndo?: () => void
 }) {
   const { t, locale } = useLocale()
   const reduce = useReducedMotion()
@@ -145,6 +149,11 @@ export function Celebration({
               <Jelly className="btn" data-autofocus onClick={onClose}>
                 {t('cheer.ok')}
               </Jelly>
+              {onUndo && (
+                <button type="button" className="link-btn bam-undo" onClick={onUndo}>
+                  {t('cheer.oops')}
+                </button>
+              )}
             </div>
           </div>
         </motion.div>

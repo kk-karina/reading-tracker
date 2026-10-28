@@ -3106,8 +3106,19 @@ span.se-grip {
 }
 .bam-actions {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
   margin-top: 32px;
+}
+/* Тихо и под кнопкой: это выход для случайности, а не второй ответ на
+   праздник. На графите — его же вторые чернила. */
+.bam-undo {
+  color: #9aa1a8;
+}
+.bam-undo:hover {
+  color: #f6f7f8;
+  border-color: #f6f7f8;
 }
 .bam-actions .btn {
   min-width: 132px;

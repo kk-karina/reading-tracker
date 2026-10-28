@@ -16,7 +16,7 @@ import { MaterialForm } from '../../components/MaterialForm'
 import { StreamForm } from '../../components/StreamForm'
 import { todayISO } from '../../lib/format'
 import { focusOf } from '../../lib/learning/buckets'
-import { isFinal, stepsOf } from '../../lib/learning/steps'
+import { canUndo, isFinal, stepsOf } from '../../lib/learning/steps'
 import type { StreamStep } from '../../lib/learning/types'
 import { notesOfStream } from '../../lib/learning/notes'
 import { activeWeeks, notesByDate } from '../../lib/learning/rhythm'
@@ -198,6 +198,14 @@ export function StreamDashboard() {
             if (!cheer.replay) setIntro((n) => n + 1)
             setCheer(null)
           }}
+          onUndo={
+            cheer.replay && canUndo(ladder, cheer.step.id)
+              ? () => {
+                  void updateStep(cheer.step.id, { done_on: null })
+                  setCheer(null)
+                }
+              : undefined
+          }
         />
       )}
       {adding && <MaterialForm streamId={stream.id} onClose={() => setAdding(false)} />}

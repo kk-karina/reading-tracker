@@ -480,4 +480,5 @@ export const LEARNING = {
   'cheer.final': { ru: 'Ты дошла до конца!', en: 'You made it to the end!' },
   'cheer.replay': { ru: 'Твой приз', en: 'Your prize' },
   'cheer.ok': { ru: 'Ура!', en: 'Yay!' },
+  'cheer.oops': { ru: 'Упс, отклеила случайно', en: 'Oops, peeled it by accident' },
 } satisfies Dict
