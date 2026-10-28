@@ -8,6 +8,7 @@ import {
   type MaterialPart,
   type MaterialStatus,
   type Stream,
+  type StreamStep,
   type StudyNote,
   type StudySession,
 } from '../types'
@@ -19,6 +20,7 @@ import type {
   NewStream,
   NewStudyNote,
   NewStudySession,
+  NewStreamStep,
 } from './types'
 
 const KEY = 'readingtracker.learning.v3'
@@ -126,7 +128,7 @@ function migrateV2(old: SnapshotV2): LearningSnapshot {
     }
   }
 
-  return { streams, materials, parts, sessions: [], notes }
+  return { streams, materials, parts, sessions: [], notes, steps: [] }
 }
 
 /**
@@ -168,6 +170,9 @@ const fill = (snap: LearningSnapshot): LearningSnapshot => ({
       }))
     : [],
   notes: snap.notes.map((n) => ({ ...n, part_id: n.part_id ?? null, session_id: n.session_id ?? null })),
+  // Шаги к цели появились последними: снимок без них — поток, который ещё не
+  // разбивали на шаги.
+  steps: Array.isArray(snap.steps) ? snap.steps : [],
 })
 
 function read(): LearningSnapshot {
@@ -303,5 +308,17 @@ export const localLearning: LearningStore = {
   },
   async deleteNote(id) {
     change((snap) => rules.removeNote(snap, id))
+  },
+
+  async addStep(item: NewStreamStep) {
+    const made: StreamStep = { ...item, done_on: item.done_on ?? null, id: uid(), created_at: now() }
+    change((snap) => rules.insert(snap, 'steps', made))
+    return made
+  },
+  async updateStep(id, patch) {
+    change((snap) => rules.updateStep(snap, id, patch))
+  },
+  async deleteStep(id) {
+    change((snap) => rules.removeStep(snap, id))
   },
 }

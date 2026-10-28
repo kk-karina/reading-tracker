@@ -18,6 +18,7 @@ import type {
   Material,
   MaterialPart,
   Stream,
+  StreamStep,
   StudyNote,
   StudySession,
 } from '../types'
@@ -29,6 +30,7 @@ export interface Rows {
   parts: MaterialPart
   sessions: StudySession
   notes: StudyNote
+  steps: StreamStep
 }
 
 /** Кладёт строку, которую уже создало хранилище, в снимок. */
@@ -85,6 +87,9 @@ export function removeStream(snap: LearningSnapshot, id: string): LearningSnapsh
     parts: snap.parts.filter((p) => !gone.has(p.material_id)),
     sessions: snap.sessions.filter((x) => !gone.has(x.material_id)),
     notes: snap.notes.filter((n) => !gone.has(n.material_id)),
+    // Шаги — к цели потока: без потока им незачем быть. В базе то же делает
+    // каскад по `stream_id`.
+    steps: snap.steps.filter((x) => x.stream_id !== id),
   }
 }
 
@@ -178,6 +183,7 @@ export function updateMaterial(
         }))
       : snap.sessions,
     notes: snap.notes,
+    steps: snap.steps,
   }
 }
 
@@ -190,6 +196,7 @@ export function removeMaterial(snap: LearningSnapshot, id: string): LearningSnap
     parts: snap.parts.filter((p) => p.material_id !== id),
     sessions: snap.sessions.filter((x) => x.material_id !== id),
     notes: snap.notes.filter((n) => n.material_id !== id),
+    steps: snap.steps,
   }
 }
 
@@ -261,4 +268,16 @@ export function updateNote(
 
 export function removeNote(snap: LearningSnapshot, id: string): LearningSnapshot {
   return { ...snap, notes: snap.notes.filter((n) => n.id !== id) }
+}
+
+export function updateStep(
+  snap: LearningSnapshot,
+  id: string,
+  patch: Partial<StreamStep>,
+): LearningSnapshot {
+  return { ...snap, steps: snap.steps.map((x) => (x.id === id ? { ...x, ...patch } : x)) }
+}
+
+export function removeStep(snap: LearningSnapshot, id: string): LearningSnapshot {
+  return { ...snap, steps: snap.steps.filter((x) => x.id !== id) }
 }

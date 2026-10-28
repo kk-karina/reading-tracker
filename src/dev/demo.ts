@@ -16,6 +16,7 @@ import type {
   Material,
   MaterialPart,
   Stream,
+  StreamStep,
   StudyNote,
   StudySession,
 } from '../lib/learning/types'
@@ -417,6 +418,28 @@ function learning(): LearningSnapshot {
     parts,
     sessions,
     notes,
+    // Лесенка к цели «Интерфейсов»: первый шаг пройден, второй — текущий.
+    steps: (
+      [
+        ['Пройти курс по сетке', 'Ужин в любимом месте', 'Обязательно сходи и отпразднуй, какая ты молодец', 'h02', 12],
+        ['Собрать дашборд с нуля', 'Вечер кино с попкорном', 'Тот фильм, который давно откладывала', 'h17', null],
+        ['Прочитать «Refactoring UI»', 'Новая книжка', 'Ту самую, из бэклога', 'h08', null],
+        ['Показать работу на ревью', 'День спа', 'Ты заслужила тишину и тёплую воду', 'h06', null],
+        ['Выпустить свой интерфейс', 'Что-то ценное', 'Ты это заслужила, выбирай без оглядки', 'h03', null],
+      ] as const
+    ).map(
+      ([title, prize, wish, image, ago], i): StreamStep => ({
+        id: `${PREFIX}step-${i}`,
+        stream_id: ui.id,
+        title,
+        prize,
+        wish,
+        image,
+        sort: i,
+        done_on: ago === null ? null : daysAgo(ago),
+        created_at: stamp(40),
+      }),
+    ),
   }
 }
 

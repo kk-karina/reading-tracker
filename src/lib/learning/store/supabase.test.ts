@@ -88,18 +88,19 @@ const aMaterial = {
 }
 
 describe('загрузка', () => {
-  it('читает пять таблиц', async () => {
+  it('читает шесть таблиц', async () => {
     const { sb, calls } = fakeClient()
     const snap = await createSupabaseLearningStore(sb).load()
 
     expect(calls.map((c) => c.table).sort()).toEqual([
       'material_parts',
       'materials',
+      'stream_steps',
       'streams',
       'study_notes',
       'study_sessions',
     ])
-    expect(snap).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [] })
+    expect(snap).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [], steps: [] })
   })
 
   it('отказ одной таблицы не оставляет соседние отказы без ожидающего', async () => {

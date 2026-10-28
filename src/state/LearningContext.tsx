@@ -15,6 +15,7 @@ import {
   type NewStream,
   type NewStudyNote,
   type NewStudySession,
+  type NewStreamStep,
 } from '../lib/learning/store'
 import { carried, carryOver, markCarried, worthCarrying } from '../lib/learning/store/carry'
 import { localLearning } from '../lib/learning/store/local'
@@ -26,6 +27,7 @@ import {
   type Material,
   type MaterialPart,
   type Stream,
+  type StreamStep,
   type StudyNote,
   type StudySession,
 } from '../lib/learning/types'
@@ -69,6 +71,10 @@ interface LearningValue extends LearningSnapshot {
   updateNote(id: string, patch: Partial<StudyNote>): Promise<void>
   deleteNote(id: string): Promise<void>
 
+  addStep(item: NewStreamStep): Promise<StreamStep | undefined>
+  updateStep(id: string, patch: Partial<StreamStep>): Promise<void>
+  deleteStep(id: string): Promise<void>
+
   /**
    * Сколько строк лежит в браузере сверх облака, и перенос их туда.
    * `null` — переносить нечего или некуда (локальный режим).
@@ -83,7 +89,7 @@ const now = () => new Date().toISOString()
 
 /** Сколько строк в снимке — число для строки в настройках. */
 const size = (s: LearningSnapshot) =>
-  s.streams.length + s.materials.length + s.parts.length + s.sessions.length + s.notes.length
+  s.streams.length + s.materials.length + s.parts.length + s.sessions.length + s.notes.length + s.steps.length
 
 export function LearningProvider({ children }: { children: ReactNode }) {
   const { user } = useAuth()
@@ -273,6 +279,18 @@ export function LearningProvider({ children }: { children: ReactNode }) {
         change(
           (s) => rules.removeNote(s, id),
           () => learningStore.deleteNote(id),
+        ),
+
+      addStep: (x) => add('steps', () => learningStore.addStep(x)),
+      updateStep: (id, p) =>
+        change(
+          (s) => rules.updateStep(s, id, p),
+          () => learningStore.updateStep(id, p),
+        ),
+      deleteStep: (id) =>
+        change(
+          (s) => rules.removeStep(s, id),
+          () => learningStore.deleteStep(id),
         ),
     }),
     [snap, loading, error, pending, carry, add, change],

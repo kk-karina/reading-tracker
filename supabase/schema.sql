@@ -239,11 +239,27 @@ create table if not exists public.study_notes (
   updated_at timestamptz not null default now()
 );
 
+-- Steps towards a stream's goal, each with a prize. See
+-- migrations/010_stream_steps.sql.
+create table if not exists public.stream_steps (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
+  stream_id uuid not null references public.streams(id) on delete cascade,
+  title text not null default '',
+  prize text not null default '',
+  wish text not null default '',
+  image text,
+  sort integer not null default 0,
+  done_on date,
+  created_at timestamptz not null default now()
+);
+
 alter table public.streams enable row level security;
 alter table public.materials enable row level security;
 alter table public.material_parts enable row level security;
 alter table public.study_sessions enable row level security;
 alter table public.study_notes enable row level security;
+alter table public.stream_steps enable row level security;
 
 -- Policies have no "if not exists", so they are dropped first: running this
 -- file a second time on a live database must not stop on its own first run.
@@ -262,6 +278,9 @@ create policy "own study sessions" on public.study_sessions
 drop policy if exists "own study notes" on public.study_notes;
 create policy "own study notes" on public.study_notes
   for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
+drop policy if exists "own steps" on public.stream_steps;
+create policy "own steps" on public.stream_steps
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
 
 create index if not exists streams_user_sort on public.streams (user_id, sort);
 create index if not exists materials_stream on public.materials (user_id, stream_id, sort);
@@ -269,6 +288,7 @@ create index if not exists material_parts_material on public.material_parts (mat
 create index if not exists study_sessions_material on public.study_sessions (material_id, date desc);
 create index if not exists study_notes_material on public.study_notes (material_id, date desc);
 create index if not exists study_notes_session on public.study_notes (session_id);
+create index if not exists stream_steps_stream on public.stream_steps (stream_id, sort);
 create unique index if not exists materials_book on public.materials (book_id)
   where book_id is not null;
 create unique index if not exists study_sessions_book_session on public.study_sessions (book_session_id)

@@ -33,8 +33,8 @@ npm run build
 Needed only if you want the data on more than one device.
 
 1. Create a project at [supabase.com](https://supabase.com) — the free tier is enough.
-2. SQL Editor → paste and run `supabase/schema.sql`. It creates seven tables —
-   three for reading, four for learning — and the row-level security policies
+2. SQL Editor → paste and run `supabase/schema.sql`. It creates nine tables —
+   three for reading, six for learning — and the row-level security policies
    that keep each account's rows to itself.
 3. Authentication → Providers → Email stays on. For a single-user setup you can
    turn "Confirm email" off.

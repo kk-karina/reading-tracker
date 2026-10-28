@@ -2104,3 +2104,1036 @@ a.sheet-page.slip:focus-visible {
     transform: none;
   }
 }
+
+/* ---------- стикер приза ----------
+   Одна анатомия на все места: белая вырубка постоянной толщины (5,5%
+   диаметра) — край самой наклейки, есть всегда. Внутри — картинка или
+   рубашка. Отгибается только рубашка и только внутри вырубки.
+
+   Отгиб — линия сгиба x + y = k внутри слоя рубашки: что за линией,
+   отрезается и отражается поверх — это отогнутый край. Слой повёрнут на
+   четверть оборота, чтобы отгибался правый верхний угол: у картинок там
+   обычно сама вещь, а внизу — белое тело героя, которое ни на что не
+   намекает. `--k` зарегистрировано, поэтому отгиб едет, а не скачет; жест
+   пишет его прямо в элемент (`usePeel`). */
+@property --k {
+  syntax: '<length>';
+  inherits: true;
+  initial-value: 0px;
+}
+.stk {
+  --s: 96px;
+  --si: calc(var(--s) * 0.89 + 1px);
+  --k: calc(var(--si) * 2.2);
+  position: relative;
+  display: block;
+  flex: none;
+  width: var(--s);
+  height: var(--s);
+  transition: --k 0.22s var(--ease-out);
+}
+.stk[data-state='next'] {
+  --k: calc(var(--si) * 1.12);
+}
+.stk-prize,
+.stk-cover,
+.stk-flap {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+}
+.stk-prize {
+  padding: calc(var(--s) * 0.055);
+  background: #fff;
+  box-shadow: 0 calc(var(--s) * 0.04) calc(var(--s) * 0.1) calc(var(--s) * -0.03) rgba(14, 16, 18, 0.35);
+}
+.stk-prize img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.stk-lid {
+  position: absolute;
+  inset: calc(var(--s) * 0.055 - 0.5px);
+  transform: rotate(-90deg);
+}
+.stk-cover {
+  display: grid;
+  place-items: center;
+  background:
+    repeating-linear-gradient(-45deg, rgba(14, 16, 18, 0.07) 0 1.5px, transparent 1.5px 7px),
+    #fffdf3;
+  clip-path: polygon(
+    0 0,
+    min(var(--k), var(--si)) 0,
+    min(var(--k), var(--si)) max(calc(var(--k) - var(--si)), 0px),
+    max(calc(var(--k) - var(--si)), 0px) min(var(--k), var(--si)),
+    0 min(var(--k), var(--si))
+  );
+}
+/* Подарок на рубашке — рукой, чернилами одной толщины. Слой повёрнут ради
+   отгиба, поэтому знак повёрнут обратно и чуть вкось. */
+.stk-gift {
+  width: 62%;
+  height: 62%;
+  overflow: visible;
+  transform: rotate(84deg);
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+/* Тень отогнутого края падает вниз: отражение переворачивает и её, поэтому
+   смещение задано уже отражённым. */
+.stk-flapw {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  transform-origin: calc(var(--k) / 2) calc(var(--k) / 2);
+  transform: matrix(0, -1, -1, 0, 0, 0);
+  filter: drop-shadow(calc(var(--s) * -0.012) calc(var(--s) * 0.03) calc(var(--s) * 0.03) rgba(14, 16, 18, 0.28));
+}
+.stk-flap {
+  background: linear-gradient(135deg, #fff 46%, #f1f2f3 74%, #dcdfe1 100%);
+  clip-path: polygon(
+    min(var(--k), var(--si)) max(calc(var(--k) - var(--si)), 0px),
+    var(--si) max(calc(var(--k) - var(--si)), 0px),
+    var(--si) var(--si),
+    max(calc(var(--k) - var(--si)), 0px) var(--si),
+    max(calc(var(--k) - var(--si)), 0px) min(var(--k), var(--si))
+  );
+}
+.stk.final .stk-prize {
+  background: var(--pearl);
+}
+/* У закрытого целиком отгибать нечего, а отражённый слой всё равно занимал
+   место за краем — и путь начинал прокручиваться, когда всё и так влезало. */
+.stk[data-state='later'] .stk-flapw {
+  display: none;
+}
+.stk.final .stk-cover {
+  background: var(--pearl);
+}
+.stk.final .stk-gift {
+  stroke: var(--pearl-ink);
+}
+.stk.final .stk-flap {
+  background: linear-gradient(135deg, #fdf9ff 46%, #efe9fb 74%, #dcd3ef 100%);
+}
+.stk.just {
+  animation: stk-pop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes stk-pop {
+  0% { transform: scale(0.92) rotate(-5deg); }
+  60% { transform: scale(1.05) rotate(2deg); }
+  100% { transform: none; }
+}
+
+/* Хватательная часть — весь стикер: в уголок пальцем не попасть. Курсор и
+   подъём края под курсором говорят «бери». */
+.peel {
+  position: relative;
+  display: block;
+  border-radius: 50%;
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.peel.dragging {
+  cursor: grabbing;
+}
+.peel.dragging .stk {
+  transition: none;
+}
+@media (hover: hover) and (pointer: fine) {
+  .peel:hover .stk[data-state='next'] {
+    --k: calc(var(--si) * 0.96);
+  }
+}
+
+/* ---------- купон: приз ----------
+   Приз — вещь, а не строка, поэтому у него своя бумага: лимонная, с
+   перфорацией и вырубками, как у отрывного талона. Вырубки красятся тем, на
+   чём купон лежит (`--notch`). */
+.coupon {
+  --notch: var(--paper);
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  border-radius: 16px;
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px rgba(14, 16, 18, 0.08);
+}
+.coupon.pearl {
+  background: var(--pearl);
+  box-shadow: inset 0 0 0 1px rgba(120, 96, 170, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+.coupon-art {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 30px 48px 22px 22px;
+}
+.coupon-body {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-self: stretch;
+  padding: 20px 22px 20px 24px;
+  border-left: 1.5px dashed rgba(14, 16, 18, 0.2);
+}
+.coupon-body::before,
+.coupon-body::after {
+  content: '';
+  position: absolute;
+  left: -9px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--notch);
+  box-shadow: inset 0 0 0 1px rgba(14, 16, 18, 0.08);
+}
+.coupon-body::before {
+  top: -8px;
+  clip-path: inset(50% 0 0 0);
+}
+.coupon-body::after {
+  bottom: -8px;
+  clip-path: inset(0 0 50% 0);
+}
+.coupon-title {
+  margin: 0;
+  font: 700 30px/1 var(--font-hand);
+}
+.coupon-text {
+  margin: 8px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  text-wrap: pretty;
+}
+.coupon-alt {
+  align-self: flex-start;
+  margin-top: 12px;
+}
+.coupon.fresh {
+  animation: coupon-rise 0.32s var(--ease-out);
+}
+@keyframes coupon-rise {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+/* «тяни» со стрелкой к уголку — подпись к жесту, рукой, как на полях. */
+.peel-hint {
+  position: absolute;
+  top: -22px;
+  right: -40px;
+  display: flex;
+  align-items: flex-start;
+  font: 600 18px/1 var(--font-hand);
+  color: var(--ink);
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.peel-hint svg {
+  order: 2;
+  width: 34px;
+  height: 30px;
+  margin-top: 10px;
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.peel.dragging .peel-hint {
+  opacity: 0;
+}
+.coupon.vertical {
+  grid-template-columns: 1fr;
+  text-align: center;
+}
+.coupon.vertical .coupon-art {
+  padding: 36px 24px 28px;
+}
+.coupon.vertical .coupon-body {
+  padding: 22px 26px 26px;
+  border-left: 0;
+  border-top: 1.5px dashed rgba(14, 16, 18, 0.2);
+}
+.coupon.vertical .coupon-body::before,
+.coupon.vertical .coupon-body::after {
+  top: -9px;
+  bottom: auto;
+  clip-path: none;
+  box-shadow: none;
+}
+.coupon.vertical .coupon-body::before {
+  left: -8px;
+}
+.coupon.vertical .coupon-body::after {
+  left: auto;
+  right: -8px;
+}
+
+/* «Главный приз» — перламутровым бейджем, а не подписью мелко: финал должен
+   быть виден с первого взгляда на лесенку. */
+.pbadge {
+  display: inline-flex;
+  align-items: center;
+  height: 28px;
+  margin-top: 8px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  background: var(--pearl);
+  box-shadow:
+    inset 0 0 0 1px rgba(120, 96, 170, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 6px 14px -8px rgba(150, 120, 210, 0.6);
+  font-size: 13px;
+  font-weight: 600;
+  color: #3a2d57;
+}
+
+/* ---------- блок шагов на дашборде ----------
+   Бумагой, не графитом: главный предмет экрана — подложка с фокусом под
+   ним. Слева следующий шаг словами, справа путь стикерами. */
+.steps-block {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(0, 1.6fr);
+  align-items: center;
+  gap: 32px;
+  margin: 0 0 20px;
+  padding: 28px 32px 26px;
+  border-radius: 22px;
+  background: var(--paper);
+  box-shadow: 0 1px 2px rgba(14, 16, 18, 0.06), 0 18px 40px -30px rgba(14, 16, 18, 0.4);
+}
+.steps-block.empty {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 28px;
+}
+.sb-empty {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+.sb-main {
+  display: block;
+  min-width: 0;
+  text-align: left;
+}
+/* Подпись над шагом — по просьбе Карины: «твоя следующая цель» говорит, что
+   крупная строка — это не north star потока, а ближайшая ступенька к ней. */
+.sb-kick {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 13.5px;
+  color: var(--ink-3);
+}
+.sb-goal {
+  display: block;
+  font-size: clamp(24px, 2.4vw, 30px);
+  font-weight: 400;
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+  text-wrap: balance;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 6px;
+  transition: text-decoration-color 0.2s ease;
+}
+.sb-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  margin-top: 10px;
+  font-size: 13.5px;
+  color: var(--ink-2);
+  border-bottom: 1px dashed var(--line-2);
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.sb-chev {
+  transform: rotate(-90deg);
+}
+@media (hover: hover) {
+  .sb-main:hover .sb-goal {
+    text-decoration-color: var(--line-2);
+  }
+  .sb-main:hover .sb-link {
+    color: var(--ink);
+    border-color: var(--ink);
+  }
+}
+
+/* Ячейка у шага одной ширины при любом их числе: три шага не разъезжаются
+   с метровыми линиями, двенадцать не сжимаются в горох. Не влезло — путь
+   прокручивается экранами: свайпом, колесом, стрелками; край гаснет с той
+   стороны, где есть ещё. */
+.tl-wrap {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  min-width: 0;
+}
+.tl-view {
+  --fl: 0px;
+  --fr: 0px;
+  flex: 1;
+  min-width: 0;
+  padding: 6px 0 2px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  mask-image: linear-gradient(90deg, transparent 0, #000 var(--fl), #000 calc(100% - var(--fr)), transparent 100%);
+}
+.tl-view::-webkit-scrollbar {
+  display: none;
+}
+.tl-view.more-l {
+  --fl: 40px;
+}
+.tl-view.more-r {
+  --fr: 40px;
+}
+.tl-arrow {
+  display: none;
+  flex: none;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-top: 24px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--line-2);
+  color: var(--ink-2);
+  transition: background 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+.tl-wrap.paged .tl-arrow {
+  display: grid;
+}
+.tl-arrow:hover {
+  background: var(--well);
+  color: var(--ink);
+}
+.tl-arrow:disabled {
+  opacity: 0.3;
+  pointer-events: none;
+}
+.tl-chev.prev {
+  transform: rotate(90deg);
+}
+.tl-chev.next {
+  transform: rotate(-90deg);
+}
+.tl {
+  display: flex;
+  align-items: flex-start;
+  width: max-content;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.tl-wrap:not(.paged) .tl {
+  width: 100%;
+}
+/* Влезает — прокрутки нет вовсе: край отгиба при жесте выходит за стикер, и
+   прокручиваемая коробка обрезала бы его или поехала вбок. */
+.tl-wrap:not(.paged) .tl-view {
+  overflow: visible;
+}
+.tl-i {
+  position: relative;
+  display: flex;
+  flex: 0 0 128px;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-align: center;
+  scroll-snap-align: start;
+}
+.tl-wrap:not(.paged) .tl-i {
+  flex: 1 1 0;
+}
+/* Отрезок пути — от прошлого стикера к этому, по центру стикеров: пройденный
+   чернилами, впереди пунктиром. */
+.tl-i + .tl-i::before {
+  content: '';
+  position: absolute;
+  top: 34px;
+  right: 50%;
+  width: 100%;
+  border-top: 2px dashed var(--line-2);
+}
+.tl-i[data-walked]::before {
+  border-top-style: solid;
+  border-top-color: var(--ink);
+}
+.tl-btn {
+  position: relative;
+  z-index: 1;
+  display: block;
+  border-radius: 50%;
+}
+.tl-l {
+  display: -webkit-box;
+  max-width: 118px;
+  overflow: hidden;
+  font-size: 12.5px;
+  line-height: 1.25;
+  color: var(--ink-3);
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+.tl-i[data-st='done'] .tl-l {
+  color: var(--ink-2);
+}
+.tl-i[data-st='next'] .tl-l {
+  font-weight: 500;
+  color: var(--ink);
+}
+@media (max-width: 900px) {
+  .steps-block {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+    padding: 22px 18px;
+  }
+  .steps-block.empty {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .tl-i {
+    flex-basis: 100px;
+  }
+  .tl-wrap.paged .tl-arrow {
+    display: none;
+  }
+}
+
+/* ---------- лист шагов ---------- */
+.steps-head .sheet-title {
+  margin: 0;
+}
+.steps-sub {
+  margin: 4px 0 0;
+  font-size: 13.5px;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.steps-foot {
+  margin-top: 10px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+}
+
+/* Список: рейка слева, пройденная часть чернилами. Пройденный шаг отмечен
+   не галочкой, а своим стикером — вклеенным в лесенку, чуть вкось: путь и
+   коллекция призов — одно и то же. */
+.sl {
+  margin: 0 0 6px;
+  padding: 0;
+  list-style: none;
+}
+.sl-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  column-gap: 16px;
+  align-items: center;
+  padding: 12px 0;
+}
+.sl-row::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 25px;
+  width: 2px;
+  background: var(--line);
+}
+.sl-row:first-child::before {
+  top: 50%;
+}
+.sl-row:last-child::before {
+  bottom: 50%;
+}
+.sl-row[data-st='done']::before {
+  background: var(--ink);
+}
+.sl-row[data-st='next']::before {
+  background: linear-gradient(var(--ink) 0 26px, var(--line) 26px);
+}
+.sl-row[data-st='next']:first-child::before {
+  top: 26px;
+  background: var(--line);
+}
+.sl-row[data-st='done'] {
+  padding: 10px 0;
+}
+.sl-row[data-st='next'] {
+  align-items: start;
+  padding: 18px 0 22px;
+}
+.sl-mark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1.5px var(--line-2);
+  font: 500 12.5px var(--mono);
+  color: var(--ink-3);
+}
+.sl-row[data-st='next'] .sl-mark {
+  margin-top: 1px;
+  background: var(--brand);
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  color: var(--ink);
+}
+.sl-stk {
+  position: relative;
+  z-index: 1;
+  justify-self: center;
+  border-radius: 50%;
+}
+.sl-row:nth-child(odd) .sl-stk {
+  transform: rotate(-5deg);
+}
+.sl-row:nth-child(even) .sl-stk {
+  transform: rotate(4deg);
+}
+.sl-text {
+  min-width: 0;
+}
+.sl-t {
+  font-size: 15.5px;
+  font-weight: 500;
+  line-height: 1.3;
+  text-wrap: balance;
+}
+.sl-row[data-st='done'] .sl-t {
+  color: var(--ink-2);
+}
+.sl-row[data-st='next'] .sl-t {
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+}
+.sl-date {
+  margin-left: 8px;
+  font-size: 13px;
+  font-weight: 400;
+  color: var(--ink-3);
+  font-variant-numeric: tabular-nums;
+}
+.sl-m {
+  margin-top: 4px;
+  font-size: 13px;
+  color: var(--ink-3);
+}
+.sl-prize {
+  margin-top: 2px;
+  font: 600 19px/1.15 var(--font-hand);
+}
+.sl-row .coupon {
+  margin-top: 16px;
+}
+
+/* На узком экране купон встаёт вертикально, как в празднике: в две
+   колонки пояснение ломалось по слову в строку. */
+@media (max-width: 720px) {
+  .sl-row .coupon {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .sl-row .coupon-art {
+    padding: 30px 22px 24px;
+  }
+  .sl-row .coupon-body {
+    border-left: 0;
+    border-top: 1.5px dashed rgba(14, 16, 18, 0.2);
+  }
+  .sl-row .coupon-body::before,
+  .sl-row .coupon-body::after {
+    top: -9px;
+    bottom: auto;
+    clip-path: none;
+    box-shadow: none;
+  }
+  .sl-row .coupon-body::before {
+    left: -8px;
+  }
+  .sl-row .coupon-body::after {
+    left: auto;
+    right: -8px;
+  }
+  .sl-row {
+    grid-template-columns: 44px minmax(0, 1fr);
+    column-gap: 12px;
+  }
+  .sl-row::before {
+    left: 21px;
+  }
+}
+
+/* Правка — по образцу глав: строка правится на месте, пишется на уходе из
+   поля. Приз — тем же купоном, каким он будет: поля оформлены как его
+   текст, а не как анкета. */
+.se {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.se-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 18px 28px minmax(0, 1fr) auto;
+  column-gap: 12px;
+  align-items: start;
+  padding: 16px 0;
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}
+.se-row:first-child {
+  border-top: 0;
+}
+.se-row.dragging {
+  z-index: 3;
+  border-radius: 14px;
+  border-top-color: transparent;
+  box-shadow: 0 18px 36px -18px rgba(14, 16, 18, 0.45);
+}
+.se-row .sl-mark {
+  margin-top: 3px;
+}
+.se-row .sl-mark[data-done] {
+  background: var(--ink);
+  box-shadow: none;
+  color: var(--brand);
+}
+/* Тянут за ручку: пройденные не двигаются, у них ручки нет. */
+.se-grip {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 28px;
+  margin-top: 3px;
+  border-radius: 4px;
+  color: var(--ink-3);
+  cursor: grab;
+  touch-action: none;
+  transition: color 0.2s ease;
+}
+.se-grip:hover,
+.se-row.dragging .se-grip {
+  color: var(--ink);
+}
+.se-row.dragging .se-grip {
+  cursor: grabbing;
+}
+span.se-grip {
+  cursor: default;
+}
+.se-main {
+  min-width: 0;
+}
+.se-in {
+  width: 100%;
+  padding: 3px 0;
+  border: 0;
+  border-bottom: 1px dashed transparent;
+  border-radius: 0;
+  background: none;
+  color: var(--ink);
+  transition: border-color 0.15s ease;
+}
+.se-in::placeholder {
+  color: var(--ink-3);
+}
+@media (hover: hover) and (pointer: fine) {
+  .se-in:hover {
+    border-bottom-color: var(--line-2);
+  }
+}
+.se-in:focus {
+  outline: none;
+  border-bottom: 1px solid var(--ink);
+}
+.se-title {
+  font-size: 16px;
+  font-weight: 500;
+}
+.se-draft .se-title {
+  grid-column: 3 / span 2;
+}
+.se-prize {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 10px;
+  padding: 8px 14px 8px 8px;
+  border-radius: 16px;
+  background: var(--brand-soft);
+  box-shadow: inset 0 0 0 1px rgba(14, 16, 18, 0.08);
+}
+.se-prize.pearl {
+  background: var(--pearl);
+  box-shadow: inset 0 0 0 1px rgba(120, 96, 170, 0.16);
+}
+.se-pic {
+  flex: none;
+  border-radius: 50%;
+}
+.se-pic[aria-expanded='true'] {
+  box-shadow: 0 0 0 2px var(--brand-soft), 0 0 0 4px var(--ink);
+}
+.se-empty {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: 1.5px dashed var(--ink-3);
+  color: var(--ink-2);
+}
+.se-fields {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+}
+.se-pname {
+  font: 600 21px/1.15 var(--font-hand);
+}
+.se-wish {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.se-note {
+  margin: 8px 0 0;
+  font-size: 12.5px;
+  color: var(--ink-3);
+}
+.se-picker {
+  margin-top: 10px;
+  padding: 12px 12px 8px;
+  border-radius: 14px;
+  background: var(--paper);
+  box-shadow: inset 0 0 0 1px var(--line);
+  animation: coupon-rise 0.22s var(--ease-out);
+}
+.se-lib {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+  gap: 10px;
+  max-height: 200px;
+  margin-top: 12px;
+  padding: 4px 2px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--line-2) transparent;
+}
+.se-lib button {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  transition: transform 0.2s var(--ease-out);
+}
+.se-lib img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+}
+@media (hover: hover) and (pointer: fine) {
+  .se-lib button:hover {
+    transform: translateY(-2px);
+  }
+}
+.se-lib button[aria-pressed='true'] {
+  box-shadow: 0 0 0 2px var(--paper), 0 0 0 4px var(--ink);
+}
+.se-acts {
+  display: flex;
+  margin-top: 1px;
+}
+.se-undo {
+  margin-top: 8px;
+}
+.se-check {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.se-row .se-remove {
+  opacity: 1;
+}
+.se-add {
+  margin-top: 6px;
+}
+
+/* ---------- праздник ---------- */
+.bam-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1100;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  background: rgba(10, 12, 15, 0.55);
+}
+.bam-confetti {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.bam {
+  position: relative;
+  z-index: 1;
+  width: min(440px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow: auto;
+  padding: 46px 36px 36px;
+  border-radius: 26px;
+  background: radial-gradient(80% 46% at 50% 0%, rgba(233, 248, 107, 0.24), transparent 72%), #14171c;
+  box-shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.7);
+  color: #f6f7f8;
+  text-align: center;
+}
+.bam-title {
+  margin: 0;
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+}
+.bam-did {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 14px 0 0;
+  font-size: 15px;
+  color: #d6dade;
+}
+.bam-did .icon {
+  color: var(--brand);
+}
+.bam .coupon {
+  --notch: #14171c;
+  margin-top: 32px;
+  color: var(--ink);
+  box-shadow: 0 18px 36px -22px rgba(233, 248, 107, 0.55);
+}
+.bam .coupon.pearl {
+  background-size: 100% 100%, 220% 100%;
+  box-shadow: inset 0 0 0 1px rgba(120, 96, 170, 0.16), 0 18px 40px -22px rgba(214, 190, 255, 0.7);
+  animation: pearl-sheen 7s linear infinite;
+}
+.bam .coupon.thump {
+  animation: coupon-thump 0.34s 0.22s var(--ease-out);
+}
+.bam .coupon.pearl.thump {
+  animation: coupon-thump 0.34s 0.22s var(--ease-out), pearl-sheen 7s linear infinite;
+}
+@keyframes coupon-thump {
+  30% { transform: translateY(3px) scale(0.992); }
+  100% { transform: none; }
+}
+@keyframes pearl-sheen {
+  from { background-position: 0 0, 0% 0; }
+  to { background-position: 0 0, 220% 0; }
+}
+/* Стикер шлёпается на купон сверху: удар — на 45% хода, к нему привязаны
+   проседание купона и разлёт штрихов. */
+.stk.slap {
+  animation: stk-slap 0.56s var(--ease-out) both;
+}
+@keyframes stk-slap {
+  0% { opacity: 0; transform: scale(1.3) rotate(-14deg); }
+  45% { opacity: 1; transform: scale(0.95) rotate(3deg); }
+  72% { transform: scale(1.03) rotate(-1deg); }
+  100% { transform: none; }
+}
+.bam-ray {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 3px;
+  height: 16px;
+  margin: -8px 0 0 -1.5px;
+  border-radius: 2px;
+  background: var(--ink);
+  opacity: 0;
+  pointer-events: none;
+}
+.bam-prize {
+  margin: 0;
+  font-size: 21px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.015em;
+}
+.bam-wish {
+  margin: 10px 0 0;
+  font: 600 20px/1.15 var(--font-hand);
+  color: var(--ink-2);
+}
+.bam-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 32px;
+}
+.bam-actions .btn {
+  min-width: 132px;
+}
+.bam-seq > * {
+  animation: bam-in 0.35s var(--ease-out) both;
+}
+.bam-seq > :nth-child(2) { animation-delay: 0.06s; }
+.bam-seq > :nth-child(3) { animation-delay: 0.12s; }
+.bam-seq > :nth-child(4) { animation-delay: 0.5s; }
+@keyframes bam-in {
+  from { opacity: 0; transform: translateY(10px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stk,
+  .peel:hover .stk[data-state='next'] {
+    transition: none;
+  }
+  .stk.just,
+  .stk.slap,
+  .coupon.fresh,
+  .se-picker,
+  .bam .coupon.thump,
+  .bam .coupon.pearl,
+  .bam .coupon.pearl.thump {
+    animation: none;
+  }
+  .bam-seq > * {
+    animation: bam-fade 0.2s ease both;
+  }
+  @keyframes bam-fade {
+    from { opacity: 0; }
+  }
+}

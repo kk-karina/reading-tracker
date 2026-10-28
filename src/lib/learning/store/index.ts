@@ -19,4 +19,5 @@ export type {
   NewStream,
   NewStudyNote,
   NewStudySession,
+  NewStreamStep,
 } from './types'

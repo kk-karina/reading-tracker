@@ -90,6 +90,7 @@ function filled(): LearningSnapshot {
         updated_at: BEFORE,
       },
     ],
+    steps: [],
   }
 }
 

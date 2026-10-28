@@ -37,7 +37,7 @@ const aStream = {
 
 describe('localLearning', () => {
   it('начинает с пустого снимка', async () => {
-    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [] })
+    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [], steps: [] })
   })
 
   it('заводит поток и возвращает его из load', async () => {
@@ -197,7 +197,7 @@ describe('localLearning', () => {
 
   it('переживает испорченное хранилище', async () => {
     localStorage.setItem('readingtracker.learning.v1', '{не json')
-    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [] })
+    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [], steps: [] })
   })
 
   it('достраивает недостающие массивы в старом снимке', async () => {
@@ -303,7 +303,7 @@ describe('переезд снимка v1 → v2', () => {
     localStorage.setItem('readingtracker.learning.v1',
       JSON.stringify({ categories: 'oops', materials: [], notes: [] }))
 
-    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [] })
+    expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [], steps: [] })
   })
 })
 
@@ -580,6 +580,7 @@ describe('переезд v2 → v3', () => {
       parts: [],
       sessions: [],
       notes: [],
+      steps: [],
     })
   })
 
@@ -784,5 +785,28 @@ describe('занятия', () => {
     })
     await localLearning.deleteMaterial(m.id)
     expect((await localLearning.load()).sessions).toEqual([])
+  })
+})
+
+describe('шаги к цели', () => {
+  it('заводит, правит и убирает шаг', async () => {
+    const made = await localLearning.addStep({ stream_id: 's1', title: 'Сдать теорию', prize: 'Черноморка', wish: '', image: 'h02', sort: 0 })
+    expect(made.done_on).toBeNull()
+    await localLearning.updateStep(made.id, { done_on: '2026-10-12' })
+    expect((await localLearning.load()).steps).toEqual([{ ...made, done_on: '2026-10-12' }])
+    await localLearning.deleteStep(made.id)
+    expect((await localLearning.load()).steps).toEqual([])
+  })
+
+  it('удаление потока уносит его шаги', async () => {
+    const stream = await localLearning.addStream({ name: 'Вождение', accent: null, outline: null, sort: 0 })
+    await localLearning.addStep({ stream_id: stream.id, title: 'Шаг', prize: '', wish: '', image: null, sort: 0 })
+    await localLearning.deleteStream(stream.id)
+    expect((await localLearning.load()).steps).toEqual([])
+  })
+
+  it('снимок без шагов читается потоком без шагов', async () => {
+    localStorage.setItem('readingtracker.learning.v3', JSON.stringify({ streams: [], materials: [], parts: [], sessions: [], notes: [] }))
+    expect((await localLearning.load()).steps).toEqual([])
   })
 })

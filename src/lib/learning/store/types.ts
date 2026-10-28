@@ -3,6 +3,7 @@ import type {
   Material,
   MaterialPart,
   Stream,
+  StreamStep,
   StudyNote,
   StudySession,
 } from '../types'
@@ -32,6 +33,9 @@ export type NewStudyNote = Pick<
 >
 export type NewStudySession = Omit<StudySession, 'id' | 'created_at' | 'book_session_id' | 'started_ids'> &
   Partial<Pick<StudySession, 'book_session_id' | 'started_ids'>>
+/** Новый шаг всегда не закрыт: закрывают его потом, отклеив стикер. */
+export type NewStreamStep = Pick<StreamStep, 'stream_id' | 'title' | 'prize' | 'wish' | 'image' | 'sort'> &
+  Partial<Pick<StreamStep, 'done_on'>>
 
 export interface LearningStore {
   load(): Promise<LearningSnapshot>
@@ -64,4 +68,10 @@ export interface LearningStore {
   addNote(item: NewStudyNote): Promise<StudyNote>
   updateNote(id: string, patch: Partial<StudyNote>): Promise<void>
   deleteNote(id: string): Promise<void>
+
+  /** По одному, как части: шагов у потока единицы, не сотни. */
+  addStep(item: NewStreamStep): Promise<StreamStep>
+  /** Перестановка — тоже сюда: новый `sort` у каждой сдвинутой строки. */
+  updateStep(id: string, patch: Partial<StreamStep>): Promise<void>
+  deleteStep(id: string): Promise<void>
 }

@@ -189,12 +189,40 @@ export interface StudyNote {
   updated_at: string
 }
 
+/**
+ * Шаг к цели потока и приз за него.
+ *
+ * Большая цель потока (`Stream.goal`) остаётся north star; шаги — лесенка к
+ * ней. Приз Карина придумывает себе сама, и приложение только объявляет его в
+ * момент победы: сходила ли она за ним — уже не его дело, поэтому и полей об
+ * этом нет.
+ *
+ * «Главный приз» — не флаг, а место: им всегда становится последний шаг по
+ * порядку. Переставили — главным стал новый последний, и ничего не надо
+ * переносить между строками.
+ */
+export interface StreamStep {
+  id: string
+  stream_id: string
+  title: string
+  prize: string
+  /** Напутствие к призу. Пустое — строки в празднике нет. */
+  wish: string
+  /** Картинка из зашитого набора (`STICKERS`); пусто — картинка по умолчанию. */
+  image: string | null
+  sort: number
+  /** День, когда шаг закрыт. Пусто — не закрыт. */
+  done_on: string | null
+  created_at: string
+}
+
 export interface LearningSnapshot {
   streams: Stream[]
   materials: Material[]
   parts: MaterialPart[]
   sessions: StudySession[]
   notes: StudyNote[]
+  steps: StreamStep[]
 }
 
 /** Фабрика, не константа: у общего экземпляра массивы мутировали бы на месте. */
@@ -204,4 +232,5 @@ export const emptyLearning = (): LearningSnapshot => ({
   parts: [],
   sessions: [],
   notes: [],
+  steps: [],
 })

@@ -1,6 +1,9 @@
 import { useState } from 'react'
 import { Rhythm } from '../../components/Charts'
 import { BacklogPanel } from '../../components/learning/BacklogPanel'
+import { Celebration } from '../../components/learning/Celebration'
+import { StepsBlock } from '../../components/learning/StepsBlock'
+import { StepsSheet } from '../../components/learning/StepsSheet'
 import { RecentStudyNotes } from '../../components/learning/RecentStudyNotes'
 import { StreamFocus } from '../../components/learning/StreamFocus'
 import { StreamGoal } from '../../components/learning/StreamGoal'
@@ -11,7 +14,10 @@ import { StudySheet } from '../../components/learning/StudySheet'
 import { Zone } from '../../components/Zone'
 import { MaterialForm } from '../../components/MaterialForm'
 import { StreamForm } from '../../components/StreamForm'
+import { todayISO } from '../../lib/format'
 import { focusOf } from '../../lib/learning/buckets'
+import { isFinal, stepsOf } from '../../lib/learning/steps'
+import type { StreamStep } from '../../lib/learning/types'
 import { notesOfStream } from '../../lib/learning/notes'
 import { activeWeeks, notesByDate } from '../../lib/learning/rhythm'
 import { Jelly } from '../../components/ui'
@@ -45,7 +51,7 @@ import { useStream } from './StreamLayout'
 export function StreamDashboard() {
   const { t } = useLocale()
   const stream = useStream()
-  const { materials, parts, notes, sessions } = useLearning()
+  const { materials, parts, notes, sessions, steps, updateStep } = useLearning()
   const [editing, setEditing] = useState(false)
   const [adding, setAdding] = useState(false)
   /**
@@ -56,6 +62,23 @@ export function StreamDashboard() {
    * действие: главное на этом экране по-прежнему одно.
    */
   const [logging, setLogging] = useState<'log' | 'note' | null>(null)
+  /** Лист шагов: `edit` — сразу во втором режиме (пустой поток, «Добавить шаги»). */
+  const [stepsOpen, setStepsOpen] = useState<{ edit: boolean } | null>(null)
+  const [cheer, setCheer] = useState<{ step: StreamStep; replay: boolean } | null>(null)
+  /**
+   * Растёт, когда закрылся праздник по новому шагу: блок и лист вводят в кадр
+   * следующий шаг. Не по самой отметке — та пишется сразу, пока окно ещё
+   * открыто, и вступление прошло бы под ним незамеченным.
+   */
+  const [intro, setIntro] = useState(0)
+  const ladder = stepsOf(steps, stream.id)
+
+  const complete = (step: StreamStep) => {
+    const done_on = todayISO()
+    void updateStep(step.id, { done_on })
+    setCheer({ step: { ...step, done_on }, replay: false })
+  }
+  const replay = (step: StreamStep) => setCheer({ step, replay: true })
 
   const mine = notesOfStream(materials, notes, stream.id)
   // Ритм — по всему, что было: занятие без конспекта тоже живой день. Вес
@@ -66,6 +89,16 @@ export function StreamDashboard() {
 
   return (
     <>
+      {/* Шаги к цели — своим блоком над подложкой: подложка и её кнопка
+          занятия — про фокус, шаги — про дорогу к north star. */}
+      <StepsBlock
+        steps={ladder}
+        intro={intro}
+        onOpen={(edit = false) => setStepsOpen({ edit })}
+        onReplay={replay}
+        onComplete={complete}
+      />
+
       {/* Акцент потока живёт здесь заливкой, а не пипеткой по тонким линиям:
           подложка Professional Growth и подложка Driving отличаются, и это
           единственное место, где цвет потока вообще что-то делает. */}
@@ -144,6 +177,29 @@ export function StreamDashboard() {
       )}
       {logging === 'note' && <NoteAddSheet stream={stream} onClose={() => setLogging(null)} />}
       {editing && <StreamForm stream={stream} onClose={() => setEditing(false)} />}
+      {stepsOpen && (
+        <StepsSheet
+          stream={stream}
+          steps={ladder}
+          editFirst={stepsOpen.edit}
+          intro={intro}
+          onClose={() => setStepsOpen(null)}
+          onComplete={complete}
+          onReplay={replay}
+        />
+      )}
+      {cheer && (
+        <Celebration
+          key={cheer.step.id + (cheer.replay ? ':again' : '')}
+          step={cheer.step}
+          final={isFinal(ladder, cheer.step.id)}
+          replay={cheer.replay}
+          onClose={() => {
+            if (!cheer.replay) setIntro((n) => n + 1)
+            setCheer(null)
+          }}
+        />
+      )}
       {adding && <MaterialForm streamId={stream.id} onClose={() => setAdding(false)} />}
     </>
   )

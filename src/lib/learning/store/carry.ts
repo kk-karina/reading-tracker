@@ -44,7 +44,8 @@ export function worthCarrying(cloud: LearningSnapshot, local: LearningSnapshot):
     local.materials.length > 0 ||
     local.parts.length > 0 ||
     local.sessions.length > 0 ||
-    local.notes.length > 0
+    local.notes.length > 0 ||
+    local.steps.length > 0
   )
 }
 
@@ -80,6 +81,8 @@ export async function carryOver(sb: SupabaseClient, snap: LearningSnapshot): Pro
     )
   }
   if (snap.notes.length) await ok(() => sb.from('study_notes').insert(snap.notes))
+  // Шаги ссылаются только на поток, а он уже на месте.
+  if (snap.steps.length) await ok(() => sb.from('stream_steps').insert(snap.steps))
 
   for (const s of focused) {
     await ok(() =>
@@ -92,6 +95,7 @@ export async function carryOver(sb: SupabaseClient, snap: LearningSnapshot): Pro
     snap.materials.length +
     snap.parts.length +
     snap.sessions.length +
-    snap.notes.length
+    snap.notes.length +
+    snap.steps.length
   )
 }
