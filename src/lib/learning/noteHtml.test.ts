@@ -201,3 +201,45 @@ describe('круг md → поле → md', () => {
     })
   }
 })
+
+describe('картинка', () => {
+  // Хвост `==` — нарочно: в base64 он бывает, и маркером его считать нельзя.
+  const SRC = 'data:image/webp;base64,UklGRhAAAABXRUJQ=='
+  const img = (src = SRC) => el('img', [], { src })
+
+  it('в поле — своей строкой-блоком', () => {
+    expect(mdToHtml(`раз\n![](${SRC})\nдва`)).toBe(
+      `<div>раз</div><div><img src="${SRC}" alt=""></div><div>два</div>`,
+    )
+  })
+
+  it('вставленная посреди строки уходит в свою строку', () => {
+    const tree = root([el('div', [txt('до'), img(), txt('после')])])
+    expect(htmlToMd(tree)).toBe(`до\n![](${SRC})\nпосле`)
+  })
+
+  it('в пустом поле — одна строка, без лишних переносов', () => {
+    expect(htmlToMd(root([img()]))).toBe(`![](${SRC})`)
+    expect(htmlToMd(root([el('div', [img(), el('br')])]))).toBe(`![](${SRC})`)
+  })
+
+  it('чужой адрес не доезжает до хранилища', () => {
+    expect(htmlToMd(root([txt('a'), img('https://tracker.example/pixel.gif')]))).toBe('a')
+    expect(htmlToMd(root([img('data:text/html;base64,PHNjcmlwdD4=')]))).toBe('')
+  })
+
+  it('оформление картинку не обнимает', () => {
+    expect(htmlToMd(root([el('b', [img()])]))).toBe(`![](${SRC})`)
+  })
+
+  it('проходит круг md → поле → md', () => {
+    const md = `заметка\n![](${SRC})\n==главное==`
+    const tree = root([
+      el('div', [txt('заметка')]),
+      el('div', [img()]),
+      el('div', [el('mark', [txt('главное')])]),
+    ])
+    expect(htmlToMd(tree)).toBe(md)
+    expect(mdToHtml(md)).toContain(`<img src="${SRC}"`)
+  })
+})

@@ -1,5 +1,6 @@
 import { plainText } from './markdown'
 import { MARK } from './marks'
+import { NOTE_IMAGE_ANY } from './noteImage'
 import type { StudyNote } from './types'
 
 /**
@@ -18,7 +19,8 @@ export interface Highlight {
 export function extractHighlights(notes: StudyNote[]): Highlight[] {
   const out: Highlight[] = []
   for (const n of notes) {
-    for (const m of n.body.matchAll(MARK)) {
+    // Картинки снимаются до поиска: `==` в хвосте base64 — не маркер.
+    for (const m of n.body.replace(NOTE_IMAGE_ANY, '').matchAll(MARK)) {
       const text = m[2].trim()
       // Пустое выделение — опечатка, а не мысль.
       if (text) out.push({ text, noteId: n.id, materialId: n.material_id })

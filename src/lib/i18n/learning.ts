@@ -386,8 +386,8 @@ export const LEARNING = {
   'note.titlePlaceholder': { ru: 'Заголовок', en: 'Title' },
   'note.body': { ru: 'Конспект', en: 'Note' },
   'note.bodyPlaceholder': {
-    ru: 'Пиши как в тетради. ## заголовок, - список, > цитата. Оформить — выделить и правой кнопкой.',
-    en: 'Write as in a notebook. ## heading, - list, > quote. To format, select and right-click.',
+    ru: 'Пиши как в тетради. ## заголовок, - список, > цитата. Оформить — выделить и правой кнопкой. Картинку — вставить из буфера.',
+    en: 'Write as in a notebook. ## heading, - list, > quote. To format, select and right-click. Paste an image straight in.',
   },
   'note.format': { ru: 'Оформление', en: 'Formatting' },
   'note.bold': { ru: 'Жирный', en: 'Bold' },
@@ -396,6 +396,7 @@ export const LEARNING = {
   'note.mark': { ru: 'Маркер', en: 'Marker' },
   'note.ul': { ru: 'Список', en: 'Bulleted list' },
   'note.ol': { ru: 'Нумерованный список', en: 'Numbered list' },
+  'note.emoji': { ru: 'Смайлик', en: 'Emoji' },
   'mark.lemon': { ru: 'лимонный', en: 'lemon' },
   'mark.pink': { ru: 'розовый', en: 'pink' },
   'mark.peach': { ru: 'персиковый', en: 'peach' },

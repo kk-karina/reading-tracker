@@ -84,3 +84,19 @@ describe('excerptOf', () => {
     expect(excerptOf(note({ body: '   \n\n  ' }))).toBeNull()
   })
 })
+
+describe('картинка в конспекте', () => {
+  const SRC = 'data:image/webp;base64,UklGRhAAAABXRUJQ=='
+
+  it('хвост base64 маркером не считается', () => {
+    const n = note({ body: `![](${SRC})\nтекст ==главное==` })
+    expect(extractHighlights([n]).map((h) => h.text)).toEqual(['главное'])
+  })
+
+  it('в выдержку не попадает — берётся первая строка с текстом', () => {
+    expect(excerptOf(note({ body: `![](${SRC})\nпервая мысль` }))).toEqual({
+      text: 'первая мысль',
+      marked: false,
+    })
+  })
+})

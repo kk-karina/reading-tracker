@@ -325,7 +325,22 @@
 .sheet-body h1 { font-size: 24px; }
 .sheet-body h2 { font-size: 20px; }
 .sheet-body h3 { font-size: 17px; }
-.sheet-body p { margin: 0 0 0.9em; }
+.sheet-body p { margin: 0 0 1.15em; }
+/* Картинка в конспекте — вклеенная в тетрадь: в край колонки, с тонкой
+   кромкой, чтобы белый скриншот не растворялся в белой бумаге. */
+.sheet-body .note-pic {
+  margin: 0.4em 0 1.15em;
+}
+.note-pic img,
+.note-input img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+  box-shadow:
+    0 0 0 1px rgba(14, 16, 18, 0.08),
+    0 10px 24px -18px rgba(14, 16, 18, 0.45);
+}
 .sheet-body ul,
 .sheet-body ol {
   margin: 0 0 16px;
@@ -390,9 +405,39 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
 }
 .note-input:focus { outline: none; }
 /* Строка поля — блок, и между блоками тот же воздух, что между абзацами
-   готового конспекта: как напишешь, так и ляжет. */
+   готового конспекта: как напишешь, так и ляжет. Пункты списка теснее —
+   как и на листе: список читается одним куском, а не стопкой абзацев. */
 .note-input > div + div {
-  margin-top: 0.45em;
+  margin-top: 1.1em;
+}
+.note-input > [data-li] + [data-li] {
+  margin-top: 0.25em;
+}
+/* В поле картинка ниже, чем на листе: длинный скриншот иначе уводит строку,
+   которую пишут, за край экрана. */
+.note-input img {
+  max-height: 460px;
+  /* Только что вставленная стоит в одной строке-блоке с текстом над ней —
+     отступ тот же, что даст ей своя строка после сохранения. */
+  margin: 0.8em 0 0.4em;
+}
+/* Только что вставленная проявляется из мутного — видно, куда она легла.
+   Один раз: метку `data-fresh` поле снимает, как только проявление кончилось. */
+.note-input img[data-fresh] {
+  animation: pic-in 0.26s var(--ease-out);
+}
+@keyframes pic-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: scale(0.98);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-input img[data-fresh] { animation: pic-fade 0.2s ease; }
+}
+@keyframes pic-fade {
+  from { opacity: 0; }
 }
 /* У contentEditable своего плейсхолдера нет — рисуем сами по флагу от React.
    :empty здесь не годится: браузер держит в пустом поле служебный <br>. */
@@ -589,6 +634,81 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
   display: flex;
   gap: 2px;
   margin-left: -7px;
+}
+
+/* ---------- смайлики ---------- */
+/* Кнопка — тот же тихий кружок, что под обложкой в композере, у левого края
+   под полем: справа внизу листа уже стоит «Сохранить». */
+.note-tools {
+  display: flex;
+  margin-top: -4px;
+}
+/* Палитра — то же меню, что по правой кнопке, только сеткой: два ряда пометок
+   и два ряда настроения, между группами — черта, как между частями меню. */
+.note-emoji {
+  min-width: 0;
+  gap: 4px;
+  transform-origin: top left;
+  transition:
+    opacity 0.16s var(--ease-out),
+    transform 0.16s var(--ease-out);
+}
+.note-emoji.up {
+  transform-origin: bottom left;
+}
+/* Выезжает из кнопки, а не из ниоткуда. */
+@starting-style {
+  .note-emoji {
+    opacity: 0;
+    transform: scale(0.96) translateY(-4px);
+  }
+  .note-emoji.up {
+    transform: scale(0.96) translateY(4px);
+  }
+}
+.note-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 34px);
+}
+.note-emoji-grid + .note-emoji-grid {
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
+}
+.note-emoji-cell {
+  display: inline-grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: transparent;
+  font-size: 19px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.note-emoji-cell:active {
+  background: var(--well);
+}
+.note-emoji-cell:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: -2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .note-emoji-cell:hover { background: var(--well); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .note-emoji { transition: opacity 0.16s ease; }
+  @starting-style {
+    .note-emoji,
+    .note-emoji.up { transform: none; }
+  }
+}
+/* На телефоне восемь кружков по 34 не помещаются в узкое окно с полями. */
+@media (max-width: 360px) {
+  .note-emoji-grid { grid-template-columns: repeat(8, 30px); }
+  .note-emoji-cell { width: 30px; height: 30px; font-size: 17px; }
 }
 
 /* ---------- шапка листа с предметом ---------- */
@@ -2064,6 +2184,19 @@ mark[data-mark='sky'] { --mark: var(--mark-sky); }
 }
 .slip-body li {
   margin-bottom: 2px;
+}
+.slip-body p {
+  margin-bottom: 9px;
+}
+/* В плитке картинка — полоской: целиком она съела бы всю вырезку. */
+.slip-body .note-pic {
+  margin: 4px 0 9px;
+}
+.slip-body .note-pic img {
+  width: 100%;
+  max-height: 96px;
+  object-fit: cover;
+  object-position: top;
 }
 /* Подпись прижата к низу листа: в ряду одной высоты она стоит на одной
    линии с соседней. */

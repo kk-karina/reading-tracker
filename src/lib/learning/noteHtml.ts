@@ -12,6 +12,7 @@
  */
 
 import { isMarkColor, MARK, MARK_COLORS, markOpen, type MarkColor } from './marks'
+import { NOTE_IMAGE_LINE, NOTE_IMAGE_SRC, noteImageMd } from './noteImage'
 
 const ESCAPE: Record<string, string> = {
   '&': '&amp;',
@@ -52,6 +53,10 @@ export function mdToHtml(md: string): string {
   return escapeHtml(md)
     .split('\n')
     .map((line) => {
+      // Картинка — строкой-блоком, а не внутри текста: знаки оформления до неё
+      // не доходят, иначе `==` в хвосте base64 читались бы маркером.
+      const pic = NOTE_IMAGE_LINE.exec(line)
+      if (pic) return `<div><img src="${pic[2]}" alt="${pic[1]}"></div>`
       let out = line.replace(MARK, markSpan)
       out = out.replace(/\*\*(.+?)\*\*/g, '<b>$1</b>')
       out = out.replace(/__(.+?)__/g, '<u>$1</u>')
@@ -179,6 +184,8 @@ export function markColorOf(node: HtmlNode, palette: MarkPalette = {}): MarkColo
  */
 export function htmlToMd(root: HtmlNode, palette: MarkPalette = {}): string {
   let out = ''
+  /** Только что легла картинка: следующий текст начнёт свою строку. */
+  let afterPic = false
 
   const kids = (node: HtmlNode): HtmlNode[] => Array.from(node.childNodes ?? [])
 
@@ -188,7 +195,10 @@ export function htmlToMd(root: HtmlNode, palette: MarkPalette = {}): string {
     const name = node.nodeName.toUpperCase()
 
     if (name === '#TEXT') {
-      out += node.nodeValue ?? ''
+      const text = node.nodeValue ?? ''
+      if (afterPic && text) out += '\n'
+      if (text) afterPic = false
+      out += text
       return
     }
 
@@ -196,10 +206,26 @@ export function htmlToMd(root: HtmlNode, palette: MarkPalette = {}): string {
       // Замыкающий `<br>` браузер дописывает сам, чтобы пустой блок не схлопнулся
       // в ничто. Своей строки он не значит, и переносом его считать нельзя.
       if (!last) out += '\n'
+      if (!last) afterPic = false
       return
     }
 
-    if (BLOCK.has(name) && out !== '') out += '\n'
+    // Картинка встаёт своей строкой, даже если браузер вставил её посреди
+    // текста: в markdown картинка — строка, и в поле она всё равно рисуется
+    // блоком. Чужой адрес — из вставленной разметки — не доезжает вовсе.
+    if (name === 'IMG') {
+      const src = node.getAttribute?.('src') ?? ''
+      if (!NOTE_IMAGE_SRC.test(src)) return
+      if (out !== '' && !out.endsWith('\n')) out += '\n'
+      out += noteImageMd(src)
+      afterPic = true
+      return
+    }
+
+    if (BLOCK.has(name) && out !== '') {
+      out += '\n'
+      afterPic = false
+    }
 
     // Тег и заливка бывают на одном узле: красит браузер то, что уже стоит,
     // и на жирном слове заливка ложится на сам `<b>`. Маркер идёт снаружи —
@@ -218,7 +244,9 @@ export function htmlToMd(root: HtmlNode, palette: MarkPalette = {}): string {
     // слова, оставляет пробел внутри, а `** жирный**` чужой markdown не узнает.
     const inner = out.slice(before)
     const body = inner.trim()
-    if (open && body) {
+    // Картинку оформление не обнимает: `**![](…)**` уже не строка-картинка, и
+    // вместо неё на листе встал бы километр base64.
+    if (open && body && !body.includes('](data:image/')) {
       const lead = inner.slice(0, inner.length - inner.trimStart().length)
       const trail = inner.slice(inner.trimEnd().length)
       out = out.slice(0, before) + lead + open + body + close + trail

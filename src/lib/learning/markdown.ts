@@ -11,6 +11,7 @@
  */
 
 import { MARK } from './marks'
+import { NOTE_IMAGE_ANY, NOTE_IMAGE_LINE } from './noteImage'
 
 const ESCAPE: Record<string, string> = {
   '&': '&amp;',
@@ -101,6 +102,16 @@ export function renderMarkdown(src: string): string {
       continue
     }
 
+    // Картинка — до строчной разметки: в хвосте base64 бывает `==`, и маркер
+    // принял бы его за своё. Адрес проверен регуляркой целиком, подпись уже
+    // экранирована вместе со всей строкой.
+    const pic = NOTE_IMAGE_LINE.exec(line)
+    if (pic) {
+      flushAll()
+      out.push(`<figure class="note-pic"><img src="${pic[2]}" alt="${pic[1]}" loading="lazy" decoding="async"></figure>`)
+      continue
+    }
+
     const heading = line.match(/^(#{1,3})\s+(.*)$/)
     if (heading) {
       flushAll()
@@ -162,6 +173,8 @@ export function renderMarkdown(src: string): string {
  */
 export function plainText(src: string): string {
   return src
+    // Картинка в строку не превращается: на дашборде вместо неё встал бы base64.
+    .replace(NOTE_IMAGE_ANY, ' ')
     .replace(/`([^`]+)`/g, '$1')
     .replace(/\[([^\]]+)\]\([^)]+\)/g, '$1')
     .replace(MARK, '$2')

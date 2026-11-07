@@ -184,3 +184,27 @@ describe('волна', () => {
     expect(plainText('тут __важное__ слово')).toBe('тут важное слово')
   })
 })
+
+describe('картинка', () => {
+  const SRC = 'data:image/png;base64,iVBORw0KGgo=='
+
+  it('рисуется фигурой, а не текстом и не маркером', () => {
+    const html = renderMarkdown(`текст\n![](${SRC})`)
+    expect(html).toBe(
+      `<p>текст</p><figure class="note-pic"><img src="${SRC}" alt="" loading="lazy" decoding="async"></figure>`,
+    )
+  })
+
+  it('с чужим адресом остаётся текстом — тегом не становится', () => {
+    expect(renderMarkdown('![](https://tracker.example/p.gif)')).not.toContain('<img')
+    expect(renderMarkdown('![x](javascript:alert(1))')).not.toContain('<img')
+  })
+
+  it('подпись экранируется', () => {
+    expect(renderMarkdown(`![<b>](${SRC})`)).toContain('alt="&lt;b&gt;"')
+  })
+
+  it('в превью строкой её нет', () => {
+    expect(plainText(`до ![](${SRC}) после`)).toBe('до после')
+  })
+})
