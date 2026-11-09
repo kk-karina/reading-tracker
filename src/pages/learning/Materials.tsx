@@ -16,10 +16,12 @@ import {
 } from '../../lib/learning/buckets'
 import { barWidth, materialProgress } from '../../lib/learning/metrics'
 import { lastTouched } from '../../lib/learning/sessions'
-import type { Material } from '../../lib/learning/types'
+import { KINDS, type Material, type MaterialKind } from '../../lib/learning/types'
 import { useLearning } from '../../state/LearningContext'
 import { useLocale } from '../../state/LocaleContext'
 import { useStream } from './StreamLayout'
+import { useProgressText } from '../../components/learning/Progress'
+import { fmtMinutes } from '../../lib/format'
 
 /**
  * Всё, что есть в потоке, одним разделом.
@@ -52,10 +54,13 @@ const EMPTY: Record<MaterialView, { text: DictKey; art: EmptyArtName }> = {
 const isView = (v: string | null): v is MaterialView =>
   v !== null && (MATERIAL_VIEWS as readonly string[]).includes(v)
 
+type KindFilter = MaterialKind | 'all'
+
 export function Materials() {
   const { t, locale } = useLocale()
   const stream = useStream()
-  const { materials, notes, sessions, parts, updateMaterial } = useLearning()
+  const { materials: all, notes, sessions, parts, updateMaterial } = useLearning()
+  const progressText = useProgressText()
   const [adding, setAdding] = useState(false)
   /** Материал, по которому сейчас записывают занятие. Лист тот же, что на герое. */
   const [logging, setLogging] = useState<Material | null>(null)
@@ -69,13 +74,24 @@ export function Materials() {
   const raw = params.get('view')
   const view: MaterialView = isView(raw) ? raw : 'active'
 
+  /* Вторая рейка — по виду, как второй срез на Полке: только виды, которые в
+     потоке есть, и только когда их хотя бы два — выбирать из одного нечего.
+     Вид из адреса, которого в потоке уже нет, читается как «все». */
+  const present = KINDS.filter((k) => all.some((m) => m.stream_id === stream.id && m.kind === k))
+  const rawKind = params.get('kind')
+  const kind: KindFilter = present.some((k) => k === rawKind) ? (rawKind as MaterialKind) : 'all'
+  const materials = kind === 'all' ? all : all.filter((m) => m.kind === kind)
+
   const counts = materialCounts(materials, stream.id)
+  const query = (v: MaterialView, k: KindFilter): Record<string, string> =>
+    k === 'all' ? { view: v } : { view: v, kind: k }
   const from = {
-    to: `/learning/${stream.slug}/materials?view=${view}`,
+    to: `/learning/${stream.slug}/materials?${new URLSearchParams(query(view, kind))}`,
     label: t('nav.materials'),
   }
 
-  const go = (next: MaterialView) => setParams({ view: next }, { replace: false })
+  const go = (next: MaterialView) => setParams(query(next, kind), { replace: false })
+  const pick = (next: KindFilter) => setParams(query(view, next), { replace: false })
 
   // Фокус стоит первым: на «На изучении» это ответ на вопрос экрана, а не
   // одна из карточек.
@@ -83,7 +99,8 @@ export function Materials() {
     a.id === stream.focus_material_id ? -1 : b.id === stream.focus_material_id ? 1 : a.sort - b.sort,
   )
 
-  const nothingAtAll = counts.active + counts.backlog + counts.done === 0
+  // Пусто во всём потоке, а не в выбранном виде: вид из пустого потока не выбрать.
+  const nothingAtAll = present.length === 0
 
   return (
     <>
@@ -103,6 +120,18 @@ export function Materials() {
               onChange={(v) => go(v)}
               className="sm"
             />
+            {present.length > 1 && (
+              <Segmented
+                name={t('materials.kinds')}
+                value={kind}
+                options={[
+                  { value: 'all' as KindFilter, label: t('mkind.all') },
+                  ...present.map((k) => ({ value: k as KindFilter, label: t(`mkind.${k}`) })),
+                ]}
+                onChange={pick}
+                className="sm scroll"
+              />
+            )}
           </div>
           <div className="row-tight">
             <Jelly className="btn" onClick={() => setAdding(true)}>
@@ -139,7 +168,7 @@ export function Materials() {
            бэклог — «взять», пройденное — отметку статуса. */
         <ul className="mat-list">
           {rows.map((m) => {
-            const p = materialProgress(m, parts)
+            const p = materialProgress(m, parts, sessions)
             const last = lastTouched(m.id, sessions, notes)
             const isFocus = view === 'active' && m.id === stream.focus_material_id
             const width = barWidth(p.percent)
@@ -174,9 +203,14 @@ export function Materials() {
                       </Jelly>
                     </div>
                     <span className="small faint">
-                      {p.total
-                        ? t('material.progress', { done: p.done, total: p.total })
-                        : t('note.count', { n: p.done })}
+                      {/* Практика говорит накопленным — временем или разами,
+                          с нуля, раз её взяли в работу. */}
+                      {m.kind === 'practice'
+                        ? (progressText(p) ??
+                          (p.unit === 'time' ? t('count.times', { n: 0 }) : fmtMinutes(0, locale)))
+                        : p.total
+                          ? t('material.progress', { done: p.done, total: p.total })
+                          : t('note.count', { n: p.done })}
                       {last ? ` · ${t('stream.lastNote', { date: fmtDate(last, locale) })}` : ''}
                     </span>
                   </>

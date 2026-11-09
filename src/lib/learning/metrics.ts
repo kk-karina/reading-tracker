@@ -1,9 +1,9 @@
 import { fromISO, todayISO } from '../format'
 import { hasParts, partsOf } from './parts'
-import type { Material, MaterialPart, StudyNote } from './types'
+import type { Material, MaterialPart, StudyNote, StudySession } from './types'
 
 /** Чем меряется прогресс — от этого зависит подпись под полосой. */
-export type ProgressUnit = 'page' | 'part' | 'flag'
+export type ProgressUnit = 'page' | 'part' | 'flag' | 'minute' | 'time'
 
 export interface MaterialProgress {
   done: number
@@ -24,7 +24,19 @@ export interface MaterialProgress {
  * `total === null` значит «мерить нечем»: страниц не знаем, частей ещё нет.
  * Тогда и полосы не рисуют — врать шириной хуже, чем не показывать.
  */
-export function materialProgress(material: Material, parts: MaterialPart[]): MaterialProgress {
+export function materialProgress(
+  material: Material,
+  parts: MaterialPart[],
+  /** Нужны только практике: её прогресс копится в занятиях. */
+  sessions: Pick<StudySession, 'material_id' | 'minutes'>[] = [],
+): MaterialProgress {
+  if (material.kind === 'practice') {
+    const unit: ProgressUnit = material.scale === 'times' ? 'time' : 'minute'
+    const done = practiced(material, sessions)
+    const total = material.target && material.target > 0 ? material.target : null
+    return { done, total, percent: ratio(done, total), unit }
+  }
+
   if (material.kind === 'article' || material.kind === 'video') {
     const done = material.status === 'done' ? 1 : 0
     return { done, total: 1, percent: done * 100, unit: 'flag' }
@@ -41,6 +53,22 @@ export function materialProgress(material: Material, parts: MaterialPart[]): Mat
   const total = material.pages_total && material.pages_total > 0 ? material.pages_total : null
   const done = Math.max(0, Math.min(material.page_current ?? 0, total ?? Number.MAX_SAFE_INTEGER))
   return { done, total, percent: ratio(done, total), unit: 'page' }
+}
+
+/**
+ * Сколько накоплено практикой: минут — у шкалы минут, занятий — у шкалы раз.
+ *
+ * У шкалы раз занятие засчитывается и без минут: «было» и есть шаг. У шкалы
+ * минут занятие без минут ничего не добавляет — лист такого не сохранит, но
+ * старое или правленое руками считать нулём честнее, чем падать.
+ */
+export function practiced(
+  material: Pick<Material, 'id' | 'scale'>,
+  sessions: Pick<StudySession, 'material_id' | 'minutes'>[],
+): number {
+  const mine = sessions.filter((s) => s.material_id === material.id)
+  if (material.scale === 'times') return mine.length
+  return mine.reduce((sum, s) => sum + (s.minutes ?? 0), 0)
 }
 
 /**

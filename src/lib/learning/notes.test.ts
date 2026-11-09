@@ -4,6 +4,7 @@ import type { Material, MaterialPart, StudyNote } from './types'
 
 const material = (id: string, streamId: string): Material => ({
   book_id: null,
+  target: null,
   id,
   stream_id: streamId,
   title: id,

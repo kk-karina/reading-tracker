@@ -75,7 +75,13 @@ const Glow = ({ at }: { at?: number }) => (at ? <span key={at} className="fill-g
  * Композер — заведение и правка материала и книги.
  *
  * Два шага. Захват — одна строка «ссылка или название»: человек приносит то,
- * что у него есть, и не выбирает, что это. Карточка — то, что получится,
+ * что у него есть, и не обязан выбирать, что это.
+ *
+ * Вид стоит над обоими шагами и не перерисовывается при переходе. Раньше он
+ * жил в карточке, ниже ссылки, и практику — у которой ссылки нет —
+ * приходилось заводить кругом: «вручную», потом сменить вид. Теперь вид
+ * можно назвать первым, и строка захвата сразу спрашивает то, что у этого
+ * вида бывает. Не назвать тоже можно: тогда его угадает ссылка. Карточка — то, что получится,
  * в том виде, в каком ляжет в список: обложка своего кадра, название крупно,
  * автор, и мелко ниже — то, чем меряется прогресс. Правка открывается сразу
  * карточкой.
@@ -138,8 +144,22 @@ export function Composer({
   // Ref — для чтения ссылки, которое идёт асинхронно и должно видеть
   // свежее значение; состояние — для отрисовки.
   const kindFixed = editing || variant.kinds.length === 1
+  /* Практика не меняет вид после заведения ни в одну сторону: у неё другие
+     данные — шкала, цель, занятия без глав и страниц, — и смена вида молча
+     теряла бы их. Заведённой практике выбирать не из чего, остальным в правке
+     практики в вариантах нет. */
+  const kinds = !editing
+    ? variant.kinds
+    : initial.kind === 'practice'
+      ? []
+      : variant.kinds.filter((k) => k !== 'practice')
   const kindTouched = useRef(kindFixed)
   const [kindChosen, setKindChosen] = useState(kindFixed)
+  const chooseKind = (kind: MaterialKind) => {
+    kindTouched.current = true
+    setKindChosen(true)
+    patch({ kind })
+  }
 
   const patch = (p: Partial<Draft>) => {
     live.current = { ...live.current, ...p }
@@ -273,232 +293,235 @@ export function Composer({
 
   return (
     <Sheet title={title} onClose={onClose} dirty={dirty} onSubmit={stage === 'card' ? () => void save() : undefined}>
-      {stage === 'capture' ? (
-        <Capture
-          onLink={onLink}
-          onPick={onPick}
-          onManual={onManual}
-          own={(q) => findOwn(q, world, ownSections, 4, home.section === 'stream' ? home.streamId : undefined)}
-          onOwn={onOwn}
-        />
-      ) : (
-        <motion.div
-          ref={cardBox}
-          className="compose-card"
-          variants={card}
-          initial={unfolded && !reduce ? 'hidden' : false}
-          animate="shown"
-        >
-          {/* Строка источника. В неё перетекает строка захвата: ссылка,
-              которую принесли, остаётся на виду как то, откуда всё взялось. */}
+      <div className="compose-flow">
+        {kinds.length > 1 && (
+          <Segmented
+            name={t('material.kind')}
+            // На захвате невыбранный вид не подсвечен: у черновика он есть, но
+            // это заглушка, а не ответ, и подсветка выдала бы её за выбор.
+            value={stage === 'capture' && !kindChosen ? null : view.kind}
+            options={kinds.map((k) => ({ value: k, label: t(`kind.${k}`), icon: KIND_ICON[k] }))}
+            onChange={chooseKind}
+            className="wrap compose-kinds"
+          />
+        )}
+        {stage === 'capture' ? (
+          <Capture
+            kind={kindChosen && kinds.length > 1 ? draft.kind : null}
+            onLink={onLink}
+            onPick={onPick}
+            onManual={onManual}
+            own={(q) => findOwn(q, world, ownSections, 4, home.section === 'stream' ? home.streamId : undefined)}
+            onOwn={onOwn}
+          />
+        ) : (
           <motion.div
-            layoutId="compose-line"
-            className="compose-line compose-source"
-            transition={{ duration: 0.28, ease: [0.77, 0, 0.175, 1] }}
+            ref={cardBox}
+            className="compose-card"
+            variants={card}
+            initial={unfolded && !reduce ? 'hidden' : false}
+            animate="shown"
           >
-            {editUrl ? (
-              <input
-                className="input"
-                inputMode="url"
-                placeholder={t('compose.linkPlaceholder')}
-                aria-label={t('material.url')}
-                value={draft.url}
-                autoFocus
-                onChange={(e) => patch({ url: e.target.value })}
-                onBlur={() => setEditUrl(false)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
-                    e.preventDefault()
-                    setEditUrl(false)
-                    if (draft.url.trim()) void fill.read(draft.url)
-                  }
-                }}
-              />
-            ) : host ? (
-              <>
-                <a className="compose-host" href={view.url} target="_blank" rel="noreferrer">
+            {/* Строка источника. В неё перетекает строка захвата: ссылка,
+                которую принесли, остаётся на виду как то, откуда всё взялось.
+                У практики источника нет — её делают, а не открывают по ссылке. */}
+            {view.kind !== 'practice' && (
+            <motion.div
+              layoutId="compose-line"
+              className="compose-line compose-source"
+              transition={{ duration: 0.28, ease: [0.77, 0, 0.175, 1] }}
+            >
+              {editUrl ? (
+                <input
+                  className="input"
+                  inputMode="url"
+                  placeholder={t('compose.linkPlaceholder')}
+                  aria-label={t('material.url')}
+                  value={draft.url}
+                  autoFocus
+                  onChange={(e) => patch({ url: e.target.value })}
+                  onBlur={() => setEditUrl(false)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.metaKey && !e.ctrlKey) {
+                      e.preventDefault()
+                      setEditUrl(false)
+                      if (draft.url.trim()) void fill.read(draft.url)
+                    }
+                  }}
+                />
+              ) : host ? (
+                <>
+                  <a className="compose-host" href={view.url} target="_blank" rel="noreferrer">
+                    <Icon name="link" size={15} />
+                    {host}
+                  </a>
+                  <button type="button" className="link-btn" onClick={() => setEditUrl(true)}>
+                    {t('compose.editLink')}
+                  </button>
+                </>
+              ) : (
+                // Без ссылки карточка не начинается с пустого поля: ссылка здесь
+                // — возможность, а не вопрос.
+                <button type="button" className="link-btn compose-add-link" onClick={() => setEditUrl(true)}>
                   <Icon name="link" size={15} />
-                  {host}
-                </a>
-                <button type="button" className="link-btn" onClick={() => setEditUrl(true)}>
-                  {t('compose.editLink')}
+                  {t('compose.addLink')}
                 </button>
-              </>
-            ) : (
-              // Без ссылки карточка не начинается с пустого поля: ссылка здесь
-              // — возможность, а не вопрос.
-              <button type="button" className="link-btn compose-add-link" onClick={() => setEditUrl(true)}>
-                <Icon name="link" size={15} />
-                {t('compose.addLink')}
-              </button>
-            )}
-            {(host || editUrl) && (
-              <Jelly
-                type="button"
-                className={`btn ghost compose-wand${fill.reading ? ' busy' : ''}`}
-                // Нажатие не должно сначала погасить поле ввода по blur.
-                onMouseDown={(e) => e.preventDefault()}
-                onClick={() => {
-                  setEditUrl(false)
-                  void fill.read(draft.url)
-                }}
-                disabled={!draft.url.trim()}
-                aria-label={t('material.fetch')}
-                title={t('material.fetch')}
-                aria-busy={fill.reading}
-              >
-                <Icon name="sparkles" size={18} />
-              </Jelly>
-            )}
-          </motion.div>
-          {fill.nothing && (
-            <p className="small faint compose-note" role="status">
-              {t('material.fetchNothing')}
-            </p>
-          )}
-
-          {variant.kinds.length > 1 && (
-            <motion.div variants={step}>
-              <Segmented
-                name={t('material.kind')}
-                value={view.kind}
-                options={variant.kinds.map((k) => ({ value: k, label: t(`kind.${k}`), icon: KIND_ICON[k] }))}
-                onChange={(kind) => {
-                  kindTouched.current = true
-                  setKindChosen(true)
-                  patch({ kind })
-                }}
-                className="wrap compose-kinds"
-              />
+              )}
+              {(host || editUrl) && (
+                <Jelly
+                  type="button"
+                  className={`btn ghost compose-wand${fill.reading ? ' busy' : ''}`}
+                  // Нажатие не должно сначала погасить поле ввода по blur.
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    setEditUrl(false)
+                    void fill.read(draft.url)
+                  }}
+                  disabled={!draft.url.trim()}
+                  aria-label={t('material.fetch')}
+                  title={t('material.fetch')}
+                  aria-busy={fill.reading}
+                >
+                  <Icon name="sparkles" size={18} />
+                </Jelly>
+              )}
             </motion.div>
-          )}
-
-          <motion.div variants={step} className="compose-main" data-kind={view.kind}>
-            <CoverPicker
-              title={view.title}
-              kind={view.kind}
-              url={view.url}
-              cover={view.cover}
-              onCover={(cover) => edit({ cover })}
-              glow={filled.cover}
-            />
-            <div className="compose-text">
-              <span className="compose-field">
-                {glow('title')}
-                <Grow
-                  className="compose-title display"
-                  value={draft.title}
-                  placeholder={t('compose.titlePlaceholder')}
-                  aria-label={t('material.title')}
-                  data-autofocus
-                  onChange={(e) => edit({ title: e.target.value })}
-                />
-              </span>
-              <span className="compose-field">
-                {glow('author')}
-                <Grow
-                  className="compose-author"
-                  value={view.author}
-                  placeholder={t('compose.authorPlaceholder')}
-                  aria-label={t('material.author')}
-                  onChange={(e) => edit({ author: e.target.value })}
-                />
-              </span>
-              <MeasureRow
-                draft={view}
-                scales={variant.scales}
-                onChange={edit}
-                glow={glow('pages')}
-              />
-            </div>
-          </motion.div>
-
-          {/* Дубль — плашкой во всю ширину, а не строкой под автором: от него
-              зависит, что сделает главная кнопка, и он должен читаться сразу. */}
-          <AnimatePresence initial={false}>
-            {found && (
-              <motion.div
-                key={`${found.where}-${found.id}`}
-                className={`compose-dupe ${blocking ? 'blocking' : 'copy'}`}
-                role="status"
-                initial={{ opacity: 0, transform: 'translateY(4px)' }}
-                animate={{ opacity: 1, transform: 'translateY(0px)' }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-              >
-                <Icon name={blocking ? 'circle-warning' : 'copy'} size={18} />
-                <span className="compose-dupe-text">
-                  <strong>
-                    {blocking
-                      ? blocking.where === 'shelf'
-                        ? t('compose.blockShelf')
-                        : t('compose.blockStream')
-                      : found.where === 'shelf'
-                        ? t('compose.onShelf')
-                        : t('compose.inStream', { stream: found.stream ?? '' })}
-                  </strong>
-                  <span>
-                    {blocking
-                      ? t('compose.blockHint')
-                      : willLink
-                        ? t('compose.copyLinkedHint')
-                        : t('compose.copyHint')}
-                  </span>
-                </span>
-                <Link className="compose-dupe-open" to={found.href} onClick={onClose}>
-                  {t('compose.open')}
-                  <Icon name="arrow-up-right-md" size={15} />
-                </Link>
-              </motion.div>
             )}
-          </AnimatePresence>
+            {fill.nothing && view.kind !== 'practice' && (
+              <p className="small faint compose-note" role="status">
+                {t('material.fetchNothing')}
+              </p>
+            )}
 
-          {/* Связь — той же плашкой, что дубль: это тот же вопрос «эта книга есть
-              и там», только уже решённый. Тихая подложка, а не лимонная: главная
-              кнопка от неё не меняется. */}
-          <AnimatePresence initial={false}>
-            {editing && linked && (
-              <motion.div
-                key="linked"
-                className="compose-dupe linked"
-                initial={{ opacity: 0, transform: 'translateY(4px)' }}
-                animate={{ opacity: 1, transform: 'translateY(0px)' }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
-              >
-                <Icon name="link" size={18} />
-                <span className="compose-dupe-text">
-                  <strong>{linked.title}</strong>
-                  <span>{t('compose.linkedHint')}</span>
+            <motion.div variants={step} className="compose-main" data-kind={view.kind}>
+              <CoverPicker
+                title={view.title}
+                kind={view.kind}
+                url={view.url}
+                cover={view.cover}
+                onCover={(cover) => edit({ cover })}
+                glow={filled.cover}
+              />
+              <div className="compose-text">
+                <span className="compose-field">
+                  {glow('title')}
+                  <Grow
+                    className="compose-title display"
+                    value={draft.title}
+                    placeholder={t('compose.titlePlaceholder')}
+                    aria-label={t('material.title')}
+                    data-autofocus
+                    onChange={(e) => edit({ title: e.target.value })}
+                  />
                 </span>
-                <span className="compose-dupe-acts">
-                  <Link className="compose-dupe-open" to={linked.href} onClick={onClose}>
+                {view.kind !== 'practice' && (
+                  <span className="compose-field">
+                    {glow('author')}
+                    <Grow
+                      className="compose-author"
+                      value={view.author}
+                      placeholder={t('compose.authorPlaceholder')}
+                      aria-label={t('material.author')}
+                      onChange={(e) => edit({ author: e.target.value })}
+                    />
+                  </span>
+                )}
+                <MeasureRow
+                  draft={view}
+                  scales={variant.scales}
+                  onChange={edit}
+                  glow={glow('pages')}
+                />
+              </div>
+            </motion.div>
+
+            {/* Дубль — плашкой во всю ширину, а не строкой под автором: от него
+                зависит, что сделает главная кнопка, и он должен читаться сразу. */}
+            <AnimatePresence initial={false}>
+              {found && (
+                <motion.div
+                  key={`${found.where}-${found.id}`}
+                  className={`compose-dupe ${blocking ? 'blocking' : 'copy'}`}
+                  role="status"
+                  initial={{ opacity: 0, transform: 'translateY(4px)' }}
+                  animate={{ opacity: 1, transform: 'translateY(0px)' }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <Icon name={blocking ? 'circle-warning' : 'copy'} size={18} />
+                  <span className="compose-dupe-text">
+                    <strong>
+                      {blocking
+                        ? blocking.where === 'shelf'
+                          ? t('compose.blockShelf')
+                          : t('compose.blockStream')
+                        : found.where === 'shelf'
+                          ? t('compose.onShelf')
+                          : t('compose.inStream', { stream: found.stream ?? '' })}
+                    </strong>
+                    <span>
+                      {blocking
+                        ? t('compose.blockHint')
+                        : willLink
+                          ? t('compose.copyLinkedHint')
+                          : t('compose.copyHint')}
+                    </span>
+                  </span>
+                  <Link className="compose-dupe-open" to={found.href} onClick={onClose}>
                     {t('compose.open')}
                     <Icon name="arrow-up-right-md" size={15} />
                   </Link>
-                  {/* Не красным: отвязка ничего не удаляет, записи остаются. */}
-                  <button type="button" className="link-btn" onClick={linked.onUnlink}>
-                    {t('compose.unlink')}
-                  </button>
-                </span>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          <motion.div variants={step} layout="position" className="compose-foot">
-            <span className="compose-foot-end">
-              {onDelete && (
-                <button className="link-btn danger" type="button" onClick={onDelete}>
-                  {t('compose.delete')}
-                </button>
+                </motion.div>
               )}
-              <Jelly className="btn" onClick={() => void save()} disabled={!canSave}>
-                {saveLabel}
-              </Jelly>
-            </span>
+            </AnimatePresence>
+
+            {/* Связь — той же плашкой, что дубль: это тот же вопрос «эта книга есть
+                и там», только уже решённый. Тихая подложка, а не лимонная: главная
+                кнопка от неё не меняется. */}
+            <AnimatePresence initial={false}>
+              {editing && linked && (
+                <motion.div
+                  key="linked"
+                  className="compose-dupe linked"
+                  initial={{ opacity: 0, transform: 'translateY(4px)' }}
+                  animate={{ opacity: 1, transform: 'translateY(0px)' }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
+                >
+                  <Icon name="link" size={18} />
+                  <span className="compose-dupe-text">
+                    <strong>{linked.title}</strong>
+                    <span>{t('compose.linkedHint')}</span>
+                  </span>
+                  <span className="compose-dupe-acts">
+                    <Link className="compose-dupe-open" to={linked.href} onClick={onClose}>
+                      {t('compose.open')}
+                      <Icon name="arrow-up-right-md" size={15} />
+                    </Link>
+                    {/* Не красным: отвязка ничего не удаляет, записи остаются. */}
+                    <button type="button" className="link-btn" onClick={linked.onUnlink}>
+                      {t('compose.unlink')}
+                    </button>
+                  </span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <motion.div variants={step} layout="position" className="compose-foot">
+              <span className="compose-foot-end">
+                {onDelete && (
+                  <button className="link-btn danger" type="button" onClick={onDelete}>
+                    {t('compose.delete')}
+                  </button>
+                )}
+                <Jelly className="btn" onClick={() => void save()} disabled={!canSave}>
+                  {saveLabel}
+                </Jelly>
+              </span>
+            </motion.div>
           </motion.div>
-        </motion.div>
-      )}
+        )}
+      </div>
     </Sheet>
   )
 }

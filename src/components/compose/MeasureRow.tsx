@@ -1,9 +1,15 @@
 import type { Draft } from '../../lib/compose/draft'
-import { BOOK_SCALES, type BookScale } from '../../lib/learning/types'
+import { BOOK_SCALES, PRACTICE_SCALES, type BookScale } from '../../lib/learning/types'
 import { useLocale } from '../../state/LocaleContext'
 import { Segmented } from '../ui'
 
 const digits = (v: string) => v.replace(/\D/g, '')
+/** Часы бывают дробными — «1,5». Одна запятая или точка, дальше только цифры. */
+const decimal = (v: string) => {
+  const clean = v.replace(/[^\d.,]/g, '')
+  const at = clean.search(/[.,]/)
+  return at < 0 ? clean : clean.slice(0, at + 1) + clean.slice(at + 1).replace(/[.,]/g, '')
+}
 
 /**
  * Чем меряется прогресс — одной фразой под автором: «218 страниц», «12 лекций».
@@ -30,6 +36,42 @@ export function MeasureRow({
   const { t } = useLocale()
 
   if (draft.kind === 'article' || draft.kind === 'video') return null
+
+  /* Практика: «цель 20 часов | раз». Та же фраза, что «218 страниц | глав»:
+     единица после числа и есть выбор шкалы. Только число здесь необязательно —
+     без него практика просто копит время или разы. */
+  if (draft.kind === 'practice') {
+    const hours = draft.practice === 'minutes'
+    const n = Number(draft.target.replace(',', '.')) || 0
+    return (
+      <div className="compose-measure" title={t('practice.targetHint')}>
+        <span className="compose-unit">{t('practice.target')}</span>
+        <span className="compose-count">
+          <input
+            className="input"
+            inputMode={hours ? 'decimal' : 'numeric'}
+            aria-label={hours ? t('practice.targetHours') : t('practice.targetTimes')}
+            value={draft.target}
+            placeholder="—"
+            onChange={(e) => onChange({ target: hours ? decimal(e.target.value) : digits(e.target.value) })}
+          />
+        </span>
+        <Segmented
+          name={t('practice.scale')}
+          value={draft.practice}
+          options={PRACTICE_SCALES.map((s) => ({
+            value: s,
+            label: s === 'minutes' ? t('compose.unitHours', { n }) : t('unit.times', { n }),
+          }))}
+          // Разы дробными не бывают: дробь из часов при переключении отрезается.
+          onChange={(practice) =>
+            onChange(practice === 'times' ? { practice, target: digits(draft.target.split(/[.,]/)[0]) } : { practice })
+          }
+          className="sm"
+        />
+      </div>
+    )
+  }
 
   const byParts = draft.kind === 'course' || draft.scale === 'parts'
   const field = byParts ? 'parts' : 'pages'

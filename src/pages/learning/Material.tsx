@@ -2,12 +2,15 @@ import { useState } from 'react'
 import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 import { Crumbs } from '../../components/Crumbs'
 import { Icon } from '../../components/Icon'
+import { MetaLine } from '../../components/MetaLine'
 import { MaterialCover } from '../../components/learning/MaterialCover'
 import { NoteSheet } from '../../components/learning/NoteSheet'
 import { NoteStack } from '../../components/learning/NoteStack'
 import { SheetFlip } from '../../components/learning/SheetFlip'
 import { NoteToc } from '../../components/learning/NoteToc'
-import { PartDots } from '../../components/learning/PartDots'
+import { PartDots, PracticeTally, TALLY_MAX } from '../../components/learning/PartDots'
+import { FinishMark } from '../../components/learning/FinishMark'
+import { KIND_ICON } from '../../components/learning/kindIcon'
 import { PartNames } from '../../components/learning/PartNames'
 import { useProgressText } from '../../components/learning/Progress'
 import { NoteAddSheet } from '../../components/learning/NoteAddSheet'
@@ -26,6 +29,7 @@ import { focusOf } from '../../lib/learning/buckets'
 import { sourceOf } from '../../lib/compose/linkMeta'
 import { barWidth, materialProgress, remainingOf } from '../../lib/learning/metrics'
 import { lastTouched } from '../../lib/learning/sessions'
+import { finishedByCount } from '../../lib/learning/status'
 import { Mood } from '../../components/Mood'
 import { isBlankNote, noteOutline } from '../../lib/learning/notes'
 import { timeOf } from '../../lib/log'
@@ -62,6 +66,7 @@ export function Material() {
     deleteMaterial,
     updateStream,
     updateMaterial,
+    updateSession,
   } = useLearning()
   const [editing, setEditing] = useState(false)
   /* Лист один, а дверей к нему две, и зовутся они по-разному: плюс у полосы
@@ -104,8 +109,9 @@ export function Material() {
    * создаётся и нигде не показывается.
    */
   const started = new Set(mine.map((n) => n.part_id).filter((id): id is string => id !== null))
-  const p = materialProgress(material, parts)
+  const p = materialProgress(material, parts, sessions)
   const left = remainingOf(p)
+  const practice = material.kind === 'practice'
   const last = lastTouched(material.id, sessions, notes)
   const mySessions = sessions
     .filter((x) => x.material_id === material.id)
@@ -113,6 +119,9 @@ export function Material() {
   const word = partWord(material.kind)
   const withParts = hasParts(material)
   const done = material.status === 'done'
+  /* Всё пройдено подсчётом, но не завершено: сама страница ничего не
+     закрывает, только подсвечивает кнопку — решать человеку. */
+  const ready = !done && finishedByCount(material, parts, p.done)
   // Через `focusOf`, а не сравнением с указателем: пройденный материал фокусом
   // быть перестаёт, и флажок на странице должен говорить то же, что подложка.
   const isFocus = focusOf(materials, stream.focus_material_id)?.id === material.id
@@ -169,14 +178,42 @@ export function Material() {
     void updateStream(stream.id, { focus_material_id: material.id })
   }
 
+  /** Завершить или вернуть в работу. Фокус с завершённого снимает само
+      хранилище — `updateMaterial` при уходе из `active`. Возврат снимает и
+      «Прочитано» с занятий статьи и ролика: иначе лист занятия спорил бы со
+      статусом, показывая галочку у незавершённого. */
+  const toggleDone = async () => {
+    if (!done) {
+      void updateMaterial(material.id, { status: 'done' })
+      return
+    }
+    await updateMaterial(material.id, { status: 'active' })
+    for (const x of mySessions) if (x.completed) void updateSession(x.id, { completed: false })
+  }
+
   const remove = async () => {
-    if (!confirm(t('material.confirmDelete'))) return
+    if (!confirm(t(practice ? 'practice.confirmDelete' : 'material.confirmDelete'))) return
     await deleteMaterial(material.id)
     navigate(`/learning/${stream.slug}/materials?view=backlog`)
   }
 
 
   const dash = <span className="faint">{t('book.unknown')}</span>
+
+  /** Накопленное практикой словами — с нуля, раз её взяли в работу. */
+  const zero = p.unit === 'time' ? t('count.times', { n: 0 }) : fmtMinutes(0, locale)
+  const practiceText = progressText(p) ?? zero
+  const tally = practice && p.unit === 'time' && p.total !== null && p.total <= TALLY_MAX
+  const leftText =
+    left === null
+      ? dash
+      : p.unit === 'page'
+        ? t('count.pages', { n: left })
+        : p.unit === 'minute'
+          ? fmtMinutes(left, locale)
+          : p.unit === 'time'
+            ? t('count.times', { n: left })
+            : t(word === 'lecture' ? 'count.lectures' : 'count.chapters', { n: left })
 
   /** Что стоит в ячейке «Пройдено»: у статьи и ролика отметка, у остальных
       число. Книга без заданного числа страниц не молчит — страницу, на
@@ -194,6 +231,9 @@ export function Material() {
       {/* Действия над материалом целиком — в строке крошки, а не у названия:
           у длинного заголовка они переносились на вторую строку и вставали
           между названием и автором. Здесь строка всегда одной высоты. */}
+      {/* Вид материала — не здесь, а в строке под названием, вместе со
+          статусом: порознь, над названием и под ним, они зажимали его с двух
+          сторон. */}
       <Crumbs
         fallback={{ to: `/learning/${stream.slug}`, label: stream.name }}
         actions={
@@ -208,20 +248,39 @@ export function Material() {
                     <Icon name="flag" size={17} />
                   </Jelly>
                 </Tip>
-                <Tip text={t('material.edit')}>
+                {/* «Завершить» — сразу за фокусом: оба про то, где материал
+                    в работе, а не про его карточку. В бэклоге кнопки нет —
+                    завершить можно только то, за что взялась. */}
+                {material.status !== 'backlog' && (
+                  <Tip
+                    text={
+                      done ? t('material.reopen') : ready ? t('material.finishReady') : t('material.finish')
+                    }
+                  >
+                    <Jelly
+                      className={`icon-act finish${done ? ' on' : ''}${ready ? ' ready' : ''}`}
+                      onClick={() => void toggleDone()}
+                      aria-pressed={done}
+                      aria-label={done ? t('material.reopen') : t('material.finish')}
+                    >
+                      <FinishMark on={done} />
+                    </Jelly>
+                  </Tip>
+                )}
+                <Tip text={t(practice ? 'practice.edit' : 'material.edit')}>
                   <Jelly
                     className="icon-act"
                     onClick={() => setEditing(true)}
-                    aria-label={t('material.edit')}
+                    aria-label={t(practice ? 'practice.edit' : 'material.edit')}
                   >
                     <Icon name="pen" size={17} />
                   </Jelly>
                 </Tip>
-                <Tip text={t('material.delete')}>
+                <Tip text={t(practice ? 'practice.delete' : 'material.delete')}>
                   <Jelly
                     className="icon-act danger"
                     onClick={() => void remove()}
-                    aria-label={t('material.delete')}
+                    aria-label={t(practice ? 'practice.delete' : 'material.delete')}
                   >
                     <Icon name="trash" size={17} />
                   </Jelly>
@@ -233,17 +292,24 @@ export function Material() {
       {/* Обложка после текста и в разметке, и на экране: у материала лежачий
           кадр, и он справа — этим страница материала с первого взгляда
           отличается от страницы книги, где обложка стоячая и слева. */}
-      <div className="book-head">
+      <div className="book-head mat-head">
         <div className="book-info">
           <h1 className="display book-title">{material.title}</h1>
 
           {/* Статус стоит здесь строкой, а не переключателем ниже: он больше не
               вопрос к человеку, а вывод из сделанного — см. `statusOf`. */}
-          <p className="muted book-author">
-            {[material.author, t(`kind.${material.kind}`), t(`mstatus.${material.status}`)]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
+          {/* Вид, автор и статус — одной подписью, той же, что в шапке листа
+              и на карточке. Порознь, над названием и под ним, вид и статус
+              зажимали название с двух сторон. */}
+          {/* Набрана `label`, как шапка листа конспекта: это одна и та же
+              служебная подпись к заголовку, и шрифт у неё один. */}
+          <div className="book-author">
+            <MetaLine className="label" lead={<Icon name={KIND_ICON[material.kind]} size={15} />}>
+              <span key="kind">{t(`kind.${material.kind}`)}</span>
+              {material.author && <span key="author">{material.author}</span>}
+              <span key="status">{t(`mstatus.${material.status}`)}</span>
+            </MetaLine>
+          </div>
 
           {/* Плюс стоит вплотную к полосе: тот же жест, что у фокуса на
               дашборде, и в том же месте относительно своего результата.
@@ -254,8 +320,15 @@ export function Material() {
               ответить не умеет: двадцать лекций и двадцать страниц она рисует
               одинаково. Точка при этом не картинка: по ней ставят отметку, и
               это самый короткий путь к тому, ради чего в список и заходят. */}
-          <div className={`prog-row${withParts && chapters.length > 0 ? ' prog-dots' : ''}`}>
-            {withParts && chapters.length > 0 ? (
+          <div className={`prog-row prog-wide${(withParts && chapters.length > 0) || tally ? ' prog-dots' : ''}`}>
+            {/* Практика: разы до цели — кружками, время до цели — полосой,
+                без цели — просто накопленное словами: мерить его не против
+                чего, а пустая полоса врала бы, что работа не начата. */}
+            {practice && p.total === null ? (
+              <span className="prog-total mono">{practiceText}</span>
+            ) : tally && p.total !== null ? (
+              <PracticeTally done={Math.min(p.done, p.total)} total={p.total} label={practiceText} />
+            ) : withParts && chapters.length > 0 ? (
               <PartDots
                 parts={chapters}
                 started={started}
@@ -285,8 +358,14 @@ export function Material() {
               тоже сведение. Те же четыре вопроса, что у книги в чтении. */}
           <dl className="facts">
             <div>
-              <dt>{t('material.factDone')}</dt>
+              <dt>{t(practice ? 'practice.factTotal' : 'material.factDone')}</dt>
               <dd className="mono">
+                {/* Только накопленное: сколько всего, говорит соседняя
+                    «Осталось», а «4 ч 30 мин из 20 ч» в ячейку не влезало. */}
+                {practice ? (
+                  p.unit === 'time' ? t('count.times', { n: p.done }) : fmtMinutes(p.done, locale)
+                ) : (
+                  <>
                 {/* У материала по частям ячейка открывает лист глав: вписать
                     названия списком, вставкой оглавления. Отдельной вкладки
                     ради одного этого больше нет. */}
@@ -302,17 +381,13 @@ export function Material() {
                 ) : (
                   (doneCell ?? dash)
                 )}
+                  </>
+                )}
               </dd>
             </div>
             <div>
               <dt>{t('material.factLeft')}</dt>
-              <dd className="mono">
-                {left === null
-                  ? dash
-                  : p.unit === 'page'
-                    ? t('count.pages', { n: left })
-                    : t(word === 'lecture' ? 'count.lectures' : 'count.chapters', { n: left })}
-              </dd>
+              <dd className="mono">{leftText}</dd>
             </div>
             <div>
               <dt>{t('material.factNotes')}</dt>

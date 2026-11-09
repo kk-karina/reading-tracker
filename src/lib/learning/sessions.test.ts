@@ -12,6 +12,7 @@ import type { Material, StudyNote, StudySession } from './types'
 
 const material = (over: Partial<Material> = {}): Material => ({
   book_id: null,
+  target: null,
   id: 'm1',
   stream_id: 's1',
   title: 'Книга',
@@ -125,7 +126,7 @@ describe('diffSession', () => {
       ...before,
       completed: false,
     })
-    expect(fx.material).toEqual({ status: 'backlog' })
+    expect(fx.material).toEqual({ status: 'active' })
   })
 })
 
@@ -183,7 +184,7 @@ describe('rollbackSession', () => {
   it('reopens what it completed', () => {
     const s = session({ completed: true })
     const fx = rollbackSession(material({ kind: 'video', scale: null, status: 'done' }), [s], s)
-    expect(fx.material).toEqual({ status: 'backlog' })
+    expect(fx.material).toEqual({ status: 'active' })
   })
 })
 

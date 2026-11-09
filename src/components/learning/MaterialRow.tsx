@@ -3,6 +3,9 @@ import { Link } from 'react-router-dom'
 import { sourceOf } from '../../lib/compose/linkMeta'
 import type { Material } from '../../lib/learning/types'
 import { useLocale } from '../../state/LocaleContext'
+import { Icon } from '../Icon'
+import { MetaLine } from '../MetaLine'
+import { KIND_ICON } from './kindIcon'
 import { MaterialCover } from './MaterialCover'
 
 /** Куда вернуться из материала — то же, что все ссылки раздела кладут в state. */
@@ -70,9 +73,16 @@ export function MaterialRow({
           <span className="mat-card-title">{material.title}</span>
           {badge}
         </span>
-        <span className="mat-card-sub">
-          {[t(`kind.${material.kind}`), material.author, host].filter(Boolean).join(' · ')}
-        </span>
+        {/* Значок вида — впереди подписи, а не на обложке: настоящая обложка
+            (кадр ролика, баннер статьи) значка не несёт, и в списке, где
+            рядом статьи и практики, вид пришлось бы прочитать. Значком он
+            узнаётся боковым зрением — те же значки, что в рейке вида у
+            формы. */}
+        <MetaLine className="mat-card-sub" lead={<Icon name={KIND_ICON[material.kind]} size={14} />}>
+          <span key="kind">{t(`kind.${material.kind}`)}</span>
+          {material.author && <span key="author">{material.author}</span>}
+          {host && <span key="host">{host}</span>}
+        </MetaLine>
       </Link>
       {children}
       {/* После текста и в разметке: читают здесь название, обложкой узнают. */}

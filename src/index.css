@@ -199,6 +199,47 @@ button {
   flex: none;
   color: currentColor;
 }
+/* Подпись через точку — `MetaLine`. Значок прижат к слову, сущности
+   разведены шире: расстояние говорит, что с чем связано.
+
+   Ряд сдвинут влево на ширину точки, и левый край срезает точку у той
+   сущности, что начинает строку, — у первой и у перенесённой. Срезает
+   `clip-path`, а не `overflow`: вверх, вниз и вправо он отпускает с запасом,
+   и кольцо фокуса у «Изменить» в шапке листа не обрезается. */
+.meta-line {
+  --meta-lead: 7px;
+  --meta-sep: 10px;
+  --meta-dot: calc(var(--meta-sep) * 2 + 4px);
+  display: block;
+  min-width: 0;
+  clip-path: inset(-8px -8px -8px -3px);
+}
+.meta-line-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  row-gap: 2px;
+  margin-left: calc(var(--meta-dot) * -1);
+}
+.meta-line-item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--meta-lead);
+  min-width: 0;
+}
+.meta-line-item::before {
+  content: '·';
+  flex: none;
+  width: var(--meta-dot);
+  /* Зазор пары «значок — слово» точке не нужен: её поля — уже `--meta-sep`. */
+  margin-right: calc(var(--meta-lead) * -1);
+  text-align: center;
+  opacity: 0.7;
+}
+.meta-line-item > .icon {
+  flex: none;
+}
+
 .label .icon {
   width: 15px;
   height: 15px;
@@ -477,6 +518,25 @@ button {
 .seg.grid3 {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+}
+/* Рейка, у которой деления могут не влезть на узком экране — срез по виду
+   в разделе потока. Там она не переносится рваной второй строкой, а уходит
+   вбок и прокручивается пальцем, как меню в шапке; страница вбок не едет. */
+@media (max-width: 640px) {
+  .seg.scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    max-width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .seg.scroll::-webkit-scrollbar {
+    display: none;
+  }
+  .seg.scroll button {
+    flex: none;
+  }
 }
 /* Больше четырёх делений ряд не держит: flex-wrap оставляет вторую строку
    рваной, потому что деления разной ширины. Грид даёт равные. */
@@ -1065,12 +1125,30 @@ button.chip:active {
   flex-direction: column;
   z-index: 3;
 }
+.chart-tip[data-edge='end'] {
+  transform: translate(calc(-100% + 14px), calc(-100% - 8px));
+}
+.chart-tip[data-edge='start'] {
+  transform: translate(-14px, calc(-100% - 8px));
+}
 .chart-tip strong {
   font-family: var(--mono);
   font-weight: 500;
 }
 .chart-tip span {
   color: rgba(255, 255, 255, 0.65);
+}
+/* Шаг — не число и не дата: своим начертанием, и длинное имя переносится,
+   а не растягивает подсказку на полэкрана. */
+.chart-tip-note {
+  margin-top: 4px;
+  /* Подсказка у правого края сжимается до остатка ширины — без своей ширины
+     имя шага ломалось по слову в строку. */
+  width: max-content;
+  max-width: 220px;
+  font-style: normal;
+  font-weight: 500;
+  white-space: normal;
 }
 
 /* ---------- rhythm: a square per day ----------
@@ -1084,12 +1162,6 @@ button.chip:active {
 }
 .rh-cell {
   fill: var(--well);
-.chart-tip[data-edge='end'] {
-  transform: translate(calc(-100% + 14px), calc(-100% - 8px));
-}
-.chart-tip[data-edge='start'] {
-  transform: translate(-14px, calc(-100% - 8px));
-}
   stroke: rgba(14, 16, 18, 0.06);
   stroke-width: 1;
   /* SVG растянут по панели вдвое-втрое, и волосок вместе с ним становился
@@ -1097,43 +1169,12 @@ button.chip:active {
   vector-effect: non-scaling-stroke;
 }
 .rh-cell.is-on {
-/* Шаг — не число и не дата: своим начертанием, и длинное имя переносится,
-   а не растягивает подсказку на полэкрана. */
-.chart-tip-note {
-  margin-top: 4px;
-  /* Подсказка у правого края сжимается до остатка ширины — без своей ширины
-     имя шага ломалось по слову в строку. */
-  width: max-content;
-  max-width: 220px;
-  font-style: normal;
-  font-weight: 500;
-  white-space: normal;
-}
   fill: var(--brand);
 }
 .rh-cell.rh-future {
   fill: none;
   stroke: var(--line);
 }
-
-/* ---------- weeks: pages per week as bars ---------- */
-
-.wk-plot {
-  position: relative;
-  display: grid;
-  align-items: end;
-  /* The border is the baseline the bars stand on. */
-  border-bottom: 1px solid var(--line-2);
-}
-.wk-col {
-  position: relative;
-  height: 100%;
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
-  /* Grid tracks default to their content's minimum width; without this a phone
-     gets twelve fixed columns and the chart runs off the panel. */
-  min-width: 0;
 /* День, когда закрыт шаг: в клетке лежит стикер приза. Кнопка — сам
    стикер, без своей подложки; наклон задаёт разметка (`rotate`), чтобы
    `transform` оставался свободным для шлепка и подъёма. */
@@ -1166,6 +1207,25 @@ button.chip:active {
     transition: none;
   }
 }
+
+/* ---------- weeks: pages per week as bars ---------- */
+
+.wk-plot {
+  position: relative;
+  display: grid;
+  align-items: end;
+  /* The border is the baseline the bars stand on. */
+  border-bottom: 1px solid var(--line-2);
+}
+.wk-col {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  /* Grid tracks default to their content's minimum width; without this a phone
+     gets twelve fixed columns and the chart runs off the panel. */
+  min-width: 0;
 }
 /* A week with nothing in it: a dot on the baseline, not a gap in the row. */
 .wk-none {
@@ -2621,6 +2681,12 @@ a.group-subject:hover .group-subject-title {
    полосу, и жест стоит там же, где результат, а не отдельной громкой кнопкой
    внизу: тогда на экране два одинаково главных действия вместо одного.
    Один ряд на три экрана — фокус потока, материал, книга. */
+/* Накопленное практикой без цели — на месте полосы, словами: мерить его не
+   против чего. Кегль подписи под полосой, но чернилами: это и есть прогресс. */
+.prog-total {
+  font-size: 15px;
+  color: var(--ink);
+}
 .prog-row {
   display: flex;
   align-items: center;
@@ -2665,6 +2731,10 @@ a.group-subject:hover .group-subject-title {
   display: flex;
   gap: 6px;
   flex: none;
+}
+/* К правому краю и тогда, когда «назад» в строке нет (страница материала). */
+.crumbs .head-actions {
+  margin-left: auto;
 }
 
 /* Тихая кнопка: обводка, а не заливка, — та же, что у плюса у полосы. Разница
@@ -2791,6 +2861,24 @@ a.group-subject:hover .group-subject-title {
 .icon-act.on {
   border-color: var(--brand-2);
   background: var(--brand);
+  color: var(--ink);
+}
+
+/* «Завершить», когда всё пройдено подсчётом, а решения ещё нет: лимонное
+   кольцо вокруг пустой кнопки — та же краска, что у залитой, но без заливки.
+   Сама кнопка ничего не закрывает, кольцо только показывает, что пора.
+   Без пульса: подсказка висит, пока не решишь, и мигающая звала бы громче,
+   чем стоит. */
+.icon-act.finish {
+  transition:
+    color 0.18s var(--ease-out),
+    background 0.18s var(--ease-out),
+    border-color 0.18s var(--ease-out),
+    box-shadow 0.18s var(--ease-out);
+}
+.icon-act.finish.ready {
+  border-color: var(--brand-2);
+  box-shadow: 0 0 0 3px var(--brand);
   color: var(--ink);
 }
 
@@ -2953,7 +3041,15 @@ a.group-subject:hover .group-subject-title {
 
 /* ---------- композер: заведение книги и материала ---------- */
 
-/* Строка захвата — единственное, что видно при открытии, поэтому она крупнее
+/* Вид над обоими шагами: тот же отступ, что между частями карточки, — рейка
+   читается первым вопросом формы, а не её заголовком. */
+.compose-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+/* Строка захвата — главное, что видно при открытии, поэтому она крупнее
    обычного поля: это не одно из полей формы, а вся форма на первом шаге. */
 .compose-capture {
   display: flex;
@@ -3867,23 +3963,30 @@ a.group-subject:hover .group-subject-title {
   margin-bottom: 22px;
 }
 
-.crumb {
+/* «Назад» — подписью со стрелкой, тем же `label`, что строка под
+   названием. Не плашка: плашка спорила с названием за первый взгляд. */
+.crumb-back {
   display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 12px 6px 10px;
-  border: 1px solid var(--ink);
-  border-radius: var(--r-pill);
-  font-size: 13px;
-  font-weight: 500;
-  color: var(--ink);
+  padding: 6px 0;
+  color: var(--ink-3);
   text-decoration: none;
-  transition: background 0.2s, transform 0.2s var(--ease-out);
+  transition: color 0.18s var(--ease-out);
 }
-
-.crumb:hover {
-  background: var(--brand-soft);
-  transform: translateX(-2px);
+.crumb-back .icon {
+  transition: transform 0.2s var(--ease-out);
+}
+@media (hover: hover) and (pointer: fine) {
+  .crumb-back:hover {
+    color: var(--ink);
+  }
+  .crumb-back:hover .icon {
+    transform: translateX(-2px);
+  }
+}
+.crumb-back:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 /* Four cells, always present. A dash is a fact; a missing row is not. */
@@ -4680,6 +4783,14 @@ a.group-subject:hover .group-subject-title {
 .when-minutes-input:focus {
   outline: none;
   border-bottom-color: var(--ink);
+}
+/* Обязательные минуты практики: пустое поле подчёркнуто лимонным — то же
+   «сюда», что у залитого фокуса, — пока в него не впишут число. */
+.when-minutes.need {
+  color: var(--ink);
+}
+.when-minutes.need .when-minutes-input {
+  border-bottom: 2px solid var(--brand-2);
 }
 .when-faces {
   /* Просвет шире кольца выбранного: иначе кольцо ложится на соседа. */

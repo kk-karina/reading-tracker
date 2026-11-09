@@ -112,7 +112,12 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
         streams: (s.data ?? []) as Stream[],
         // Связь с полкой — миграция 008. До неё колонок нет, и материал
         // читается несвязанным.
-        materials: ((m.data ?? []) as Material[]).map((row) => ({ ...row, book_id: row.book_id ?? null })),
+        // Цель практики — миграция 011, и до неё колонки нет тоже.
+        materials: ((m.data ?? []) as Material[]).map((row) => ({
+          ...row,
+          book_id: row.book_id ?? null,
+          target: row.target ?? null,
+        })),
         // Начатые руками — миграция 009. До неё колонок нет, и начатого руками нет.
         parts: ((p.data ?? []) as MaterialPart[]).map((row) => ({ ...row, started: row.started ?? false })),
         sessions: ((x.error ? [] : (x.data ?? [])) as StudySession[]).map((row) => ({
@@ -167,12 +172,12 @@ export function createSupabaseLearningStore(sb: SupabaseClient): LearningStore {
 
     async addMaterial(item: NewMaterial) {
       // Несвязанный материал пишется без ключа: на базе до миграции 008
-      // колонки нет, и пустое значение уронило бы запись целиком.
-      const { book_id, ...rest } = item
-      const made = (await ok(() =>
-        sb.from('materials').insert(book_id ? item : rest).select('*').single(),
-      )) as Material
-      return { ...made, book_id: made.book_id ?? null }
+      // колонки нет, и пустое значение уронило бы запись целиком. Цель — так
+      // же, до миграции 011.
+      const { book_id, target, ...rest } = item
+      const row = { ...rest, ...(book_id ? { book_id } : {}), ...(target ? { target } : {}) }
+      const made = (await ok(() => sb.from('materials').insert(row).select('*').single())) as Material
+      return { ...made, book_id: made.book_id ?? null, target: made.target ?? null }
     },
     async updateMaterial(id, patch) {
       const after = (await ok(() =>

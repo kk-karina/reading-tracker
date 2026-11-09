@@ -52,8 +52,8 @@ export function applySession(material: Material, session: StudySession): Session
 /**
  * Правка занятия.
  *
- * «Прошла целиком» снимается в очередь, а не в работу: из чего статус выйдет
- * дальше, решает `statusOf` по написанному, и угадывать за него незачем.
+ * «Прошла целиком» снимается в работу, а не в очередь: занятие-то было, и
+ * материал, за который садились, в бэклог не возвращается.
  */
 export function diffSession(
   material: Material,
@@ -72,7 +72,7 @@ export function diffSession(
     fx.material.page_current = after.page_to
   }
 
-  if (after.completed !== before.completed) fx.material.status = after.completed ? 'done' : 'backlog'
+  if (after.completed !== before.completed) fx.material.status = after.completed ? 'done' : 'active'
 
   const was = new Set(before.part_ids)
   const will = new Set(after.part_ids)
@@ -108,7 +108,9 @@ export function rollbackSession(
   ) {
     fx.material.page_current = session.page_from
   }
-  if (session.completed) fx.material.status = 'backlog'
+  // В работу, а не в очередь: за материал садились, и «Вернуть в работу»
+  // кнопкой ведёт туда же.
+  if (session.completed) fx.material.status = 'active'
   fx.parts = [
     ...session.part_ids.map((id) => ({ id, done: false })),
     ...session.started_ids.map((id) => ({ id, started: false })),

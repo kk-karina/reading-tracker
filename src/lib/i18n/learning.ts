@@ -5,7 +5,8 @@ export const LEARNING = {
   'nav.reading': { ru: 'Чтение', en: 'Reading' },
   'nav.hub': { ru: 'Лернинг Хаб', en: 'Learning Hub' },
   'nav.dashboard': { ru: 'Дашборд', en: 'Dashboard' },
-  'nav.materials': { ru: 'Материалы', en: 'Materials' },
+  // Не только читают, но и делают: практика лежит в том же разделе.
+  'nav.materials': { ru: 'Материалы и практика', en: 'Materials & practice' },
   // Раздел называется тем, что в нём лежит. «Заметки» — это про пометки на
   // полях; здесь пишут конспект занятия.
   'nav.notes': { ru: 'Конспекты', en: 'Notes' },
@@ -40,8 +41,9 @@ export const LEARNING = {
 
   // Все двери «завести» начинаются одним глаголом: «Добавить книгу», «Добавить
   // конспект», «Добавить материал». «Новый материал» рядом с ними читался как
-  // другое действие, хотя открывает тот же композер.
-  'learning.newMaterial': { ru: 'Добавить материал', en: 'Add a material' },
+  // другое действие, хотя открывает тот же композер. Практику заводят тем же
+  // композером, поэтому она и названа.
+  'learning.newMaterial': { ru: 'Добавить материал или практику', en: 'Add a material or practice' },
 
   'hub.title': { ru: 'Лернинг Хаб', en: 'Learning Hub' },
   'hub.empty': { ru: 'Пока ни одного потока', en: 'No streams yet' },
@@ -326,6 +328,41 @@ export const LEARNING = {
     ru: 'Удалить материал вместе с его конспектами?',
     en: 'Delete the material and its notes?',
   },
+  // У практики свои слова: «материал» про этюды врёт.
+  'practice.edit': { ru: 'Настроить практику', en: 'Edit practice' },
+  'practice.delete': { ru: 'Удалить практику', en: 'Delete practice' },
+  'practice.confirmDelete': {
+    ru: 'Удалить практику вместе с её занятиями и конспектами?',
+    en: 'Delete the practice with its sessions and notes?',
+  },
+  // Ячейки шапки практики: глав и страниц у неё нет, есть накопленное.
+  'practice.factTotal': { ru: 'Накоплено', en: 'So far' },
+  'practice.factSessions': { ru: 'Занятий', en: 'Sessions' },
+  'practice.timesOf': { ru: '{done} из {total} раз', en: '{done} of {total} times' },
+  'practice.target': { ru: 'Цель', en: 'Goal' },
+  'practice.targetHours': { ru: 'Цель в часах', en: 'Goal in hours' },
+  'practice.targetTimes': { ru: 'Цель в разах', en: 'Goal in times' },
+  'practice.scale': { ru: 'Чем мерить', en: 'Measured by' },
+  'practice.targetHint': {
+    ru: 'Цель необязательна: без неё копится просто время или число раз.',
+    en: 'The goal is optional: without it the time or the count simply adds up.',
+  },
+  'practice.minutesNeeded': {
+    ru: 'Минуты — это и есть шаг практики',
+    en: 'Minutes are what a practice session adds up',
+  },
+  'count.times': {
+    ru: { one: '{n} раз', few: '{n} раза', many: '{n} раз', other: '{n} раза' },
+    en: { one: '{n} time', other: '{n} times' },
+  },
+  'unit.times': {
+    ru: { one: 'раз', few: 'раза', many: 'раз', other: 'раза' },
+    en: { one: 'time', other: 'times' },
+  },
+  'compose.unitHours': {
+    ru: { one: 'час', few: 'часа', many: 'часов', other: 'часа' },
+    en: { one: 'hour', other: 'hours' },
+  },
   'material.notesEmpty': { ru: 'Конспектов пока нет', en: 'No notes yet' },
   'material.progress': { ru: '{done} из {total}', en: '{done} of {total}' },
   'material.cover': { ru: 'Обложка', en: 'Cover' },
@@ -345,42 +382,57 @@ export const LEARNING = {
   'kind.article': { ru: 'Статья', en: 'Article' },
   'kind.course': { ru: 'Курс', en: 'Course' },
   'kind.video': { ru: 'Видео', en: 'Video' },
+  'kind.practice': { ru: 'Практика', en: 'Practice' },
 
-  // Статус материала — тем же словом, что срез «Материалов», в котором он
-  // лежит: «В работе» на карточке из среза «На изучении» звучало как третье
-  // состояние.
+  // Статус материала — тем же словом, что срез раздела, в котором он лежит.
+  // Нейтральные слова, а не «на изучении / изучено»: практику не изучают, её
+  // делают, а «в работе» и «завершено» годятся и книге, и этюдам.
   'mstatus.backlog': { ru: 'В бэклоге', en: 'In the backlog' },
-  'mstatus.active': { ru: 'На изучении', en: 'Studying' },
-  'mstatus.done': { ru: 'Изучено', en: 'Studied' },
+  'mstatus.active': { ru: 'В работе', en: 'In progress' },
+  'mstatus.done': { ru: 'Завершено', en: 'Finished' },
+
+  // Кнопка в ряду действий материала. Глагол на пустой, состояние-отмена на
+  // залитой: подсказка говорит, что случится по нажатию.
+  'material.finish': { ru: 'Завершить', en: 'Finish' },
+  'material.reopen': { ru: 'Вернуть в работу', en: 'Back to in progress' },
+  'material.finishReady': { ru: 'Всё пройдено — завершить?', en: 'All done — finish it?' },
 
   'studying.empty': {
     // Связка после дефиса: рукописная строка узкая, и «что-» без «нибудь»
     // повисало бы на конце строки.
-    ru: 'Ничего не изучается — возьми что-\u2060нибудь из бэклога',
+    ru: 'Ничего нет в работе — возьми что-\u2060нибудь из бэклога',
     en: 'Nothing in progress — take something from the backlog',
   },
   /* Бейдж, а не действие: фокус на карточке отмечают, а переключают его на
      странице материала — там видно, что именно меняешь, и есть чем отменить. */
   'studying.focusBadge': { ru: 'Фокус', en: 'Focus' },
 
-  // Рейка фильтров раздела «Материалы». Имена от состояния человека, а не от
-  // статуса в базе: «на изучении», а не «active».
-  'mview.active': { ru: 'На изучении', en: 'Studying' },
+  // Рейка фильтров раздела. Имена от состояния человека, а не от статуса в
+  // базе: «в работе», а не «active».
+  'mview.active': { ru: 'В работе', en: 'In progress' },
   'mview.backlog': { ru: 'Бэклог', en: 'Backlog' },
-  'mview.done': { ru: 'Изучены', en: 'Studied' },
-  'materials.filters': { ru: 'Фильтры материалов', en: 'Material filters' },
+  'mview.done': { ru: 'Завершено', en: 'Finished' },
+  'materials.filters': { ru: 'Фильтры по статусу', en: 'Status filters' },
+  // Вторая рейка — по виду. Видами во множественном: это срез списка.
+  'materials.kinds': { ru: 'Фильтры по виду', en: 'Kind filters' },
+  'mkind.all': { ru: 'Все', en: 'All' },
+  'mkind.book': { ru: 'Книги', en: 'Books' },
+  'mkind.article': { ru: 'Статьи', en: 'Articles' },
+  'mkind.course': { ru: 'Курсы', en: 'Courses' },
+  'mkind.video': { ru: 'Видео', en: 'Videos' },
+  'mkind.practice': { ru: 'Практика', en: 'Practice' },
   'materials.emptyBacklog': {
     ru: 'Бэклог пуст — всё разобрано',
     en: 'The backlog is empty, all sorted',
   },
-  'materials.emptyDone': { ru: 'Изученного пока нет', en: 'Nothing studied yet' },
+  'materials.emptyDone': { ru: 'Завершённого пока нет', en: 'Nothing finished yet' },
   'materials.emptyAll': { ru: 'В потоке пока пусто', en: 'Nothing in this stream yet' },
   'materials.emptyAllBody': {
-    ru: 'Материал — это книга, курс, статья или ролик. Прогресс потока считается по ним.',
-    en: 'A material is a book, a course, an article or a video. The stream counts its progress by them.',
+    ru: 'Сюда идут книги, курсы, статьи, ролики и практика. Прогресс потока считается по ним.',
+    en: 'Books, courses, articles, videos and practice go here. The stream counts its progress by them.',
   },
 
-  'backlog.take': { ru: 'Взять на изучение', en: 'Start studying' },
+  'backlog.take': { ru: 'Взять в работу', en: 'Start' },
 
   'note.part': { ru: 'Глава или часть', en: 'Chapter or part' },
   'note.titlePlaceholder': { ru: 'Заголовок', en: 'Title' },

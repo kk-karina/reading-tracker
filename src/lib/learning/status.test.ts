@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { statusOf, withStatus } from './status'
+import { finishedByCount, settleStatuses, statusOf, withStatus } from './status'
 import type { Material, MaterialPart, StudyNote } from './types'
 
 const material = (over: Partial<Material> = {}): Material => ({
   book_id: null,
+  target: null,
   id: 'm1',
   stream_id: 'c1',
   title: 'Материал',
@@ -62,8 +63,10 @@ describe('statusOf: курс и книга по главам', () => {
     expect(statusOf(course, [part(), part({ sort: 1 })], [note()])).toBe('active')
   })
 
-  it('все лекции отмечены — пройдено, без всякой отдельной отметки', () => {
-    expect(statusOf(course, [part({ done: true }), part({ sort: 1, done: true })], [])).toBe('done')
+  // Закрывает кнопка, а не подсчёт: иначе закрытое подсчётом нельзя было бы
+  // вернуть в работу.
+  it('все лекции отмечены — всё ещё в работе, пока не завершили', () => {
+    expect(statusOf(course, [part({ done: true }), part({ sort: 1, done: true })], [])).toBe('active')
   })
 
   // Пустой список частей — это «частей ещё не завели», а не «все пройдены».
@@ -83,8 +86,8 @@ describe('statusOf: книга по страницам', () => {
     expect(statusOf({ ...book, page_current: 120 }, [], [])).toBe('active')
   })
 
-  it('последняя страница — пройдено', () => {
-    expect(statusOf({ ...book, page_current: 300 }, [], [])).toBe('done')
+  it('последняя страница — в работе, пока не завершили', () => {
+    expect(statusOf({ ...book, page_current: 300 }, [], [])).toBe('active')
   })
 
   // Число страниц неизвестно — закрыть книгу подсчётом нечем, и она остаётся
@@ -117,12 +120,79 @@ describe('statusOf: отметка сильнее подсчёта', () => {
     expect(statusOf(marked, [part(), part({ sort: 1 })], [])).toBe('done')
   })
 
-  // Старые снимки несут статус, выставленный руками. «В работе» подсчёт
-  // пересчитывает, и это правильно: иначе возвращается то самое расхождение,
-  // ради которого статус и перестали ставить руками.
-  it('выставленная руками «работа» пересчитывается', () => {
-    const stale = material({ kind: 'course', status: 'active' })
-    expect(statusOf(stale, [part(), part({ sort: 1 })], [])).toBe('backlog')
+  // «Взять в работу» и выбор фокусом пишут `active` — это решение, и подсчёт
+  // его не отменяет.
+  it('взятое в работу явно остаётся в работе и без сделанного', () => {
+    const taken = material({ kind: 'course', status: 'active' })
+    expect(statusOf(taken, [part(), part({ sort: 1 })], [])).toBe('active')
+  })
+
+  it('возвращённое в работу не закрывается подсчётом обратно', () => {
+    const reopened = material({ kind: 'course', status: 'active' })
+    expect(statusOf(reopened, [part({ done: true })], [])).toBe('active')
+  })
+})
+
+describe('statusOf: практика', () => {
+  const practice = material({ kind: 'practice', scale: 'minutes', target: 600 })
+
+  it('без занятий — очередь', () => {
+    expect(statusOf(practice, [], [])).toBe('backlog')
+  })
+
+  it('с занятием — работа', () => {
+    expect(statusOf(practice, [], [{ material_id: 'm1' }])).toBe('active')
+  })
+})
+
+describe('finishedByCount', () => {
+  it('курс со всеми отмеченными лекциями', () => {
+    const course = material({ kind: 'course' })
+    expect(finishedByCount(course, [part({ done: true })], 0)).toBe(true)
+    expect(finishedByCount(course, [part({ done: true }), part({ sort: 1 })], 0)).toBe(false)
+    expect(finishedByCount(course, [], 0)).toBe(false)
+  })
+
+  it('книга на последней странице', () => {
+    const book = material({ kind: 'book', scale: 'pages', pages_total: 300, page_current: 300 })
+    expect(finishedByCount(book, [], 0)).toBe(true)
+    expect(finishedByCount({ ...book, pages_total: null }, [], 0)).toBe(false)
+  })
+
+  it('практика с набранной целью; без цели не заканчивается никогда', () => {
+    const practice = material({ kind: 'practice', scale: 'times', target: 10 })
+    expect(finishedByCount(practice, [], 10)).toBe(true)
+    expect(finishedByCount(practice, [], 9)).toBe(false)
+    expect(finishedByCount({ ...practice, target: null }, [], 999)).toBe(false)
+  })
+
+  it('статью подсчётом не закрыть', () => {
+    expect(finishedByCount(material({ kind: 'article' }), [], 0)).toBe(false)
+  })
+})
+
+describe('settleStatuses', () => {
+  it('пройденное подсчётом закрывается', () => {
+    const course = material({ kind: 'course', status: 'backlog' })
+    const [got] = settleStatuses([course], [part({ done: true })], [])
+    expect(got.status).toBe('done')
+  })
+
+  // Хранимый `active` из времён ручного статуса прежнее правило не замечало,
+  // и на экране такой материал стоял в бэклоге. Там он и остаётся.
+  it('давний «в работе» без следов возвращается в бэклог', () => {
+    const stale = material({ kind: 'article', status: 'active' })
+    expect(settleStatuses([stale], [], [])[0].status).toBe('backlog')
+  })
+
+  it('«в работе» со следами остаётся', () => {
+    const live = material({ kind: 'article', status: 'active' })
+    expect(settleStatuses([live], [], [note()])[0].status).toBe('active')
+  })
+
+  it('завершённое не трогается', () => {
+    const done = material({ kind: 'course', status: 'done' })
+    expect(settleStatuses([done], [part()], [])[0].status).toBe('done')
   })
 })
 

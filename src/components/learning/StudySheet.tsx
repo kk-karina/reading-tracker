@@ -71,7 +71,7 @@ export function StudySheet({
   onClose: () => void
 }) {
   const { t } = useLocale()
-  const { materials, parts, notes, addNote, deleteNote } = useLearning()
+  const { materials, parts, notes, sessions, addNote, deleteNote } = useLearning()
   const writes = useSessionWrites()
 
   const options = material || session ? [] : sourceOrder(materials, stream.id, stream.focus_material_id)
@@ -120,7 +120,7 @@ export function StudySheet({
     )
   }
 
-  const p = materialProgress(subject, parts)
+  const p = materialProgress(subject, parts, sessions)
   const chapters = partsOf(parts, subject.id)
   const word = partWord(subject.kind)
   const label = (part: MaterialPart, i = chapters.indexOf(part)) =>
@@ -152,6 +152,8 @@ export function StudySheet({
   const fromNum = Number(from) || 0
   const toNum = to.trim() ? Number(to) : null
   const backwards = p.unit === 'page' && toNum !== null && toNum < fromNum
+  // Практика минутами без минут — занятие ни о чём: накопленное не сдвинет.
+  const noMinutes = p.unit === 'minute' && !(Number(minutes) > 0)
   const dirty = state() !== start
 
   const toggle = (id: string) => setPicked((list) => cycleMark(list, id, started.has(id)))
@@ -167,7 +169,7 @@ export function StudySheet({
   }
 
   const save = async () => {
-    if (backwards || busy) return
+    if (backwards || noMinutes || busy) return
     setBusy(true)
 
     const fields = {
@@ -273,7 +275,9 @@ export function StudySheet({
           onMinutes={setMinutes}
           rating={rating}
           onRating={setRating}
+          minutesNeeded={p.unit === 'minute'}
         />
+        {noMinutes && <p className="small faint">{t('practice.minutesNeeded')}</p>}
 
         <DraftStack
           drafts={drafts}
@@ -307,7 +311,7 @@ export function StudySheet({
               {t('study.delete')}
             </button>
           )}
-          <Jelly className="btn" onClick={() => void save()} disabled={backwards || busy}>
+          <Jelly className="btn" onClick={() => void save()} disabled={backwards || noMinutes || busy}>
             {t('form.save')}
           </Jelly>
         </div>

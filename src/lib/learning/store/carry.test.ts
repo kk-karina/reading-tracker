@@ -96,6 +96,7 @@ function local(): LearningSnapshot {
       {
         id: 'm1',
         book_id: null,
+        target: null,
         stream_id: 's1',
         title: 'Книга',
         kind: 'book',

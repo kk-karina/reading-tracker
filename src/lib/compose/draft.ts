@@ -1,5 +1,5 @@
 import { statusPatch } from '../reading'
-import type { BookScale, Material, MaterialKind } from '../learning/types'
+import type { BookScale, Material, MaterialKind, PracticeScale } from '../learning/types'
 import type { Book } from '../types'
 
 /**
@@ -21,6 +21,10 @@ export interface Draft {
   pages: string
   /** Глав или лекций — при частях. */
   parts: string
+  /** Только у практики: минутами или разами. */
+  practice: PracticeScale
+  /** Цель практики как набрана: часы у минут, разы у раз. Пусто — без цели. */
+  target: string
   /** «Уже прочитана / пройден»: единственный статус, который нельзя вывести. */
   done: boolean
   /** Издание Open Library, если книга выбрана из поиска. Только полка. */
@@ -36,12 +40,30 @@ export const emptyDraft = (kind: MaterialKind): Draft => ({
   scale: 'pages',
   pages: '',
   parts: '',
+  practice: 'minutes',
+  target: '',
   done: false,
   externalId: null,
 })
 
 const text = (v: string) => v.trim() || null
 const num = (v: string) => (v.trim() ? Number(v) : null)
+
+/**
+ * Цель практики из поля в единицы хранения: часы — в минуты, разы — как есть.
+ * Часы принимают дробь через точку или запятую: «1,5» — полтора часа.
+ */
+export function targetOf(practice: PracticeScale, raw: string): number | null {
+  const n = Number(raw.trim().replace(',', '.'))
+  if (!raw.trim() || !Number.isFinite(n) || n <= 0) return null
+  return practice === 'minutes' ? Math.round(n * 60) : Math.round(n)
+}
+
+/** Обратно — для правки: минуты в часы без хвоста нулей. */
+export function targetText(practice: PracticeScale, target: number | null): string {
+  if (!target) return ''
+  return practice === 'minutes' ? String(Math.round((target / 60) * 100) / 100) : String(target)
+}
 
 /** Менялось ли что-то, что стоит спросить перед закрытием. */
 export function sameDraft(a: Draft, b: Draft): boolean {
@@ -108,30 +130,36 @@ export function materialToDraft(material: Material | undefined, partsCount: numb
     title: material.title,
     author: material.author ?? '',
     cover: material.cover_url ?? '',
-    scale: material.scale ?? 'pages',
+    scale: material.scale === 'parts' ? 'parts' : 'pages',
     pages: material.pages_total ? String(material.pages_total) : '',
     parts: partsCount ? String(partsCount) : '',
+    practice: material.scale === 'times' ? 'times' : 'minutes',
+    target: targetText(material.scale === 'times' ? 'times' : 'minutes', material.target),
     done: material.status === 'done',
   }
 }
 
 export type MaterialFields = Pick<
   Material,
-  'title' | 'kind' | 'author' | 'url' | 'cover_url' | 'status' | 'scale' | 'pages_total' | 'page_current'
+  'title' | 'kind' | 'author' | 'url' | 'cover_url' | 'status' | 'scale' | 'pages_total' | 'page_current' | 'target'
 >
 
 export function draftToMaterial(d: Draft, material?: Material): MaterialFields {
   const byPages = d.kind === 'book' && d.scale === 'pages'
+  const practice = d.kind === 'practice'
   return {
     title: d.title.trim(),
     kind: d.kind,
-    author: text(d.author),
-    url: text(d.url),
+    // У практики нет ни автора, ни ссылки: поля спрятаны, но в черновике
+    // могли остаться от вида, с которого переключились.
+    author: practice ? null : text(d.author),
+    url: practice ? null : text(d.url),
     cover_url: text(d.cover),
-    // Не утверждение, а отсутствие отметки: очередь это или работа, решит
-    // подсчёт сделанного.
-    status: d.done ? 'done' : 'backlog',
-    scale: d.kind === 'book' ? d.scale : null,
+    // Правка не трогает «в работе»: хранимый `active` — это «взяла явно», и
+    // переименование материала не должно возвращать его в бэклог.
+    status: d.done ? 'done' : material?.status === 'done' ? 'active' : (material?.status ?? 'backlog'),
+    scale: d.kind === 'book' ? d.scale : practice ? d.practice : null,
+    target: practice ? targetOf(d.practice, d.target) : null,
     pages_total: byPages ? num(d.pages) : null,
     // Текущая страница живёт на странице материала: она меняется каждый раз,
     // а всё здешнее — один раз.
@@ -165,6 +193,16 @@ export function recordToDraft(rec: { book: Book } | { material: Material }): Par
   // Книга с полки меряется страницами, как там; материал — своим видом и шкалой.
   return 'book' in rec
     ? { ...kept, kind: 'book', scale: 'pages' }
-    : { ...kept, kind: rec.material.kind, scale: rec.material.scale ?? 'pages' }
+    : {
+        ...kept,
+        kind: rec.material.kind,
+        scale: rec.material.scale === 'parts' ? 'parts' : 'pages',
+        ...(rec.material.kind === 'practice'
+          ? {
+              practice: rec.material.scale === 'times' ? 'times' : 'minutes',
+              target: targetText(rec.material.scale === 'times' ? 'times' : 'minutes', rec.material.target),
+            }
+          : {}),
+      }
 }
 

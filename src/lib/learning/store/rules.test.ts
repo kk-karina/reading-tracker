@@ -33,6 +33,7 @@ const stream = (over: Partial<Stream> & { id: string }): Stream => ({
 
 const material = (over: Partial<Material> & { id: string; stream_id: string }): Material => ({
   book_id: null,
+  target: null,
   title: 'Материал',
   kind: 'book',
   author: null,

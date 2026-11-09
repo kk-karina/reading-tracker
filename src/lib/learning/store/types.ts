@@ -24,7 +24,7 @@ export type NewMaterial = Pick<
   | 'page_current'
   | 'sort'
 > &
-  Partial<Pick<Material, 'book_id'>>
+  Partial<Pick<Material, 'book_id' | 'target'>>
 export type NewMaterialPart = Pick<MaterialPart, 'material_id' | 'title' | 'done' | 'sort'> &
   Partial<Pick<MaterialPart, 'started'>>
 export type NewStudyNote = Pick<

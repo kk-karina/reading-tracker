@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
+import { Icon } from './Icon'
 
 export interface Crumb {
   to: string
@@ -22,6 +23,10 @@ export interface Crumb {
  * автором, где читаются как чужие. Крошка всегда одной высоты и всегда одна,
  * её правая половина пустует, и вопрос у этой строки тот же: где я и что
  * отсюда можно сделать.
+ *
+ * «Назад» — подписью, тем же шрифтом, что строка под названием, а не
+ * плашкой: плашка с чёрной обводкой спорила с названием за первый взгляд,
+ * хотя нужна реже всего на странице — обычно назад ходят кнопкой браузера.
  */
 export function Crumbs({ fallback, actions }: { fallback: Crumb; actions?: ReactNode }) {
   const { state } = useLocation()
@@ -29,8 +34,9 @@ export function Crumbs({ fallback, actions }: { fallback: Crumb; actions?: React
   return (
     <div className="crumbs">
       <nav>
-        <Link to={crumb.to} className="crumb">
-          ← {crumb.label}
+        <Link to={crumb.to} className="crumb-back label">
+          <Icon name="arrow-left-md" size={14} />
+          {crumb.label}
         </Link>
       </nav>
       {actions}

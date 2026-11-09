@@ -11,7 +11,7 @@ import { Composer, type ComposerVariant } from './compose/Composer'
 const STREAM: ComposerVariant = { kinds: KINDS, scales: BOOK_SCALES }
 
 /**
- * Материал в потоке — композер со всеми четырьмя видами.
+ * Материал в потоке — композер со всеми пятью видами, практикой включительно.
  *
  * Своё здесь — только сохранение: части живут отдельной коллекцией, и их
  * план считается до записи — он же отвечает, нужно ли спрашивать
@@ -41,7 +41,7 @@ export function MaterialForm({
 
   return (
     <Composer
-      title={material ? t('material.edit') : t('learning.newMaterial')}
+      title={material ? t(material.kind === 'practice' ? 'practice.edit' : 'material.edit') : t('learning.newMaterial')}
       initial={materialToDraft(material, mine.length)}
       editing={!!material}
       variant={STREAM}
@@ -91,7 +91,7 @@ export function MaterialForm({
       onDelete={
         material &&
         (async () => {
-          if (!confirm(t('material.confirmDelete'))) return
+          if (!confirm(t(material.kind === 'practice' ? 'practice.confirmDelete' : 'material.confirmDelete'))) return
           await deleteMaterial(material.id)
           onClose()
           onDeleted?.()

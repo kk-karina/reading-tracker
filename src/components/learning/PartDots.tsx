@@ -112,3 +112,43 @@ export function PartDots({
     </div>
   )
 }
+
+/**
+ * Сколько раз практика уже была — кружками до цели.
+ *
+ * Та же анатомия точки, что у глав, чтобы «сколько из скольких» читалось
+ * одним языком по всему разделу. Но здесь точки не нажимаются: их заполняют
+ * занятия, и отметить «раз» мимо листа занятия значило бы завести шаг без
+ * даты. Поэтому это картинка с одной подписью на всю строку, а не ряд кнопок.
+ */
+export function PracticeTally({ done, total, label }: { done: number; total: number; label: string }) {
+  const size = dotSize(total)
+  return (
+    <div
+      className="dots tally"
+      role="img"
+      aria-label={label}
+      title={label}
+      style={
+        {
+          '--dot-base': `${size.base}px`,
+          '--dot-touch': `${size.base}px`,
+        } as CSSProperties
+      }
+    >
+      {Array.from({ length: total }, (_, i) => (
+        <span key={i} className={`dot ${i < done ? 'done' : 'fresh'}`}>
+          <span className="dot-fill" aria-hidden />
+        </span>
+      ))}
+    </div>
+  )
+}
+
+/**
+ * До скольких раз цель рисуется кружками. Дальше — полосой: кружок мельче
+ * семи пикселей перестаёт отличать заливку от обводки, а сотня кружков
+ * читается пунктиром, а не счётом. Порог — верхняя ступень `DOT` с точкой
+ * разборчивого размера.
+ */
+export const TALLY_MAX = DOT[1].upTo

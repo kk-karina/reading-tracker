@@ -149,7 +149,7 @@ create table if not exists public.materials (
   user_id uuid not null default auth.uid() references auth.users(id) on delete cascade,
   stream_id uuid not null references public.streams(id) on delete cascade,
   title text not null,
-  kind text not null check (kind in ('book','article','course','video')),
+  kind text not null check (kind in ('book','article','course','video','practice')),
   author text,
   url text,
   status text not null default 'backlog'
@@ -158,10 +158,13 @@ create table if not exists public.materials (
   -- else's server anyway, and a drawn cover hides a dead link. A cover chosen
   -- from a file arrives here as a data: URL, downscaled by the app first.
   cover_url text,
-  -- Only a book has a scale, and only a book measured in pages has the counts.
-  scale text check (scale is null or scale in ('pages','parts')),
+  -- A book counts pages or parts, a practice minutes or times; only a book
+  -- measured in pages has the counts.
+  scale text check (scale is null or scale in ('pages','parts','minutes','times')),
   pages_total integer,
   page_current integer,
+  -- Only a practice: minutes or times to aim for. See migrations/011_practice.sql.
+  target integer check (target is null or target > 0),
   -- The same book on the shelf. See migrations/008_book_link.sql.
   book_id uuid references public.books(id) on delete set null,
   sort integer not null default 0,

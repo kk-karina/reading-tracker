@@ -21,6 +21,7 @@ export function WhenLine({
   onMinutes,
   rating,
   onRating,
+  minutesNeeded = false,
 }: {
   date: string
   onDate: (iso: string) => void
@@ -28,6 +29,11 @@ export function WhenLine({
   onMinutes?: (v: string) => void
   rating?: number | null
   onRating?: (r: number | null) => void
+  /**
+   * Без минут лист не сохранится: у практики, которая меряется временем,
+   * минуты и есть шаг. Пока поле пустое, оно подчёркнуто лимонным.
+   */
+  minutesNeeded?: boolean
 }) {
   const { t, locale } = useLocale()
   const picker = useRef<HTMLInputElement>(null)
@@ -59,12 +65,16 @@ export function WhenLine({
       </span>
 
       {onMinutes && (
-        <label className="when-minutes" title={t('session.minutesHint')}>
+        <label
+          className={`when-minutes${minutesNeeded && !minutes ? ' need' : ''}`}
+          title={minutesNeeded ? t('practice.minutesNeeded') : t('session.minutesHint')}
+        >
           <Icon name="clock" size={14} />
           <input
             className="when-minutes-input"
             inputMode="numeric"
             aria-label={t('session.minutes')}
+            aria-required={minutesNeeded || undefined}
             placeholder="—"
             value={minutes ?? ''}
             onChange={(e) => onMinutes(e.target.value.replace(/\D/g, ''))}

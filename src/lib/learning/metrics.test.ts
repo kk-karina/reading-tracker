@@ -4,6 +4,7 @@ import {
   doneAfterPart,
   lastNoteDate,
   materialProgress,
+  practiced,
   remainingOf,
   weekNotes,
 } from './metrics'
@@ -14,6 +15,7 @@ const MIN_BAR = 3
 
 const material = (over: Partial<Material> = {}): Material => ({
   book_id: null,
+  target: null,
   id: 'm1',
   stream_id: 'c1',
   title: 'Книга',
@@ -153,6 +155,34 @@ describe('materialProgress: книга по страницам', () => {
 
   it('ноль страниц всего не делит на ноль', () => {
     expect(materialProgress(material({ pages_total: 0, page_current: 5 }), []).percent).toBe(null)
+  })
+})
+
+describe('materialProgress: практика', () => {
+  const sessions = [
+    { material_id: 'm1', minutes: 90 },
+    { material_id: 'm1', minutes: null },
+    { material_id: 'm2', minutes: 45 },
+  ]
+
+  it('минуты копятся из занятий своей практики', () => {
+    const p = materialProgress(material({ kind: 'practice', scale: 'minutes', target: 600 }), [], sessions)
+    expect(p).toEqual({ done: 90, total: 600, percent: 15, unit: 'minute' })
+  })
+
+  it('без цели — только накопленное, полосы нет', () => {
+    const p = materialProgress(material({ kind: 'practice', scale: 'minutes' }), [], sessions)
+    expect(p).toEqual({ done: 90, total: null, percent: null, unit: 'minute' })
+  })
+
+  // У шкалы раз «было» и есть шаг: занятие без минут засчитывается.
+  it('разы считаются занятиями, с минутами или без', () => {
+    const p = materialProgress(material({ kind: 'practice', scale: 'times', target: 4 }), [], sessions)
+    expect(p).toEqual({ done: 2, total: 4, percent: 50, unit: 'time' })
+  })
+
+  it('без занятий — ноль, а не пустота', () => {
+    expect(practiced(material({ kind: 'practice', scale: 'minutes' }), [])).toBe(0)
   })
 })
 

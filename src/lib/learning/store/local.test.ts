@@ -35,6 +35,52 @@ const aStream = {
   sort: 0,
 }
 
+describe('разовая поправка статусов', () => {
+  const KEY = 'readingtracker.learning.v3'
+  const SETTLED = 'readingtracker.learning.statusSettled'
+  const row = (over: Record<string, unknown>) => ({
+    id: 'm',
+    stream_id: 's',
+    title: 'Курс',
+    kind: 'course',
+    author: null,
+    url: null,
+    status: 'backlog',
+    cover_url: null,
+    scale: null,
+    pages_total: null,
+    page_current: null,
+    book_id: null,
+    sort: 0,
+    created_at: '',
+    updated_at: '',
+    ...over,
+  })
+
+  it('пройденное подсчётом закрывается один раз, и вернутое в работу так и остаётся', async () => {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify({
+        streams: [],
+        materials: [row({ id: 'c' })],
+        parts: [{ id: 'p', material_id: 'c', title: '', done: true, sort: 0 }],
+        sessions: [],
+        notes: [],
+      }),
+    )
+    expect((await localLearning.load()).materials[0].status).toBe('done')
+    expect(localStorage.getItem(SETTLED)).toBe('1')
+
+    await localLearning.updateMaterial('c', { status: 'active' })
+    expect((await localLearning.load()).materials[0].status).toBe('active')
+  })
+
+  it('чистый старт поправлять не будет', async () => {
+    await localLearning.load()
+    expect(localStorage.getItem(SETTLED)).toBe('1')
+  })
+})
+
 describe('localLearning', () => {
   it('начинает с пустого снимка', async () => {
     expect(await localLearning.load()).toEqual({ streams: [], materials: [], parts: [], sessions: [], notes: [], steps: [] })
@@ -554,8 +600,11 @@ describe('переезд v2 → v3', () => {
     ])
     const snap = await localLearning.load()
 
+    // «d» хранит `active` без единого следа — после переезда его приводит в
+    // бэклог разовая поправка статусов (`settleStatuses`): на экране он и
+    // раньше стоял в очереди.
     expect(snap.materials.map((m) => m.status)).toEqual([
-      'backlog', 'backlog', 'backlog', 'active', 'done', 'backlog',
+      'backlog', 'backlog', 'backlog', 'backlog', 'done', 'backlog',
     ])
   })
 

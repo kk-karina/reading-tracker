@@ -83,6 +83,11 @@ export function useStudyLine() {
           ) : undefined,
       }
     }
+    // Практика разами: занятие и есть один раз, а минуты, если вписаны,
+    // уходят в мелкую строку, как у всех шагов с единицей.
+    if (material?.kind === 'practice' && material.scale === 'times') {
+      return { step: '+1', unit: t('unit.times', { n: 1 }), detail: '' }
+    }
     if (session.completed) {
       return { step: <Icon name="circle-check" size={18} />, unit: t('sjournal.whole'), detail: '' }
     }

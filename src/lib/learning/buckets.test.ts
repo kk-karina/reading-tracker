@@ -4,6 +4,7 @@ import type { Material, MaterialStatus } from './types'
 
 const make = (id: string, stream_id: string, status: MaterialStatus): Material => ({
   book_id: null,
+  target: null,
   id, stream_id, title: id, kind: 'book', author: null, url: null,
   status, cover_url: null, scale: null, pages_total: null, page_current: null, sort: 0,
   created_at: '2026-01-01T00:00:00.000Z', updated_at: '2026-01-01T00:00:00.000Z',

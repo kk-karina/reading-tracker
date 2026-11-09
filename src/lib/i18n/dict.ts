@@ -205,6 +205,22 @@ const BASE = {
     ru: 'По ссылке заполню карточку сама. По названию найду книгу в Open Library.',
     en: 'A link fills the card in from the page. A title looks the book up in Open Library.',
   },
+  // Строка захвата, когда вид выбран заранее: подсказка обещает ровно то, что
+  // случится по Enter у этого вида.
+  'compose.capture.book': { ru: 'Ссылка или название книги', en: 'A link or a book title' },
+  'compose.capture.article': { ru: 'Ссылка на статью или название', en: 'A link to the article or its title' },
+  'compose.capture.course': { ru: 'Ссылка на курс или название', en: 'A link to the course or its title' },
+  'compose.capture.video': { ru: 'Ссылка на видео или название', en: 'A link to the video or its title' },
+  'compose.capture.practice': { ru: 'Название практики', en: 'What you practise' },
+  'compose.captureHintLink': {
+    ru: 'По ссылке заполню карточку сама. Без ссылки — Enter, и дальше карточка.',
+    en: 'A link fills the card in from the page. Without one, press Enter for the card.',
+  },
+  'compose.captureHintPractice': {
+    ru: 'Ссылки у практики нет: назови её, дальше обложка, шкала и цель.',
+    en: 'A practice has no link: name it, then pick a cover, a scale and a goal.',
+  },
+  'compose.next': { ru: 'Дальше', en: 'Next' },
   'compose.search': { ru: 'Найти книгу', en: 'Look the book up' },
   'compose.manual': { ru: 'Заполнить вручную', en: 'Fill in by hand' },
   'compose.found': { ru: 'Найденные книги', en: 'Books found' },

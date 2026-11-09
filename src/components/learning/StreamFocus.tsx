@@ -132,7 +132,7 @@ export function StreamFocus({
               {/* Прогресс виден и до выбора фокуса: «120 из 300» у того, за
                   что уже садилась, — лучшая подсказка, что выбрать. */}
               <span className="hero-pick-by">
-                {[t(`kind.${m.kind}`), progressText(materialProgress(m, parts)) ?? (m.status === 'active' ? t('mview.active') : null)]
+                {[t(`kind.${m.kind}`), progressText(materialProgress(m, parts, sessions)) ?? (m.status === 'active' ? t('mview.active') : null)]
                   .filter(Boolean)
                   .join(' · ')}
               </span>
@@ -148,7 +148,7 @@ export function StreamFocus({
     )
   }
 
-  const p = materialProgress(focus, parts)
+  const p = materialProgress(focus, parts, sessions)
   const width = barWidth(p.percent)
   // Только собственные записи фокуса: иначе только что выбранный материал
   // показывает чужую последнюю запись и выглядит начатым.

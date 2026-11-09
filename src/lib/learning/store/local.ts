@@ -1,4 +1,5 @@
 import { streamSlug } from '../slug'
+import { settleStatuses } from '../status'
 import {
   emptyLearning,
   KINDS,
@@ -114,6 +115,7 @@ function migrateV2(old: SnapshotV2): LearningSnapshot {
       pages_total: null,
       page_current: null,
       book_id: null,
+      target: null,
       cover_url: rest.cover_url ?? null,
     }
     materials.push(material)
@@ -157,7 +159,12 @@ const backlogStatus = (status: string): MaterialStatus =>
  */
 const fill = (snap: LearningSnapshot): LearningSnapshot => ({
   ...snap,
-  materials: snap.materials.map((m) => ({ ...m, status: backlogStatus(m.status), book_id: m.book_id ?? null })),
+  materials: snap.materials.map((m) => ({
+    ...m,
+    status: backlogStatus(m.status),
+    book_id: m.book_id ?? null,
+    target: m.target ?? null,
+  })),
   // Занятия появились позже всего остального: снимок без них — просто снимок,
   // в котором занятий ещё не записывали.
   // Начатые руками появились позже частей и занятий: их нет — значит, нет.
@@ -175,18 +182,50 @@ const fill = (snap: LearningSnapshot): LearningSnapshot => ({
   steps: Array.isArray(snap.steps) ? snap.steps : [],
 })
 
+/**
+ * Отметка о том, что хранимые статусы уже приведены к правилу «Завершено —
+ * только кнопкой» (`settleStatuses`). Отдельным ключом, а не версией снимка:
+ * форма снимка не меняется, меняется смысл одного поля, и поправить его
+ * нужно ровно один раз — повторная закрыла бы заново то, что вернули в работу.
+ */
+const SETTLED = 'readingtracker.learning.statusSettled'
+
+function settleOnce(snap: LearningSnapshot): LearningSnapshot {
+  if (localStorage.getItem(SETTLED)) return snap
+  const settled: LearningSnapshot = {
+    ...snap,
+    materials: settleStatuses(snap.materials, snap.parts, [...snap.notes, ...snap.sessions]),
+  }
+  try {
+    write(settled)
+    localStorage.setItem(SETTLED, '1')
+  } catch {
+    /* хранилище недоступно на запись: поправим в следующий раз */
+  }
+  return settled
+}
+
 function read(): LearningSnapshot {
   try {
     const raw = localStorage.getItem(KEY)
     if (raw) {
-      return fill({ ...emptyLearning(), ...(JSON.parse(raw) as Partial<LearningSnapshot>) })
+      return settleOnce(fill({ ...emptyLearning(), ...(JSON.parse(raw) as Partial<LearningSnapshot>) }))
     }
 
     // Записи прежних версий не удаляются: пара килобайт против единственной
     // копии конспектов.
     const v2 = localStorage.getItem(KEY_V2)
     const v1 = v2 ? null : localStorage.getItem(KEY_V1)
-    if (!v2 && !v1) return emptyLearning()
+    if (!v2 && !v1) {
+      // Чистый старт: всё, что заведут дальше, заведут уже по новому правилу,
+      // и поправлять будет нечего.
+      try {
+        localStorage.setItem(SETTLED, '1')
+      } catch {
+        /* хранилище закрыто — и правиться нечему */
+      }
+      return emptyLearning()
+    }
 
     const before: SnapshotV2 = v2
       ? { streams: [], materials: [], notes: [], ...(JSON.parse(v2) as Partial<SnapshotV2>) }
@@ -206,7 +245,7 @@ function read(): LearningSnapshot {
     } catch {
       /* хранилище недоступно на запись: сеанс проживёт без сохранения */
     }
-    return fill(moved)
+    return settleOnce(fill(moved))
   } catch {
     /* испорченное или закрытое хранилище: начинаем с пустого */
   }
@@ -257,7 +296,14 @@ export const localLearning: LearningStore = {
   },
 
   async addMaterial(item: NewMaterial) {
-    const made: Material = { ...item, book_id: item.book_id ?? null, id: uid(), created_at: now(), updated_at: now() }
+    const made: Material = {
+      ...item,
+      book_id: item.book_id ?? null,
+      target: item.target ?? null,
+      id: uid(),
+      created_at: now(),
+      updated_at: now(),
+    }
     change((snap) => rules.insert(snap, 'materials', made))
     return made
   },

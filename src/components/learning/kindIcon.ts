@@ -13,4 +13,6 @@ export const KIND_ICON: Record<MaterialKind, IconName> = {
   article: 'file-document',
   course: 'monitor-play',
   video: 'play-circle',
+  // Практика — повторение: этюд за этюдом, подход за подходом.
+  practice: 'repeat',
 }

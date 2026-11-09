@@ -25,7 +25,8 @@ export function Counter({ value, format }: { value: number; format?: (n: number)
 }
 
 interface SegProps<T extends string> {
-  value: T
+  /** `null` — не выбрано ничего: вопрос задан, ответа ещё нет (вид в композере). */
+  value: T | null
   /**
    * `icon` — значок перед словом. Там, где деления — разные предметы (виды
    * материала), а не значения одной шкалы: значок узнаётся боковым зрением

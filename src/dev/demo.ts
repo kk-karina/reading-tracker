@@ -168,6 +168,7 @@ function learning(): LearningSnapshot {
     pages_total: null,
     page_current: null,
     book_id: null,
+    target: null,
     sort: n,
     created_at: stamp(108 - n),
     updated_at: now,
@@ -218,6 +219,19 @@ function learning(): LearningSnapshot {
     mind,
     { title: 'Influence', kind: 'book', author: 'Robert Cialdini', scale: 'pages', pages_total: 336, status: 'backlog' },
     1,
+  )
+  // Практика двумя шкалами: временем к цели и разами без цели.
+  const sketch = material(
+    'sketching',
+    ui,
+    { title: 'Скетчинг интерфейсов', kind: 'practice', scale: 'minutes', target: 20 * 60, status: 'active' },
+    4,
+  )
+  const club = material(
+    'speaking-club',
+    mind,
+    { title: 'Разговорный клуб', kind: 'practice', scale: 'times', target: 12, status: 'active' },
+    2,
   )
   ui.focus_material_id = refactoring.id
   mind.focus_material_id = kahneman.id
@@ -276,6 +290,24 @@ function learning(): LearningSnapshot {
     session(4, course, 2, { part_ids: [lec[1].id], minutes: 35, rating: 5 }),
     session(5, kahneman, 13, { page_from: 0, page_to: 74, minutes: 60, rating: 4 }),
     session(6, kahneman, 5, { page_from: 74, page_to: 142, minutes: 50, rating: 4 }),
+    session(7, sketch, 12, { minutes: 45, rating: 4 }),
+    session(8, sketch, 9, { minutes: 90, rating: 5 }),
+    session(9, sketch, 4, { minutes: 60, rating: 3 }),
+    session(10, sketch, 1, { minutes: 75, rating: 4 }),
+    session(11, club, 20, { rating: 4 }),
+    session(12, club, 13, { minutes: 60, rating: 5 }),
+    session(13, club, 6, { rating: 3 }),
+    // Длинная история «Интерфейсов» — чтобы сетка ритма за 16 недель была
+    // живой, с пропусками и плотными неделями, и стикерам пройденных шагов
+    // было где лежать. Без глав: главы Refactoring UI уже расписаны выше, а
+    // занятие по статье или курсу без отметки — обычный вечер «посидела».
+    ...[104, 101, 100, 96, 93, 92, 89, 86, 82, 79, 78, 75, 71, 68, 65, 64, 61, 57, 54, 51, 50, 47, 43, 40, 36, 33, 30, 29, 26, 22, 19, 15, 14, 10, 7, 6, 4, 1].map(
+      (ago, i) =>
+        session(100 + i, i % 3 === 0 ? course : article, ago, {
+          minutes: 20 + ((i * 17) % 45),
+          rating: [4, 3, 5, 4, 4][i % 5],
+        }),
+    ),
   ]
 
   const note = (
@@ -290,17 +322,6 @@ function learning(): LearningSnapshot {
     session_id: null,
     part_id: null,
     part: null,
-    // Длинная история «Интерфейсов» — чтобы сетка ритма за 16 недель была
-    // живой, с пропусками и плотными неделями, и стикерам пройденных шагов
-    // было где лежать. Без глав: главы Refactoring UI уже расписаны выше, а
-    // занятие по статье или курсу без отметки — обычный вечер «посидела».
-    ...[104, 101, 100, 96, 93, 92, 89, 86, 82, 79, 78, 75, 71, 68, 65, 64, 61, 57, 54, 51, 50, 47, 43, 40, 36, 33, 30, 29, 26, 22, 19, 15, 14, 10, 7, 6, 4, 1].map(
-      (ago, i) =>
-        session(100 + i, i % 3 === 0 ? course : article, ago, {
-          minutes: 20 + ((i * 17) % 45),
-          rating: [4, 3, 5, 4, 4][i % 5],
-        }),
-    ),
     title: null,
     body,
     tags: [],
@@ -425,7 +446,7 @@ function learning(): LearningSnapshot {
 
   return {
     streams: [ui, mind],
-    materials: [refactoring, course, article, video, kahneman, influence],
+    materials: [refactoring, course, article, video, kahneman, influence, sketch, club],
     parts,
     sessions,
     notes,

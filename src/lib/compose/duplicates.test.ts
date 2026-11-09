@@ -46,6 +46,7 @@ const book = (over: Partial<Book>): Book => ({
 
 const material = (over: Partial<Material>): Material => ({
   book_id: null,
+  target: null,
   id: 'm1',
   stream_id: 's1',
   title: 'Refactoring UI',

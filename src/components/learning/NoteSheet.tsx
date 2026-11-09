@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { MetaLine } from '../MetaLine'
 import { fmtDate } from '../../lib/format'
 import { renderMarkdown } from '../../lib/learning/markdown'
 import { noteHeading } from '../../lib/learning/notes'
@@ -58,20 +59,14 @@ export function NoteSheet({
       <div className="sheet-head-line">
         <span className="sheet-head-lead">
           {lead}
-          <span className="sheet-sign">
-            <span className="label">
-              {stream.accent && <i className="stream-dot" data-accent={stream.accent} />}
-              {stream.name} · {fmtDate(note.date, locale)}
-            </span>
-            {edit && (
-              <>
-                <span className="label" aria-hidden>
-                  ·
-                </span>
-                {edit}
-              </>
-            )}
-          </span>
+          <MetaLine
+            className="label"
+            lead={stream.accent && <i className="stream-dot" data-accent={stream.accent} />}
+          >
+            <span key="stream">{stream.name}</span>
+            <span key="date">{fmtDate(note.date, locale)}</span>
+            {edit}
+          </MetaLine>
         </span>
         {actions}
       </div>
