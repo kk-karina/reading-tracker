@@ -444,6 +444,7 @@ export const LEARNING = {
   'steps.peelLabel': { ru: 'Отметить «{name}» и открыть приз', en: 'Mark “{name}” done and open the prize' },
   'steps.pullHint': { ru: 'Потяни за уголок', en: 'Pull by the corner' },
   'steps.prizeOf': { ru: 'Приз: {name}', en: 'Prize: {name}' },
+  'steps.doneDay': { ru: 'Шаг пройден: {name}', en: 'Step done: {name}' },
   'steps.surprise': { ru: '{name}: приз — сюрприз', en: '{name}: the prize is a surprise' },
   'steps.newStep': { ru: 'Новый шаг', en: 'New step' },
   'steps.prev': { ru: 'Раньше', en: 'Earlier' },

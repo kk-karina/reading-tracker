@@ -2,6 +2,7 @@ import { useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'reac
 import { addDays, fromISO, isoWeek, localeTag, mondayOf, monthParts, toISO, todayISO } from '../lib/format'
 import type { Session } from '../lib/types'
 import { useLocale } from '../state/LocaleContext'
+import { Sticker } from './learning/Sticker'
 import { Empty } from './ui'
 
 /*
@@ -19,14 +20,24 @@ interface Tip {
   y: number
   text: string
   sub?: string
+  /** Третья строка — то, что случилось в этот день помимо числа. */
+  note?: string
 }
 
 function Tooltip({ tip }: { tip: Tip | null }) {
   if (!tip) return null
   return (
-    <div className="chart-tip" style={{ left: `${tip.x}%`, top: `${tip.y}%` }}>
+    // У края графика подсказка уходит внутрь, а не за панель: свежие дни
+    // ритма стоят у правого края, а с именем шага подсказка шире клетки
+    // втрое.
+    <div
+      className="chart-tip"
+      data-edge={tip.x > 75 ? 'end' : tip.x < 25 ? 'start' : undefined}
+      style={{ left: `${tip.x}%`, top: `${tip.y}%` }}
+    >
       <strong>{tip.text}</strong>
       {tip.sub && <span>{tip.sub}</span>}
+      {tip.note && <em className="chart-tip-note">{tip.note}</em>}
     </div>
   )
 }
@@ -53,6 +64,33 @@ const SQ = 17
    в первую колонку. */
 const PAD_L = 30
 const PAD_T = 22
+/* Стикер явно больше клетки и заходит на соседей: так он читается наклеенным
+   поверх календаря. В четверть шире клетки он не делал ни того, ни другого —
+   ни вписывался, ни выходил, и читался ещё одной клеткой другого цвета. */
+const MARK = CELL * 1.6
+
+/**
+ * Наклейка на день: закрытый шаг лежит в клетке своего дня. График про шаги
+ * не знает — картинку, подпись и что делать по нажатию даёт тот, кто вызывает.
+ */
+export interface RhythmMark {
+  date: string
+  image: string | null
+  final: boolean
+  /** Строка в подсказке и имя кнопки. */
+  label: string
+  /** Только что заработан: шлёпается в клетку, а не лежит там с загрузки. */
+  fresh?: boolean
+  onOpen?: () => void
+}
+
+/* Наклон от даты, а не случайный: на каждом рендере стикер лежит так же
+   криво, как вчера. */
+const tilt = (iso: string) => {
+  let h = 0
+  for (const ch of iso) h = (h * 31 + ch.charCodeAt(0)) | 0
+  return (Math.abs(h) % 19) - 9
+}
 
 /**
  * Карта «число в день». Сам график ничего не знает ни про сессии, ни про
@@ -65,6 +103,7 @@ export function Rhythm({
   unit,
   weeks = WEEKS,
   cap,
+  marks = [],
 }: {
   byDate: Map<string, number>
   label: string
@@ -73,6 +112,8 @@ export function Rhythm({
   weeks?: number
   /** Вывод под сеткой. */
   cap?: ReactNode
+  /** Наклейки на дни — по одной на день. */
+  marks?: RhythmMark[]
 }) {
   const { t, locale } = useLocale()
   const [tip, setTip] = useState<Tip | null>(null)
@@ -88,13 +129,14 @@ export function Rhythm({
      везде 10 пикселей, как даты под столбиками, поэтому её кегль в единицах
      SVG пересчитывается от настоящей ширины. До замера — прежние 7. */
   const box = useRef<HTMLDivElement>(null)
-  const [axis, setAxis] = useState(7)
+  const [scale, setScale] = useState<number | null>(null)
+  const axis = scale ? AXIS_PX / scale : 7
   useLayoutEffect(() => {
     const el = box.current
     if (!el || typeof ResizeObserver === 'undefined') return
     const fit = () => {
-      const scale = el.clientWidth / W
-      if (scale > 0) setAxis(AXIS_PX / scale)
+      const k = el.clientWidth / W
+      if (k > 0) setScale(k)
     }
     fit()
     const ro = new ResizeObserver(fit)
@@ -132,6 +174,19 @@ export function Rhythm({
 
   const dayLabel = (iso: string) =>
     fromISO(iso).toLocaleDateString(tag, { weekday: 'short', day: 'numeric', month: 'short' })
+
+  const markOf = new Map(marks.map((m) => [m.date, m]))
+  const tipFor = (c: (typeof cells)[number]): Tip => ({
+    x: (c.x / W) * 100,
+    y: ((c.y - CELL / 2) / H) * 100,
+    text: c.value ? unit(c.value) : t('chart.rest'),
+    sub: dayLabel(c.iso),
+    note: markOf.get(c.iso)?.label,
+  })
+  /* Стикеры — HTML поверх SVG, а не <image> внутри: так это тот же
+     `Sticker`, что в лесенке, с вырубкой и тенью, и настоящая кнопка.
+     Размер в пикселях известен только после замера — до него их нет. */
+  const stuck = scale ? cells.filter((c) => !c.future && markOf.has(c.iso)) : []
 
   return (
     <div className="rhythm">
@@ -207,20 +262,39 @@ export function Rhythm({
                   width={CELL}
                   height={CELL}
                   fill="transparent"
-                  onMouseEnter={() =>
-                    setTip({
-                      x: (c.x / W) * 100,
-                      y: ((c.y - CELL / 2) / H) * 100,
-                      text: c.value ? unit(c.value) : t('chart.rest'),
-                      sub: dayLabel(c.iso),
-                    })
-                  }
+                  onMouseEnter={() => setTip(tipFor(c))}
                   onMouseLeave={() => setTip(null)}
                 />
               </g>
             )
           })}
         </svg>
+        {stuck.map((c) => {
+          const m = markOf.get(c.iso)!
+          return (
+            <button
+              key={c.iso}
+              type="button"
+              className="rh-mark"
+              style={{ left: `${(c.x / W) * 100}%`, top: `${(c.y / H) * 100}%`, rotate: `${tilt(c.iso)}deg` }}
+              aria-label={m.label}
+              disabled={!m.onOpen}
+              onClick={m.onOpen}
+              onMouseEnter={() => setTip(tipFor(c))}
+              onMouseLeave={() => setTip(null)}
+              onFocus={() => setTip(tipFor(c))}
+              onBlur={() => setTip(null)}
+            >
+              <Sticker
+                image={m.image}
+                size={Math.round(MARK * scale!)}
+                state="done"
+                final={m.final}
+                className={m.fresh ? 'slap' : undefined}
+              />
+            </button>
+          )
+        })}
         <Tooltip tip={tip} />
       </div>
 

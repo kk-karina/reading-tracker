@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Rhythm } from '../../components/Charts'
+import { Rhythm, type RhythmMark } from '../../components/Charts'
 import { BacklogPanel } from '../../components/learning/BacklogPanel'
 import { Celebration } from '../../components/learning/Celebration'
 import { StepsBlock } from '../../components/learning/StepsBlock'
@@ -71,6 +71,8 @@ export function StreamDashboard() {
    * открыто, и вступление прошло бы под ним незамеченным.
    */
   const [intro, setIntro] = useState(0)
+  /** Шаг, чей праздник только что закрылся: его стикер шлёпается в клетку ритма. */
+  const [landed, setLanded] = useState<string | null>(null)
   const ladder = stepsOf(steps, stream.id)
 
   const complete = (step: StreamStep) => {
@@ -86,6 +88,27 @@ export function StreamDashboard() {
   const streamSessions = notesOfStream(materials, sessions, stream.id)
   const entries = [...streamSessions, ...mine].map((r) => r.date)
   const focus = focusOf(materials, stream.focus_material_id)
+
+  /* Приз лежит в клетке того дня, когда шаг закрыт: в ритме видно не только
+     «садилась», но и «дошла». Шаг, который празднуют впервые, в сетку ещё не
+     лёг — иначе стикер прилип бы под окном праздника, и момент прошёл бы мимо.
+     Два шага в один день — один стикер, дальнего; имена обоих в подсказке. */
+  const pending = cheer && !cheer.replay ? cheer.step.id : null
+  const doneByDay = new Map<string, StreamStep[]>()
+  for (const s of ladder) {
+    if (s.done_on && s.id !== pending) doneByDay.set(s.done_on, [...(doneByDay.get(s.done_on) ?? []), s])
+  }
+  const marks: RhythmMark[] = [...doneByDay].map(([date, day]) => {
+    const top = day[day.length - 1]
+    return {
+      date,
+      image: top.image,
+      final: isFinal(ladder, top.id),
+      label: t('steps.doneDay', { name: day.map((s) => s.title || t('steps.newStep')).join(', ') }),
+      fresh: top.id === landed,
+      onOpen: () => replay(top),
+    }
+  })
 
   return (
     <>
@@ -137,6 +160,7 @@ export function StreamDashboard() {
               label={t('chart.studyRhythm')}
               unit={(n) => t('study.entries', { n })}
               cap={<p className="rhythm-cap">{t('stream.activeWeeks', { n: activeWeeks(entries) })}</p>}
+              marks={marks}
             />
           </div>
           <StreamTime sessions={streamSessions} />
@@ -195,7 +219,10 @@ export function StreamDashboard() {
           final={isFinal(ladder, cheer.step.id)}
           replay={cheer.replay}
           onClose={() => {
-            if (!cheer.replay) setIntro((n) => n + 1)
+            if (!cheer.replay) {
+              setIntro((n) => n + 1)
+              setLanded(cheer.step.id)
+            }
             setCheer(null)
           }}
           onUndo={

@@ -1084,6 +1084,12 @@ button.chip:active {
 }
 .rh-cell {
   fill: var(--well);
+.chart-tip[data-edge='end'] {
+  transform: translate(calc(-100% + 14px), calc(-100% - 8px));
+}
+.chart-tip[data-edge='start'] {
+  transform: translate(-14px, calc(-100% - 8px));
+}
   stroke: rgba(14, 16, 18, 0.06);
   stroke-width: 1;
   /* SVG растянут по панели вдвое-втрое, и волосок вместе с ним становился
@@ -1091,6 +1097,18 @@ button.chip:active {
   vector-effect: non-scaling-stroke;
 }
 .rh-cell.is-on {
+/* Шаг — не число и не дата: своим начертанием, и длинное имя переносится,
+   а не растягивает подсказку на полэкрана. */
+.chart-tip-note {
+  margin-top: 4px;
+  /* Подсказка у правого края сжимается до остатка ширины — без своей ширины
+     имя шага ломалось по слову в строку. */
+  width: max-content;
+  max-width: 220px;
+  font-style: normal;
+  font-weight: 500;
+  white-space: normal;
+}
   fill: var(--brand);
 }
 .rh-cell.rh-future {
@@ -1116,6 +1134,38 @@ button.chip:active {
   /* Grid tracks default to their content's minimum width; without this a phone
      gets twelve fixed columns and the chart runs off the panel. */
   min-width: 0;
+/* День, когда закрыт шаг: в клетке лежит стикер приза. Кнопка — сам
+   стикер, без своей подложки; наклон задаёт разметка (`rotate`), чтобы
+   `transform` оставался свободным для шлепка и подъёма. */
+.rh-mark {
+  position: absolute;
+  z-index: 1;
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  translate: -50% -50%;
+  cursor: pointer;
+  transition: scale 0.16s var(--ease-out);
+}
+.rh-mark:disabled {
+  cursor: default;
+}
+.rh-mark:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  .rh-mark:not(:disabled):hover {
+    scale: 1.1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .rh-mark {
+    transition: none;
+  }
+}
 }
 /* A week with nothing in it: a dot on the baseline, not a gap in the row. */
 .wk-none {
